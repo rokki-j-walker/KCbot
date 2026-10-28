@@ -1,0 +1,474 @@
+[04:47:19] скорость игры: 4.0x (записано в C:\Program Files (x86)\Steam\steamapps\common\Kingdom\Kingdom_Data\speed.txt)
+[04:47:19] окно игры: 37555896  режим: LIVE  эпизод: 85.0  own_focus: True
+[04:47:19] SC=0.0 T="85.0" * focus = игра в фокусе
+[04:47:19] SC=0.0 T="85.0" ts="COIN @-16.0"
+[04:47:19] SC=37.6 T="84.8" ts="COIN @-14.0"
+[04:47:19] SC=37.7 T="84.8" ts="COIN @-17.0"
+[04:47:19] SC=37.7 T="84.7" ts="COIN @-16.0"
+[04:47:19] SC=38.0 T="84.5" ts="COIN @-14.0"
+[04:47:19] SC=38.1 T="84.5" ts="COIN @-16.0"
+[04:47:19] SC=38.1 T="84.4" ts="COIN @-17.0"
+[04:47:20] SC=38.3 T="84.3" ts="COIN @-16.0"
+[04:47:20] SC=38.4 T="84.2" ts="COIN @-14.0"
+[04:47:20] SC=38.5 T="84.2" ts="COIN @-16.0"
+[04:47:20] SC=38.5 T="84.1" ts="COIN @-14.0"
+[04:47:20] SC=38.5 T="84.0" ts="COIN @-16.0"
+[04:47:20] SC=38.6 T="84.0" ts="COIN @-17.0"
+[04:47:20] SC=38.7 T="83.9" ts="COIN @-14.0"
+[04:47:20] SC=38.8 T="83.9" ts="COIN @-17.0"
+[04:47:20] SC=38.9 T="83.8" ts="COIN @-16.0"
+[04:47:20] SC=38.9 T="83.7" ts="COIN @-17.0"
+[04:47:20] SC=38.9 T="83.6" ts="COIN @-16.0"
+[04:47:20] SC=38.9 T="83.5" ts="COIN @-14.0"
+[04:47:20] SC=39.0 T="83.4" * recruit = бомжи рядом: 16, ближайший=-2.0
+[04:47:20] SC=44.0 T="83.4" ts="RECRUIT walk" -> -1.0
+[04:47:21] SC=49.1 T="83.2" ts="RECRUIT walk" -> -2.0
+[04:47:21] SC=74.2 T="82.9" ts="RECRUIT drop coin @-13.6"
+[04:47:21] SC=74.2 T="82.8" * buy = Castle0(PayableUpgrade) 1 @-4.0
+[04:47:21] SC=79.2 T="82.8" ts="PAY Castle0(1)" -> -4.00 (px=-12.61)
+[04:47:21] SC=84.3 T="82.7" ts="PAY Castle0(1)" -> -4.00 (px=-12.14)
+[04:47:21] SC=84.3 T="82.7" ts="PAY Castle0(1)" -> -4.00 (px=-11.67)
+[04:47:21] SC=84.3 T="82.6" ts="PAY Castle0(1)" -> -4.00 (px=-11.16)
+[04:47:21] SC=84.3 T="82.6" ts="PAY Castle0(1)" -> -4.00 (px=-10.69)
+[04:47:21] SC=84.3 T="82.5" ts="PAY Castle0(1)" -> -4.00 (px=-10.18)
+[04:47:21] SC=84.4 T="82.4" ts="PAY Castle0(1)" -> -4.00 (px=-9.71)
+[04:47:21] SC=84.4 T="82.3" ts="PAY Castle0(1)" -> -4.00 (px=-9.24)
+[04:47:22] SC=84.5 T="82.3" ts="PAY Castle0(1)" -> -4.00 (px=-8.74)
+[04:47:22] SC=84.5 T="82.2" ts="PAY Castle0(1)" -> -4.00 (px=-8.26)
+[04:47:22] SC=84.5 T="82.1" ts="PAY Castle0(1)" -> -4.00 (px=-7.79)
+[04:47:22] SC=84.5 T="82.1" ts="PAY Castle0(1)" -> -4.00 (px=-7.29)
+[04:47:22] SC=84.6 T="82.0" ts="PAY Castle0(1)" -> -4.00 (px=-6.82)
+[04:47:22] SC=84.6 T="82.0" ts="PAY Castle0(1)" -> -4.00 (px=-6.35)
+[04:47:22] SC=84.6 T="81.9" ts="PAY Castle0(1)" -> -4.00 (px=-5.84)
+[04:47:22] SC=84.6 T="81.8" ts="PAY Castle0(1)" -> -4.00 (px=-5.37)
+[04:47:22] SC=84.7 T="81.7" ts="PAY Castle0(1)" -> -4.00 (px=-4.90)
+[04:47:22] SC=84.7 T="81.7" ts="PAY Castle0(1)" -> -4.00 (px=-4.43)
+[04:47:22] SC=74.7 T="81.6" ts="PAY Castle0 price=1 purse=9"
+[04:47:23] SC=78.8 T="81.0" * pay_done = Castle0 цена=1 потрачено=1
+[04:47:23] SC=178.8 T="81.0" ts="RECRUIT drop coin @-3.4"
+[04:47:23] SC=178.8 T="80.9" * buy = Wall0(PayableUpgrade) 1 @-12.5
+[04:47:23] SC=182.8 T="80.9" ts="PAY Wall0(1)" -> -12.50 (px=-3.40)
+[04:47:23] SC=182.8 T="80.8" ts="PAY Wall0(1)" -> -12.50 (px=-3.69)
+[04:47:23] SC=182.8 T="80.7" ts="PAY Wall0(1)" -> -12.50 (px=-4.19)
+[04:47:23] SC=182.9 T="80.6" ts="PAY Wall0(1)" -> -12.50 (px=-4.66)
+[04:47:23] SC=182.9 T="80.5" * world = построено 2 зданий (wall=0 shop=2 farm=0)
+[04:47:23] SC=202.9 T="80.5" ts="PAY Wall0(1)" -> -12.50 (px=-5.14)
+[04:47:23] SC=202.9 T="80.5" ts="PAY Wall0(1)" -> -12.50 (px=-5.64)
+[04:47:23] SC=203.0 T="80.4" ts="PAY Wall0(1)" -> -12.50 (px=-6.11)
+[04:47:24] SC=203.0 T="80.3" ts="PAY Wall0(1)" -> -12.50 (px=-6.58)
+[04:47:24] SC=203.0 T="80.3" ts="PAY Wall0(1)" -> -12.50 (px=-7.05)
+[04:47:24] SC=203.0 T="80.2" ts="PAY Wall0(1)" -> -12.50 (px=-7.56)
+[04:47:24] SC=203.1 T="80.2" ts="PAY Wall0(1)" -> -12.50 (px=-8.03)
+[04:47:24] SC=203.1 T="80.1" ts="PAY Wall0(1)" -> -12.50 (px=-8.54)
+[04:47:24] SC=203.1 T="80.0" ts="PAY Wall0(1)" -> -12.50 (px=-9.01)
+[04:47:24] SC=203.1 T="79.9" ts="PAY Wall0(1)" -> -12.50 (px=-9.48)
+[04:47:24] SC=203.2 T="79.9" ts="PAY Wall0(1)" -> -12.50 (px=-9.99)
+[04:47:24] SC=203.2 T="79.8" ts="PAY Wall0(1)" -> -12.50 (px=-10.46)
+[04:47:24] SC=203.2 T="79.8" ts="PAY Wall0(1)" -> -12.50 (px=-10.93)
+[04:47:24] SC=223.3 T="79.7" ts="PAY Wall0(1)" -> -12.50 (px=-11.43)
+[04:47:24] SC=223.3 T="79.6" ts="PAY Wall0(1)" -> -12.50 (px=-11.91)
+[04:47:24] SC=228.3 T="79.6" ts="PAY Wall0 price=1 purse=8"
+[04:47:25] SC=232.3 T="79.3" * world = построено 1 зданий (wall=1 shop=2 farm=0)
+[04:47:25] SC=242.4 T="78.9" * pay_done = Wall0 цена=1 потрачено=1
+[04:47:25] SC=242.4 T="78.9" * recruit = бомжи рядом: 15, ближайший=-3.0
+[04:47:25] SC=244.4 T="78.9" ts="RECRUIT drop coin @-13.0"
+[04:47:25] SC=244.4 T="78.8" * buy = ShopHammer(PayableShop) 3 @-8.5
+[04:47:25] SC=248.4 T="78.8" ts="PAY ShopHammer(3)" -> -8.50 (px=-12.97)
+[04:47:25] SC=248.4 T="78.7" ts="PAY ShopHammer(3)" -> -8.50 (px=-12.85)
+[04:47:25] SC=248.4 T="78.6" ts="PAY ShopHammer(3)" -> -8.50 (px=-12.39)
+[04:47:25] SC=248.4 T="78.5" ts="PAY ShopHammer(3)" -> -8.50 (px=-11.92)
+[04:47:25] SC=248.5 T="78.5" ts="PAY ShopHammer(3)" -> -8.50 (px=-11.45)
+[04:47:25] SC=248.5 T="78.4" ts="PAY ShopHammer(3)" -> -8.50 (px=-10.94)
+[04:47:25] SC=248.5 T="78.4" ts="PAY ShopHammer(3)" -> -8.50 (px=-10.47)
+[04:47:26] SC=248.5 T="78.3" ts="PAY ShopHammer(3)" -> -8.50 (px=-9.97)
+[04:47:26] SC=248.6 T="78.2" ts="PAY ShopHammer(3)" -> -8.50 (px=-9.50)
+[04:47:26] SC=248.6 T="78.1" ts="PAY ShopHammer(3)" -> -8.50 (px=-9.03)
+[04:47:26] SC=248.6 T="78.1" ts="PAY ShopHammer price=3 purse=6"
+[04:47:26] SC=250.7 T="77.5" * pay_done = ShopHammer цена=3 потрачено=3
+[04:47:26] SC=260.7 T="77.4" ts="PAY ShopHammer(3)" -> -8.50 (px=-7.96)
+[04:47:26] SC=260.7 T="77.4" ts="PAY ShopHammer(3)" -> -8.50 (px=-7.98)
+[04:47:27] SC=260.7 T="77.3" ts="PAY ShopHammer price=3 purse=3"
+[04:47:27] SC=272.8 T="76.6" * coin_skip = -13.0
+[04:47:27] SC=280.3 T="76.6" * status = SCORE=280.3 | d0 t10.0 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:28] SC=280.3 T="76.3" * status = SCORE=280.3 | d0 t10.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:28] SC=280.3 T="76.1" * status = SCORE=280.3 | d0 t10.2 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:28] SC=280.3 T="75.8" * status = SCORE=280.3 | d0 t10.3 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:28] SC=295.3 T="75.8" * status = SCORE=295.3 | d0 t10.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:28] SC=295.4 T="75.6" * status = SCORE=295.4 | d0 t10.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:28] SC=295.4 T="75.4" * status = SCORE=295.4 | d0 t10.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:29] SC=295.4 T="75.1" * status = SCORE=295.4 | d0 t10.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:29] SC=295.4 T="74.9" * status = SCORE=295.4 | d0 t10.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:29] SC=295.4 T="74.6" * status = SCORE=295.4 | d0 t10.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:29] SC=295.4 T="74.4" * status = SCORE=295.4 | d0 t10.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:30] SC=295.4 T="74.1" * status = SCORE=295.4 | d0 t11.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:30] SC=295.4 T="73.8" * status = SCORE=295.4 | d0 t11.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:30] SC=295.5 T="73.6" * status = SCORE=295.5 | d0 t11.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:31] SC=295.5 T="73.3" * status = SCORE=295.5 | d0 t11.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:31] SC=295.5 T="73.0" * status = SCORE=295.5 | d0 t11.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:31] SC=295.5 T="72.9" * status = SCORE=295.5 | d0 t11.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:31] SC=295.5 T="72.6" * status = SCORE=295.5 | d0 t11.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:31] SC=295.5 T="72.4" * status = SCORE=295.5 | d0 t11.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:32] SC=295.5 T="72.1" * status = SCORE=295.5 | d0 t11.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:32] SC=295.5 T="71.9" * status = SCORE=295.5 | d0 t11.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:32] SC=295.6 T="71.6" * status = SCORE=295.6 | d0 t12.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:32] SC=295.6 T="71.4" * status = SCORE=295.6 | d0 t12.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:33] SC=295.6 T="71.1" * status = SCORE=295.6 | d0 t12.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:33] SC=295.6 T="70.9" * status = SCORE=295.6 | d0 t12.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:33] SC=290.6 T="70.8" * status = SCORE=290.6 | d0 t12.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:33] SC=290.6 T="70.6" * status = SCORE=290.6 | d0 t12.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:34] SC=290.6 T="70.3" * status = SCORE=290.6 | d0 t12.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:34] SC=290.6 T="70.1" * status = SCORE=290.6 | d0 t12.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:34] SC=290.6 T="69.8" * status = SCORE=290.6 | d0 t12.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:34] SC=290.7 T="69.6" * status = SCORE=290.7 | d0 t12.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:35] SC=290.7 T="69.3" * status = SCORE=290.7 | d0 t12.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:35] SC=290.7 T="69.0" * status = SCORE=290.7 | d0 t13.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:35] SC=290.7 T="68.9" * status = SCORE=290.7 | d0 t13.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:35] SC=290.7 T="68.6" * status = SCORE=290.7 | d0 t13.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:36] SC=290.7 T="68.3" * status = SCORE=290.7 | d0 t13.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:36] SC=290.7 T="68.0" * status = SCORE=290.7 | d0 t13.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:36] SC=290.7 T="67.9" * status = SCORE=290.7 | d0 t13.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:36] SC=290.8 T="67.6" * status = SCORE=290.8 | d0 t13.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:36] SC=290.8 T="67.4" * status = SCORE=290.8 | d0 t13.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:37] SC=290.8 T="67.1" * status = SCORE=290.8 | d0 t13.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:37] SC=290.8 T="66.8" * status = SCORE=290.8 | d0 t13.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:37] SC=290.8 T="66.6" * status = SCORE=290.8 | d0 t14.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:37] SC=290.8 T="66.4" * status = SCORE=290.8 | d0 t14.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:38] SC=290.8 T="66.1" * status = SCORE=290.8 | d0 t14.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:38] SC=290.8 T="65.8" * status = SCORE=290.8 | d0 t14.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:38] SC=285.6 T="65.7" * status = SCORE=285.6 | d0 t14.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:38] SC=285.6 T="65.6" * status = SCORE=285.6 | d0 t14.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:39] SC=285.6 T="65.3" * status = SCORE=285.6 | d0 t14.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:39] SC=285.6 T="65.1" * status = SCORE=285.6 | d0 t14.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:39] SC=285.6 T="64.9" * status = SCORE=285.6 | d0 t14.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:39] SC=285.7 T="64.6" * status = SCORE=285.7 | d0 t14.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:39] SC=285.7 T="64.4" * status = SCORE=285.7 | d0 t14.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:40] SC=285.7 T="64.1" * status = SCORE=285.7 | d0 t15.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:40] SC=285.7 T="63.8" * status = SCORE=285.7 | d0 t15.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:40] SC=285.7 T="63.6" * status = SCORE=285.7 | d0 t15.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:40] SC=285.7 T="63.4" * status = SCORE=285.7 | d0 t15.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:41] SC=285.7 T="63.1" * status = SCORE=285.7 | d0 t15.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:41] SC=285.7 T="62.8" * status = SCORE=285.7 | d0 t15.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:41] SC=285.7 T="62.6" * status = SCORE=285.7 | d0 t15.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:41] SC=285.8 T="62.5" * status = SCORE=285.8 | d0 t15.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:41] SC=285.8 T="62.4" * status = SCORE=285.8 | d0 t15.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:42] SC=285.8 T="62.1" * status = SCORE=285.8 | d0 t15.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:42] SC=285.8 T="61.8" * status = SCORE=285.8 | d0 t15.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:42] SC=285.8 T="61.5" * status = SCORE=285.8 | d0 t16.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:42] SC=285.8 T="61.3" * status = SCORE=285.8 | d0 t16.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:43] SC=285.8 T="61.1" * status = SCORE=285.8 | d0 t16.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:43] SC=285.8 T="60.8" * status = SCORE=285.8 | d0 t16.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:43] SC=280.3 T="60.7" * status = SCORE=280.3 | d0 t16.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:43] SC=280.3 T="60.6" * status = SCORE=280.3 | d0 t16.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:44] SC=280.4 T="60.3" * status = SCORE=280.4 | d0 t16.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:44] SC=280.4 T="60.1" * status = SCORE=280.4 | d0 t16.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:44] SC=280.4 T="59.8" * status = SCORE=280.4 | d0 t16.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:44] SC=280.4 T="59.6" * status = SCORE=280.4 | d0 t16.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:44] SC=280.4 T="59.4" * status = SCORE=280.4 | d0 t16.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:45] SC=280.4 T="59.1" * status = SCORE=280.4 | d0 t17.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:45] SC=280.4 T="58.8" * status = SCORE=280.4 | d0 t17.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:45] SC=280.4 T="58.5" * status = SCORE=280.4 | d0 t17.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:45] SC=280.5 T="58.4" * status = SCORE=280.5 | d0 t17.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:46] SC=280.5 T="58.1" * status = SCORE=280.5 | d0 t17.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:46] SC=280.5 T="57.8" * status = SCORE=280.5 | d0 t17.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:46] SC=280.5 T="57.6" * status = SCORE=280.5 | d0 t17.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:46] SC=280.5 T="57.4" * status = SCORE=280.5 | d0 t17.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:47] SC=280.5 T="57.1" * status = SCORE=280.5 | d0 t17.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:47] SC=280.5 T="56.8" * status = SCORE=280.5 | d0 t17.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:47] SC=280.5 T="56.6" * status = SCORE=280.5 | d0 t18.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:48] SC=280.6 T="56.3" * status = SCORE=280.6 | d0 t18.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:47:48] SC=280.6 T="56.2" * world = появилось 1 врагов: Troll P10
+[04:47:48] SC=280.6 T="56.2" * status = SCORE=280.6 | d0 t18.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:48] SC=280.6 T="56.1" * status = SCORE=280.6 | d0 t18.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:48] SC=280.6 T="55.8" * status = SCORE=280.6 | d0 t18.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:48] SC=274.8 T="55.7" * status = SCORE=274.8 | d0 t18.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:48] SC=274.8 T="55.6" * status = SCORE=274.8 | d0 t18.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:48] SC=274.8 T="55.4" * status = SCORE=274.8 | d0 t18.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:49] SC=274.8 T="55.1" * status = SCORE=274.8 | d0 t18.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:49] SC=274.8 T="54.8" * status = SCORE=274.8 | d0 t18.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:49] SC=274.8 T="54.6" * status = SCORE=274.8 | d0 t18.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:49] SC=274.9 T="54.6" * status = SCORE=274.9 | d0 t18.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:49] SC=274.9 T="54.3" * status = SCORE=274.9 | d0 t18.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:50] SC=274.9 T="54.1" * status = SCORE=274.9 | d0 t19.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:50] SC=274.9 T="53.8" * status = SCORE=274.9 | d0 t19.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:50] SC=274.9 T="53.6" * status = SCORE=274.9 | d0 t19.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:51] SC=274.9 T="53.3" * status = SCORE=274.9 | d0 t19.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:51] SC=274.9 T="53.1" * status = SCORE=274.9 | d0 t19.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:51] SC=274.9 T="52.8" * status = SCORE=274.9 | d0 t19.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:51] SC=275.0 T="52.6" * status = SCORE=275.0 | d0 t19.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:51] SC=275.0 T="52.4" * status = SCORE=275.0 | d0 t19.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:52] SC=275.0 T="52.1" * status = SCORE=275.0 | d0 t19.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:52] SC=275.0 T="51.8" * status = SCORE=275.0 | d0 t19.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:52] SC=275.0 T="51.5" * status = SCORE=275.0 | d0 t20.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:52] SC=275.0 T="51.4" * status = SCORE=275.0 | d0 t20.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:53] SC=275.0 T="51.1" * status = SCORE=275.0 | d0 t20.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:53] SC=275.0 T="50.8" * status = SCORE=275.0 | d0 t20.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:53] SC=269.0 T="50.8" * status = SCORE=269.0 | d0 t20.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:53] SC=269.0 T="50.6" * status = SCORE=269.0 | d0 t20.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:53] SC=269.0 T="50.4" * status = SCORE=269.0 | d0 t20.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:54] SC=269.0 T="50.1" * status = SCORE=269.0 | d0 t20.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:54] SC=269.0 T="49.8" * status = SCORE=269.0 | d0 t20.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:54] SC=269.0 T="49.6" * status = SCORE=269.0 | d0 t20.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:54] SC=269.0 T="49.3" * status = SCORE=269.0 | d0 t20.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:55] SC=269.0 T="49.1" * status = SCORE=269.0 | d0 t21.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:55] SC=269.1 T="49.0" * status = SCORE=269.1 | d0 t21.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:55] SC=269.1 T="48.8" * status = SCORE=269.1 | d0 t21.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:55] SC=269.1 T="48.5" * status = SCORE=269.1 | d0 t21.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:55] SC=269.1 T="48.4" * status = SCORE=269.1 | d0 t21.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:56] SC=269.1 T="48.1" * status = SCORE=269.1 | d0 t21.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:56] SC=269.1 T="47.8" * status = SCORE=269.1 | d0 t21.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:56] SC=269.1 T="47.6" * status = SCORE=269.1 | d0 t21.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:56] SC=269.1 T="47.4" * status = SCORE=269.1 | d0 t21.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:57] SC=269.1 T="47.1" * status = SCORE=269.1 | d0 t21.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:57] SC=269.2 T="47.0" * status = SCORE=269.2 | d0 t21.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:57] SC=269.2 T="46.8" * status = SCORE=269.2 | d0 t21.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:57] SC=269.2 T="46.5" * status = SCORE=269.2 | d0 t22.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:57] SC=269.2 T="46.4" * status = SCORE=269.2 | d0 t22.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:58] SC=269.2 T="46.1" * status = SCORE=269.2 | d0 t22.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:58] SC=269.2 T="45.8" * status = SCORE=269.2 | d0 t22.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:58] SC=262.8 T="45.7" * status = SCORE=262.8 | d0 t22.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:58] SC=262.8 T="45.6" * status = SCORE=262.8 | d0 t22.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:58] SC=262.9 T="45.4" * status = SCORE=262.9 | d0 t22.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:58] SC=262.9 T="45.4" * status = SCORE=262.9 | d0 t22.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:47:59] SC=262.9 T="45.2" * world = появилось 1 врагов: Troll P9
+[04:47:59] SC=262.9 T="45.2" * status = SCORE=262.9 | d0 t22.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:47:59] SC=262.9 T="45.1" * status = SCORE=262.9 | d0 t22.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:47:59] SC=262.9 T="44.8" * status = SCORE=262.9 | d0 t22.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:47:59] SC=262.9 T="44.6" * status = SCORE=262.9 | d0 t22.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:47:59] SC=262.9 T="44.3" * status = SCORE=262.9 | d0 t22.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:00] SC=262.9 T="44.1" * status = SCORE=262.9 | d0 t23.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:00] SC=262.9 T="43.8" * status = SCORE=262.9 | d0 t23.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:00] SC=262.9 T="43.5" * status = SCORE=262.9 | d0 t23.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:00] SC=263.0 T="43.4" * status = SCORE=263.0 | d0 t23.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:00] SC=263.0 T="43.4" * status = SCORE=263.0 | d0 t23.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:01] SC=263.0 T="43.1" * status = SCORE=263.0 | d0 t23.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:01] SC=263.0 T="42.8" * status = SCORE=263.0 | d0 t23.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:01] SC=263.0 T="42.6" * status = SCORE=263.0 | d0 t23.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:01] SC=263.0 T="42.4" * status = SCORE=263.0 | d0 t23.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:02] SC=263.0 T="42.1" * status = SCORE=263.0 | d0 t23.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:02] SC=263.0 T="41.8" * status = SCORE=263.0 | d0 t23.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:02] SC=263.0 T="41.6" * status = SCORE=263.0 | d0 t24.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:02] SC=263.0 T="41.5" * world = день 0 -> 1 (время=0.0)
+[04:48:02] SC=263.0 T="41.5" * status = SCORE=263.0 | d1 t0.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:02] SC=263.1 T="41.4" * status = SCORE=263.1 | d1 t0.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:02] SC=263.1 T="41.3" * status = SCORE=263.1 | d1 t0.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:03] SC=263.1 T="41.1" * status = SCORE=263.1 | d1 t0.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:03] SC=263.1 T="40.8" * status = SCORE=263.1 | d1 t0.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:03] SC=256.4 T="40.7" * status = SCORE=256.4 | d1 t0.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:03] SC=256.4 T="40.6" * status = SCORE=256.4 | d1 t0.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:04] SC=256.4 T="40.3" * status = SCORE=256.4 | d1 t0.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:04] SC=256.4 T="40.1" * status = SCORE=256.4 | d1 t0.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:04] SC=256.4 T="39.8" * status = SCORE=256.4 | d1 t0.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:04] SC=256.4 T="39.6" * status = SCORE=256.4 | d1 t0.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:04] SC=256.5 T="39.4" * status = SCORE=256.5 | d1 t0.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:05] SC=256.5 T="39.3" * status = SCORE=256.5 | d1 t0.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:05] SC=256.5 T="39.1" * status = SCORE=256.5 | d1 t1.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:05] SC=256.5 T="38.8" * status = SCORE=256.5 | d1 t1.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:05] SC=256.5 T="38.5" * status = SCORE=256.5 | d1 t1.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:05] SC=256.5 T="38.4" * status = SCORE=256.5 | d1 t1.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:06] SC=256.5 T="38.1" * status = SCORE=256.5 | d1 t1.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:06] SC=256.5 T="37.8" * status = SCORE=256.5 | d1 t1.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:06] SC=256.5 T="37.6" * status = SCORE=256.5 | d1 t1.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:06] SC=256.6 T="37.4" * status = SCORE=256.6 | d1 t1.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:06] SC=256.6 T="37.4" * status = SCORE=256.6 | d1 t1.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:07] SC=256.6 T="37.1" * status = SCORE=256.6 | d1 t1.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:07] SC=256.6 T="36.9" ts="FLEE Troll P10@-24.0 d=15"
+[04:48:07] SC=256.6 T="36.7" ts="FLEE Troll P10@-23.0 d=14"
+[04:48:07] SC=256.6 T="36.6" ts="FLEE Troll P10@-23.0 d=15"
+[04:48:07] SC=256.7 T="36.6" ts="FLEE Troll P10@-22.0 d=14"
+[04:48:07] SC=256.8 T="36.5" ts="FLEE Troll P9@7.0 d=14"
+[04:48:07] SC=256.9 T="36.4" ts="FLEE Troll P9@6.0 d=12"
+[04:48:07] SC=256.9 T="36.4" ts="FLEE Troll P9@6.0 d=11"
+[04:48:08] SC=256.9 T="36.3" ts="FLEE Troll P9@5.0 d=11"
+[04:48:08] SC=257.1 T="36.1" ts="FLEE Troll P9@4.0 d=11"
+[04:48:08] SC=257.2 T="36.1" ts="FLEE Troll P10@-19.0 d=11"
+[04:48:08] SC=257.3 T="36.0" ts="FLEE Troll P10@-18.0 d=9"
+[04:48:08] SC=257.3 T="35.9" ts="FLEE Troll P10@-17.0 d=8"
+[04:48:08] SC=250.4 T="35.8" ts="FLEE Troll P10@-16.0 d=8"
+[04:48:08] SC=250.4 T="35.7" ts="FLEE Troll P9@1.0 d=8"
+[04:48:08] SC=250.4 T="35.6" ts="FLEE Troll P9@0.0 d=7"
+[04:48:08] SC=250.5 T="35.5" ts="FLEE Troll P9@-1.0 d=6"
+[04:48:08] SC=250.6 T="35.4" ts="FLEE Troll P10@-14.0 d=6"
+[04:48:08] SC=250.6 T="35.4" ts="FLEE Troll P10@-13.0 d=4"
+[04:48:09] SC=250.6 T="35.3" ts="FLEE Troll P10@-14.0 d=5"
+[04:48:09] SC=250.7 T="35.2" ts="FLEE Troll P9@-4.0 d=5"
+[04:48:09] SC=250.8 T="35.2" ts="FLEE Troll P9@-4.0 d=4"
+[04:48:09] SC=250.8 T="35.1" ts="FLEE Troll P9@-4.0 d=3"
+[04:48:09] SC=250.8 T="35.0" ts="FLEE Troll P9@-3.0 d=4"
+[04:48:09] SC=250.9 T="35.0" ts="FLEE Troll P9@-2.0 d=6"
+[04:48:09] SC=251.0 T="34.9" ts="FLEE Troll P10@-14.0 d=5"
+[04:48:09] SC=251.1 T="34.8" ts="FLEE Troll P10@-14.0 d=4"
+[04:48:09] SC=251.1 T="34.8" ts="FLEE Troll P10@-13.0 d=3"
+[04:48:09] SC=251.2 T="34.6" ts="FLEE Troll P10@-14.0 d=4"
+[04:48:09] SC=251.2 T="34.5" ts="FLEE Troll P10@-14.0 d=5"
+[04:48:09] SC=251.3 T="34.5" ts="FLEE Troll P10@-14.0 d=6"
+[04:48:09] SC=251.4 T="34.4" ts="FLEE Troll P10@-13.0 d=5"
+[04:48:10] SC=251.5 T="34.3" ts="FLEE Troll P10@-13.0 d=7"
+[04:48:10] SC=251.6 T="34.2" ts="FLEE Troll P10@-13.0 d=8"
+[04:48:10] SC=251.8 T="34.1" ts="FLEE Troll P10@-13.0 d=9"
+[04:48:10] SC=251.9 T="34.1" ts="FLEE Troll P10@-13.0 d=10"
+[04:48:10] SC=251.9 T="34.0" ts="FLEE Troll P9@8.0 d=10"
+[04:48:10] SC=252.0 T="33.9" ts="FLEE Troll P9@9.0 d=10"
+[04:48:10] SC=252.1 T="33.9" ts="FLEE Troll P9@10.0 d=10"
+[04:48:10] SC=252.1 T="33.8" ts="FLEE Troll P9@10.0 d=11"
+[04:48:10] SC=252.1 T="33.7" ts="FLEE Troll P9@11.0 d=12"
+[04:48:10] SC=252.2 T="33.6" ts="FLEE Troll P10@-14.0 d=12"
+[04:48:10] SC=252.3 T="33.6" ts="FLEE Troll P10@-14.0 d=11"
+[04:48:10] SC=252.4 T="33.5" ts="FLEE Troll P10@-13.0 d=10"
+[04:48:11] SC=252.5 T="33.3" ts="FLEE Troll P10@-13.0 d=11"
+[04:48:11] SC=252.6 T="33.3" ts="FLEE Troll P10@-13.0 d=12"
+[04:48:11] SC=252.7 T="33.2" ts="FLEE Troll P10@-13.0 d=13"
+[04:48:11] SC=252.8 T="33.1" * status = SCORE=252.8 | d1 t3.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:11] SC=252.9 T="33.1" * status = SCORE=252.9 | d1 t3.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:11] SC=253.0 T="32.9" * status = SCORE=253.0 | d1 t3.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:11] SC=253.0 T="32.8" * status = SCORE=253.0 | d1 t3.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:11] SC=253.0 T="32.6" * status = SCORE=253.0 | d1 t3.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:12] SC=253.0 T="32.3" * status = SCORE=253.0 | d1 t3.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:12] SC=253.0 T="32.1" * status = SCORE=253.0 | d1 t3.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:12] SC=253.0 T="31.9" * status = SCORE=253.0 | d1 t3.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:12] SC=253.0 T="31.6" * status = SCORE=253.0 | d1 t4.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:13] SC=253.0 T="31.3" * status = SCORE=253.0 | d1 t4.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:13] SC=253.0 T="31.1" * status = SCORE=253.0 | d1 t4.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:13] SC=253.1 T="31.1" * status = SCORE=253.1 | d1 t4.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:13] SC=253.1 T="30.9" * status = SCORE=253.1 | d1 t4.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:13] SC=245.7 T="30.7" * status = SCORE=245.7 | d1 t4.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:13] SC=245.7 T="30.6" * status = SCORE=245.7 | d1 t4.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:13] SC=245.7 T="30.3" * status = SCORE=245.7 | d1 t4.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:14] SC=245.7 T="30.1" * status = SCORE=245.7 | d1 t4.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:14] SC=245.7 T="29.8" * status = SCORE=245.7 | d1 t4.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:14] SC=245.7 T="29.6" * status = SCORE=245.7 | d1 t4.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:14] SC=245.8 T="29.3" * status = SCORE=245.8 | d1 t4.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:15] SC=245.8 T="29.1" * status = SCORE=245.8 | d1 t5.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:15] SC=245.8 T="28.8" * status = SCORE=245.8 | d1 t5.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:15] SC=245.8 T="28.6" * status = SCORE=245.8 | d1 t5.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:16] SC=245.8 T="28.3" * status = SCORE=245.8 | d1 t5.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=2
+[04:48:16] SC=245.8 T="28.2" * status = SCORE=245.8 | d1 t5.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:16] SC=245.8 T="28.1" * status = SCORE=245.8 | d1 t5.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:16] SC=245.8 T="27.9" * status = SCORE=245.8 | d1 t5.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:16] SC=245.8 T="27.6" * status = SCORE=245.8 | d1 t5.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:17] SC=245.9 T="27.3" * status = SCORE=245.9 | d1 t5.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:17] SC=245.9 T="27.1" * status = SCORE=245.9 | d1 t5.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:17] SC=245.9 T="26.9" * status = SCORE=245.9 | d1 t5.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:17] SC=245.9 T="26.6" * status = SCORE=245.9 | d1 t6.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:18] SC=245.9 T="26.3" * status = SCORE=245.9 | d1 t6.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:18] SC=245.9 T="26.1" * status = SCORE=245.9 | d1 t6.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:18] SC=245.9 T="25.9" * status = SCORE=245.9 | d1 t6.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:18] SC=238.2 T="25.7" * status = SCORE=238.2 | d1 t6.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:18] SC=238.2 T="25.6" * status = SCORE=238.2 | d1 t6.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:19] SC=238.2 T="25.3" * status = SCORE=238.2 | d1 t6.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:19] SC=238.2 T="25.1" * status = SCORE=238.2 | d1 t6.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:19] SC=238.2 T="24.9" * status = SCORE=238.2 | d1 t6.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:19] SC=238.2 T="24.6" * status = SCORE=238.2 | d1 t6.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:19] SC=238.2 T="24.4" * status = SCORE=238.2 | d1 t6.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:20] SC=238.3 T="24.2" * status = SCORE=238.3 | d1 t6.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:20] SC=238.3 T="24.1" * status = SCORE=238.3 | d1 t7.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:20] SC=238.3 T="23.8" * status = SCORE=238.3 | d1 t7.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:20] SC=238.3 T="23.6" * status = SCORE=238.3 | d1 t7.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:21] SC=238.3 T="23.3" * status = SCORE=238.3 | d1 t7.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:21] SC=238.3 T="23.0" * status = SCORE=238.3 | d1 t7.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:21] SC=238.3 T="22.9" * status = SCORE=238.3 | d1 t7.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:21] SC=238.3 T="22.6" * status = SCORE=238.3 | d1 t7.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:21] SC=238.3 T="22.3" * status = SCORE=238.3 | d1 t7.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:22] SC=238.4 T="22.2" * status = SCORE=238.4 | d1 t7.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:22] SC=238.4 T="22.1" * status = SCORE=238.4 | d1 t7.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:22] SC=238.4 T="21.8" * status = SCORE=238.4 | d1 t7.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:22] SC=238.4 T="21.6" * status = SCORE=238.4 | d1 t8.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:23] SC=238.4 T="21.3" * status = SCORE=238.4 | d1 t8.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:23] SC=238.4 T="21.1" * status = SCORE=238.4 | d1 t8.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:23] SC=238.4 T="20.9" * status = SCORE=238.4 | d1 t8.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:23] SC=230.3 T="20.7" * status = SCORE=230.3 | d1 t8.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:23] SC=230.3 T="20.6" * status = SCORE=230.3 | d1 t8.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:24] SC=230.3 T="20.3" * status = SCORE=230.3 | d1 t8.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:24] SC=230.3 T="20.1" * status = SCORE=230.3 | d1 t8.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:24] SC=230.3 T="19.9" * status = SCORE=230.3 | d1 t8.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:24] SC=230.3 T="19.6" * status = SCORE=230.3 | d1 t8.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:25] SC=230.4 T="19.3" * status = SCORE=230.4 | d1 t8.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:25] SC=230.4 T="19.1" * status = SCORE=230.4 | d1 t9.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:25] SC=230.4 T="18.9" * status = SCORE=230.4 | d1 t9.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:25] SC=230.4 T="18.6" * status = SCORE=230.4 | d1 t9.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:25] SC=230.4 T="18.3" * status = SCORE=230.4 | d1 t9.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:26] SC=230.4 T="18.1" * status = SCORE=230.4 | d1 t9.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:26] SC=230.4 T="17.8" * status = SCORE=230.4 | d1 t9.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:26] SC=230.4 T="17.6" * status = SCORE=230.4 | d1 t9.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:26] SC=230.4 T="17.4" * status = SCORE=230.4 | d1 t9.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:27] SC=230.5 T="17.3" * status = SCORE=230.5 | d1 t9.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:27] SC=230.5 T="17.1" * status = SCORE=230.5 | d1 t9.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:27] SC=230.5 T="16.8" * status = SCORE=230.5 | d1 t9.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:27] SC=230.5 T="16.6" * status = SCORE=230.5 | d1 t10.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:27] SC=230.5 T="16.4" * status = SCORE=230.5 | d1 t10.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:28] SC=230.5 T="16.1" * status = SCORE=230.5 | d1 t10.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:28] SC=230.5 T="15.9" * status = SCORE=230.5 | d1 t10.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:28] SC=222.0 T="15.7" * status = SCORE=222.0 | d1 t10.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:28] SC=222.0 T="15.6" * status = SCORE=222.0 | d1 t10.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:29] SC=222.0 T="15.3" * status = SCORE=222.0 | d1 t10.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:29] SC=222.0 T="15.1" * status = SCORE=222.0 | d1 t10.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:29] SC=222.0 T="14.9" * status = SCORE=222.0 | d1 t10.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:29] SC=222.0 T="14.6" * status = SCORE=222.0 | d1 t10.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=1
+[04:48:29] SC=222.0 T="14.5" * status = SCORE=222.0 | d1 t10.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:30] SC=222.1 T="14.3" * status = SCORE=222.1 | d1 t10.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:30] SC=222.1 T="14.1" * status = SCORE=222.1 | d1 t11.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:30] SC=222.1 T="13.9" * status = SCORE=222.1 | d1 t11.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:30] SC=222.1 T="13.6" * status = SCORE=222.1 | d1 t11.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:31] SC=222.1 T="13.3" * status = SCORE=222.1 | d1 t11.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:31] SC=222.1 T="13.1" * status = SCORE=222.1 | d1 t11.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:31] SC=222.1 T="12.8" * status = SCORE=222.1 | d1 t11.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:31] SC=222.1 T="12.6" * status = SCORE=222.1 | d1 t11.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:31] SC=222.1 T="12.4" * status = SCORE=222.1 | d1 t11.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:32] SC=222.2 T="12.3" * status = SCORE=222.2 | d1 t11.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:32] SC=222.2 T="12.1" * status = SCORE=222.2 | d1 t11.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:32] SC=222.2 T="11.8" * status = SCORE=222.2 | d1 t11.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:32] SC=222.2 T="11.6" * status = SCORE=222.2 | d1 t12.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:32] SC=222.2 T="11.4" * status = SCORE=222.2 | d1 t12.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:33] SC=222.2 T="11.1" * status = SCORE=222.2 | d1 t12.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:33] SC=222.2 T="10.8" * status = SCORE=222.2 | d1 t12.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:33] SC=213.3 T="10.7" * status = SCORE=213.3 | d1 t12.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:33] SC=213.3 T="10.6" * status = SCORE=213.3 | d1 t12.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:34] SC=213.3 T="10.3" * status = SCORE=213.3 | d1 t12.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:34] SC=213.3 T="10.1" * status = SCORE=213.3 | d1 t12.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:34] SC=213.3 T="9.9" * status = SCORE=213.3 | d1 t12.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:34] SC=213.3 T="9.6" * status = SCORE=213.3 | d1 t12.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:35] SC=213.3 T="9.3" * status = SCORE=213.3 | d1 t12.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:35] SC=213.3 T="9.0" * status = SCORE=213.3 | d1 t13.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:35] SC=213.3 T="8.9" * status = SCORE=213.3 | d1 t13.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:35] SC=213.4 T="8.7" * status = SCORE=213.4 | d1 t13.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:35] SC=213.4 T="8.5" * status = SCORE=213.4 | d1 t13.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:36] SC=213.4 T="8.3" * status = SCORE=213.4 | d1 t13.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:36] SC=213.4 T="8.0" * status = SCORE=213.4 | d1 t13.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:36] SC=213.4 T="7.9" * status = SCORE=213.4 | d1 t13.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:36] SC=213.4 T="7.6" * status = SCORE=213.4 | d1 t13.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:36] SC=213.4 T="7.4" * status = SCORE=213.4 | d1 t13.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:37] SC=213.4 T="7.1" * status = SCORE=213.4 | d1 t13.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:37] SC=213.4 T="6.9" * status = SCORE=213.4 | d1 t13.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:37] SC=213.5 T="6.7" * status = SCORE=213.5 | d1 t13.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:37] SC=213.5 T="6.6" * status = SCORE=213.5 | d1 t14.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:37] SC=213.5 T="6.4" * status = SCORE=213.5 | d1 t14.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:38] SC=213.5 T="6.1" * status = SCORE=213.5 | d1 t14.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:38] SC=213.5 T="5.9" * status = SCORE=213.5 | d1 t14.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:38] SC=204.1 T="5.7" * status = SCORE=204.1 | d1 t14.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:38] SC=204.1 T="5.6" * status = SCORE=204.1 | d1 t14.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:39] SC=204.1 T="5.3" * status = SCORE=204.1 | d1 t14.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:39] SC=204.1 T="5.1" * status = SCORE=204.1 | d1 t14.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:39] SC=204.1 T="4.8" * status = SCORE=204.1 | d1 t14.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:39] SC=204.1 T="4.6" * status = SCORE=204.1 | d1 t14.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:40] SC=204.1 T="4.3" * status = SCORE=204.1 | d1 t14.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:40] SC=204.2 T="4.1" * status = SCORE=204.2 | d1 t14.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:40] SC=204.2 T="4.0" * status = SCORE=204.2 | d1 t15.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:40] SC=204.2 T="3.9" * status = SCORE=204.2 | d1 t15.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:40] SC=204.2 T="3.6" * status = SCORE=204.2 | d1 t15.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:41] SC=204.2 T="3.3" * status = SCORE=204.2 | d1 t15.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:41] SC=204.2 T="3.1" * status = SCORE=204.2 | d1 t15.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:41] SC=204.2 T="2.8" * status = SCORE=204.2 | d1 t15.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:41] SC=204.2 T="2.6" * status = SCORE=204.2 | d1 t15.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:41] SC=204.2 T="2.4" * status = SCORE=204.2 | d1 t15.7 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:42] SC=204.3 T="2.1" * status = SCORE=204.3 | d1 t15.8 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:42] SC=204.3 T="1.8" * status = SCORE=204.3 | d1 t15.9 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:42] SC=204.3 T="1.6" * status = SCORE=204.3 | d1 t16.0 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:42] SC=204.3 T="1.4" * status = SCORE=204.3 | d1 t16.1 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:43] SC=204.3 T="1.1" * status = SCORE=204.3 | d1 t16.2 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:43] SC=204.3 T="0.8" * status = SCORE=204.3 | d1 t16.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:43] SC=194.4 T="0.7" * status = SCORE=194.4 | d1 t16.3 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:43] SC=194.4 T="0.6" * status = SCORE=194.4 | d1 t16.4 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:44] SC=194.4 T="0.3" * status = SCORE=194.4 | d1 t16.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:44] SC=194.5 T="0.2" * status = SCORE=194.5 | d1 t16.5 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:44] SC=194.5 T="0.1" * status = SCORE=194.5 | d1 t16.6 purse=0 arc=0 wrk=1 frm=0 knt=0 wall=1 portal=6 en=0
+[04:48:44] итог эпизода: {'coins_in': 10.0, 'coins_spent': 10.0, 'buys': 4, 'buildings': 3, 'citizens': 1, 'crown_lost': 0, 'recruited_beggars': 1, 'day': 1, 'deaths': 0, 'crown_picked': 0, 'buildings_started': 2, 'buildings_completed': 3, 'max_buildings': 3, 'min_trees': 96, 'trees_marked': 0, 'trees_chopped': 0, 'first_archer': 0, 'first_worker': 1, 'tool_buys': 2, 'hammer_buys': 2, 'bow_buys': 0, 'scythe_buys': 0, 'castle_base_buys': 1, 'castle_upgrade_buys': 0, 'castle_upgrade_buys_with_workers': 0, 'castle_upgrade_buys_without_workers': 0, 'buildings_with_workers': 0, 'buildings_without_workers': 3, 'distance': 82.58999999999996, 'walk_distance': 44.88999999999998, 'run_distance': 37.70000000000001, 'horse_exhaustion': 0, 'horse_rest_time': 0.0, 'final_purse': 0, 'inactivity_penalty': 15, 'tree_chops_with_workers': 0, 'tree_chops_without_workers': 0, 'failed_coin': 1, 'failed_buy': 0, 'failed_recruit': 2, 'failed_tree': 0, 'unpicked_coins': 10, 'coins_lost': 0, 'generation': 8, 'seconds': 85.01493644714355, 'score': 194.45863577777212}
+[04:48:44] остановлено

@@ -1,0 +1,125 @@
+[04:02:20] скорость игры: 4.0x (записано в C:\Program Files (x86)\Steam\steamapps\common\Kingdom\Kingdom_Data\speed.txt)
+[04:02:20] окно игры: 256055780  режим: LIVE  эпизод: 10.0  own_focus: True
+[04:02:20] SC=0.0 T="10.0" * focus = игра в фокусе
+[04:02:20] SC=0.0 T="10.0" ts="COIN @-14.0"
+[04:02:20] SC=37.6 T="9.8" ts="COIN @-17.0"
+[04:02:20] SC=37.7 T="9.8" ts="COIN @-14.0"
+[04:02:20] SC=38.0 T="9.6" ts="COIN @-17.0"
+[04:02:20] SC=38.0 T="9.5" ts="COIN @-14.0"
+[04:02:20] SC=38.1 T="9.5" ts="COIN @-17.0"
+[04:02:20] SC=38.1 T="9.4" ts="COIN @-16.0"
+[04:02:20] SC=38.4 T="9.3" ts="COIN @-14.0"
+[04:02:20] SC=38.4 T="9.2" ts="COIN @-17.0"
+[04:02:21] SC=38.5 T="9.0" ts="COIN @-14.0"
+[04:02:21] SC=38.5 T="9.0" ts="COIN @-17.0"
+[04:02:21] SC=38.6 T="8.9" ts="COIN @-14.0"
+[04:02:21] SC=38.6 T="8.9" ts="COIN @-17.0"
+[04:02:21] SC=38.6 T="8.8" ts="COIN @-14.0"
+[04:02:21] SC=38.7 T="8.8" ts="COIN @-17.0"
+[04:02:21] SC=38.7 T="8.6" ts="COIN @-16.0"
+[04:02:21] SC=38.7 T="8.5" ts="COIN @-14.0"
+[04:02:21] SC=38.8 T="8.4" ts="COIN @-16.0"
+[04:02:21] SC=38.8 T="8.3" ts="COIN @-14.0"
+[04:02:21] SC=38.8 T="8.2" * recruit = бомжи рядом: 16, ближайший=-3.0
+[04:02:21] SC=43.9 T="8.2" ts="RECRUIT walk" -> -1.0
+[04:02:22] SC=54.0 T="7.9" ts="RECRUIT drop coin @-14.6"
+[04:02:22] SC=54.0 T="7.8" * buy = Wall0(PayableUpgrade) 1 @-12.5
+[04:02:22] SC=64.0 T="7.8" ts="PAY Wall0(1)" -> -12.50 (px=-13.70)
+[04:02:22] SC=74.1 T="7.7" ts="PAY Wall0(1)" -> -12.50 (px=-13.19)
+[04:02:22] SC=79.1 T="7.7" ts="PAY Wall0(1)" -> -12.50 (px=-12.72)
+[04:02:22] SC=79.1 T="7.6" ts="PAY Wall0(1)" -> -12.50 (px=-12.25)
+[04:02:22] SC=84.2 T="7.5" ts="PAY Wall0(1)" -> -12.50 (px=-11.75)
+[04:02:22] SC=84.2 T="7.4" ts="PAY Wall0(1)" -> -12.50 (px=-11.90)
+[04:02:22] SC=84.2 T="7.4" ts="PAY Wall0(1)" -> -12.50 (px=-12.37)
+[04:02:22] SC=84.2 T="7.3" ts="PAY Wall0(1)" -> -12.50 (px=-12.88)
+[04:02:22] SC=89.3 T="7.3" ts="PAY Wall0(1)" -> -12.50 (px=-13.35)
+[04:02:22] SC=89.3 T="7.2" ts="PAY Wall0(1)" -> -12.50 (px=-13.45)
+[04:02:23] SC=89.3 T="7.1" ts="PAY Wall0(1)" -> -12.50 (px=-13.00)
+[04:02:23] SC=89.3 T="7.0" ts="PAY Wall0 price=1 purse=10"
+[04:02:23] SC=79.4 T="6.4" * pay_disabled = Wall0 @-12.5 (spent=0)
+[04:02:23] SC=79.4 T="6.4" * pay_done = Wall0 цена=1 потрачено=0
+[04:02:23] SC=79.4 T="6.4" * buy = Wall0(PayableUpgrade) 1 @4.5
+[04:02:23] SC=79.4 T="6.4" ts="PAY Wall0(1)" -> 4.50 (px=-11.65)
+[04:02:23] SC=79.4 T="6.3" ts="PAY Wall0(1)" -> 4.50 (px=-11.56)
+[04:02:23] SC=79.4 T="6.2" ts="PAY Wall0(1)" -> 4.50 (px=-11.11)
+[04:02:24] SC=79.5 T="6.1" ts="PAY Wall0(1)" -> 4.50 (px=-10.60)
+[04:02:24] SC=79.5 T="6.0" ts="PAY Wall0(1)" -> 4.50 (px=-10.13)
+[04:02:24] SC=79.5 T="6.0" ts="PAY Wall0(1)" -> 4.50 (px=-9.66)
+[04:02:24] SC=79.5 T="5.9" ts="PAY Wall0(1)" -> 4.50 (px=-9.16)
+[04:02:24] SC=79.6 T="5.9" ts="PAY Wall0(1)" -> 4.50 (px=-8.68)
+[04:02:24] SC=79.6 T="5.8" ts="PAY Wall0(1)" -> 4.50 (px=-8.21)
+[04:02:24] SC=79.6 T="5.7" ts="PAY Wall0(1)" -> 4.50 (px=-7.71)
+[04:02:24] SC=79.6 T="5.6" ts="PAY Wall0(1)" -> 4.50 (px=-7.24)
+[04:02:24] SC=79.7 T="5.6" ts="PAY Wall0(1)" -> 4.50 (px=-6.77)
+[04:02:24] SC=79.7 T="5.5" ts="PAY Wall0(1)" -> 4.50 (px=-6.26)
+[04:02:24] SC=79.7 T="5.5" ts="PAY Wall0(1)" -> 4.50 (px=-5.79)
+[04:02:24] SC=79.8 T="5.4" ts="PAY Wall0(1)" -> 4.50 (px=-5.32)
+[04:02:24] SC=79.8 T="5.3" ts="PAY Wall0(1)" -> 4.50 (px=-4.81)
+[04:02:24] SC=79.8 T="5.3" ts="PAY Wall0(1)" -> 4.50 (px=-4.34)
+[04:02:24] SC=79.8 T="5.2" ts="PAY Wall0(1)" -> 4.50 (px=-3.87)
+[04:02:25] SC=79.9 T="5.1" ts="PAY Wall0(1)" -> 4.50 (px=-3.36)
+[04:02:25] SC=79.9 T="5.0" ts="PAY Wall0(1)" -> 4.50 (px=-2.89)
+[04:02:25] SC=79.9 T="5.0" ts="PAY Wall0(1)" -> 4.50 (px=-2.42)
+[04:02:25] SC=79.9 T="4.9" ts="PAY Wall0(1)" -> 4.50 (px=-1.91)
+[04:02:25] SC=80.0 T="4.9" ts="PAY Wall0(1)" -> 4.50 (px=-1.44)
+[04:02:25] SC=80.0 T="4.8" ts="PAY Wall0(1)" -> 4.50 (px=-0.97)
+[04:02:25] SC=80.0 T="4.7" ts="PAY Wall0(1)" -> 4.50 (px=-0.47)
+[04:02:25] SC=80.1 T="4.7" ts="PAY Wall0(1)" -> 4.50 (px=0.00)
+[04:02:25] SC=80.1 T="4.6" ts="PAY Wall0(1)" -> 4.50 (px=0.48)
+[04:02:25] SC=80.1 T="4.5" ts="PAY Wall0(1)" -> 4.50 (px=0.98)
+[04:02:25] SC=80.1 T="4.5" ts="PAY Wall0(1)" -> 4.50 (px=1.45)
+[04:02:25] SC=80.2 T="4.4" ts="PAY Wall0(1)" -> 4.50 (px=1.92)
+[04:02:25] SC=80.2 T="4.3" ts="PAY Wall0(1)" -> 4.50 (px=2.43)
+[04:02:25] SC=80.2 T="4.2" ts="PAY Wall0(1)" -> 4.50 (px=2.90)
+[04:02:26] SC=80.3 T="4.2" ts="PAY Wall0(1)" -> 4.50 (px=3.37)
+[04:02:26] SC=80.3 T="4.1" ts="PAY Wall0(1)" -> 4.50 (px=3.88)
+[04:02:26] SC=80.3 T="4.0" ts="PAY Wall0(1)" -> 4.50 (px=4.35)
+[04:02:26] SC=80.4 T="3.9" ts="PAY Wall0(1)" -> 4.50 (px=5.33)
+[04:02:26] SC=80.4 T="3.9" ts="PAY Wall0(1)" -> 4.50 (px=5.79)
+[04:02:26] SC=80.4 T="3.8" ts="PAY Wall0(1)" -> 4.50 (px=5.65)
+[04:02:26] SC=80.4 T="3.7" ts="PAY Wall0(1)" -> 4.50 (px=5.14)
+[04:02:26] SC=80.5 T="3.7" ts="PAY Wall0(1)" -> 4.50 (px=4.67)
+[04:02:26] SC=80.5 T="3.6" ts="PAY Wall0(1)" -> 4.50 (px=4.20)
+[04:02:26] SC=80.5 T="3.5" ts="PAY Wall0(1)" -> 4.50 (px=3.71)
+[04:02:26] SC=80.5 T="3.4" ts="PAY Wall0(1)" -> 4.50 (px=3.86)
+[04:02:26] SC=80.5 T="3.4" ts="PAY Wall0(1)" -> 4.50 (px=4.33)
+[04:02:26] SC=80.6 T="3.3" ts="PAY Wall0(1)" -> 4.50 (px=4.84)
+[04:02:26] SC=80.6 T="3.3" ts="PAY Wall0(1)" -> 4.50 (px=5.31)
+[04:02:26] SC=80.6 T="3.2" ts="PAY Wall0(1)" -> 4.50 (px=5.39)
+[04:02:27] SC=80.6 T="3.1" ts="PAY Wall0(1)" -> 4.50 (px=4.94)
+[04:02:27] SC=80.7 T="3.1" ts="PAY Wall0 price=1 purse=10"
+[04:02:27] SC=92.7 T="2.4" * pay_done = Wall0 цена=1 потрачено=3
+[04:02:27] SC=92.7 T="2.4" * recruit = бомжи рядом: 16, ближайший=-1.0
+[04:02:27] SC=94.7 T="2.4" ts="RECRUIT drop coin @3.6"
+[04:02:27] SC=94.7 T="2.3" * buy = Wall0(PayableUpgrade) 1 @11.5
+[04:02:27] SC=98.7 T="2.3" ts="PAY Wall0(1)" -> 11.50 (px=3.59)
+[04:02:27] SC=98.8 T="2.2" ts="PAY Wall0(1)" -> 11.50 (px=3.66)
+[04:02:28] SC=98.8 T="2.1" ts="PAY Wall0(1)" -> 11.50 (px=4.13)
+[04:02:28] SC=98.8 T="2.1" ts="PAY Wall0(1)" -> 11.50 (px=4.60)
+[04:02:28] SC=98.8 T="2.0" ts="PAY Wall0(1)" -> 11.50 (px=5.07)
+[04:02:28] SC=98.9 T="1.9" ts="PAY Wall0(1)" -> 11.50 (px=5.57)
+[04:02:28] SC=98.9 T="1.9" ts="PAY Wall0(1)" -> 11.50 (px=6.04)
+[04:02:28] SC=98.9 T="1.8" ts="PAY Wall0(1)" -> 11.50 (px=6.52)
+[04:02:28] SC=98.9 T="1.7" ts="PAY Wall0(1)" -> 11.50 (px=7.02)
+[04:02:28] SC=99.0 T="1.7" ts="PAY Wall0(1)" -> 11.50 (px=7.49)
+[04:02:28] SC=99.0 T="1.6" ts="PAY Wall0(1)" -> 11.50 (px=7.96)
+[04:02:28] SC=99.0 T="1.5" ts="PAY Wall0(1)" -> 11.50 (px=8.47)
+[04:02:28] SC=99.1 T="1.5" ts="PAY Wall0(1)" -> 11.50 (px=8.94)
+[04:02:28] SC=99.1 T="1.4" ts="PAY Wall0(1)" -> 11.50 (px=9.41)
+[04:02:28] SC=99.1 T="1.3" ts="PAY Wall0(1)" -> 11.50 (px=9.92)
+[04:02:28] SC=99.1 T="1.2" ts="PAY Wall0(1)" -> 11.50 (px=10.39)
+[04:02:28] SC=99.2 T="1.2" ts="PAY Wall0(1)" -> 11.50 (px=10.86)
+[04:02:29] SC=99.2 T="1.1" ts="PAY Wall0(1)" -> 11.50 (px=11.37)
+[04:02:29] SC=89.2 T="1.1" ts="PAY Wall0(1)" -> 11.50 (px=11.84)
+[04:02:29] SC=89.2 T="1.0" ts="PAY Wall0(1)" -> 11.50 (px=12.21)
+[04:02:29] SC=89.3 T="0.9" ts="PAY Wall0(1)" -> 11.50 (px=11.89)
+[04:02:29] SC=89.3 T="0.9" ts="PAY Wall0 price=1 purse=6"
+[04:02:29] SC=93.3 T="0.6" * world = построено 1 зданий (wall=1 shop=0 farm=0)
+[04:02:29] SC=103.3 T="0.2" * pay_done = Wall0 цена=1 потрачено=1
+[04:02:29] SC=103.3 T="0.2" * recruit = бомжи рядом: 15, ближайший=21.0
+[04:02:29] SC=105.4 T="0.2" ts="RECRUIT drop coin @10.8"
+[04:02:30] SC=105.4 T="0.1" * buy = Castle0(PayableUpgrade) 1 @-4.0
+[04:02:30] SC=109.4 T="0.1" ts="PAY Castle0(1)" -> -4.00 (px=10.76)
+[04:02:30] SC=109.4 T="0.0" ts="PAY Castle0(1)" -> -4.00 (px=10.69)
+[04:02:30] итог эпизода: {'coins_in': 10.0, 'coins_spent': 6.0, 'buys': 2, 'buildings': 1, 'citizens': 1, 'crown_lost': 0, 'recruited_beggars': 0, 'day': 0, 'deaths': 0, 'crown_picked': 0, 'buildings_started': 2, 'buildings_completed': 1, 'max_buildings': 1, 'min_trees': 96, 'trees_marked': 0, 'trees_chopped': 0, 'first_archer': 0, 'first_worker': 0, 'tool_buys': 0, 'hammer_buys': 0, 'bow_buys': 0, 'scythe_buys': 0, 'castle_base_buys': 0, 'castle_upgrade_buys': 0, 'castle_upgrade_buys_with_workers': 0, 'castle_upgrade_buys_without_workers': 0, 'buildings_with_workers': 0, 'buildings_without_workers': 1, 'distance': 56.88999999999992, 'walk_distance': 48.18999999999995, 'run_distance': 8.7, 'horse_exhaustion': 0, 'horse_rest_time': 0.0, 'final_purse': 4, 'inactivity_penalty': 0.0, 'tree_chops_with_workers': 0, 'tree_chops_without_workers': 0, 'failed_coin': 0, 'failed_buy': 0, 'failed_recruit': 2, 'failed_tree': 0, 'unpicked_coins': 10, 'coins_lost': 0, 'generation': 1, 'seconds': 10.01994252204895, 'score': 109.36670402265418}
+[04:02:30] остановлено

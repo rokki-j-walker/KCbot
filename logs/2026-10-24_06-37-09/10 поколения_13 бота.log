@@ -1,0 +1,543 @@
+[11:34:27] скорость игры: 4.0x (записано в C:\Program Files (x86)\Steam\steamapps\common\Kingdom\Kingdom_Data\speed.txt)
+[11:34:27] окно игры: 221524186  режим: LIVE  эпизод: 55.0  own_focus: True
+[11:34:28] SC=0.0 T="55.0" * focus = игра в фокусе
+[11:34:28] SC=0.0 T="55.0" ts="COIN @-17.0"
+[11:34:28] SC=37.8 T="54.7" ts="COIN @-16.0"
+[11:34:28] SC=37.9 T="54.7" ts="COIN @-14.0"
+[11:34:28] SC=38.0 T="54.6" ts="COIN @-16.0"
+[11:34:28] SC=38.0 T="54.5" ts="COIN @-17.0"
+[11:34:28] SC=38.1 T="54.5" ts="COIN @-14.0"
+[11:34:28] SC=38.1 T="54.4" ts="COIN @-16.0"
+[11:34:28] SC=38.2 T="54.4" ts="COIN @-17.0"
+[11:34:28] SC=38.3 T="54.3" ts="COIN @-14.0"
+[11:34:28] SC=38.4 T="54.3" ts="COIN @-17.0"
+[11:34:28] SC=38.4 T="54.1" ts="COIN @-14.0"
+[11:34:29] SC=38.5 T="54.0" ts="COIN @-16.0"
+[11:34:29] SC=38.6 T="53.9" ts="COIN @-17.0"
+[11:34:29] SC=38.6 T="53.8" ts="COIN @-14.0"
+[11:34:29] SC=38.6 T="53.8" ts="COIN @-17.0"
+[11:34:29] SC=38.7 T="53.6" ts="COIN @-16.0"
+[11:34:29] SC=38.7 T="53.6" ts="COIN @-17.0"
+[11:34:29] SC=38.8 T="53.5" ts="COIN @-16.0"
+[11:34:29] SC=38.8 T="53.4" ts="COIN @-17.0"
+[11:34:29] SC=38.8 T="53.3" ts="COIN @-16.0"
+[11:34:29] SC=38.8 T="53.3" * recruit = бомжи рядом: 16, ближайший=-2.0
+[11:34:29] SC=43.8 T="53.3" ts="RECRUIT walk" -> -2.0
+[11:34:30] SC=69.0 T="52.8" ts="RECRUIT drop coin @-13.8"
+[11:34:30] SC=69.0 T="52.7" * buy = Wall0(PayableUpgrade) 1 @4.5
+[11:34:30] SC=74.1 T="52.7" ts="PAY Wall0(1)" -> 4.50 (px=-13.25)
+[11:34:30] SC=79.1 T="52.7" ts="PAY Wall0(1)" -> 4.50 (px=-12.78)
+[11:34:30] SC=79.1 T="52.6" ts="PAY Wall0(1)" -> 4.50 (px=-12.31)
+[11:34:30] SC=84.1 T="52.5" ts="PAY Wall0(1)" -> 4.50 (px=-11.80)
+[11:34:30] SC=84.2 T="52.4" ts="PAY Wall0(1)" -> 4.50 (px=-11.33)
+[11:34:30] SC=84.2 T="52.4" ts="PAY Wall0(1)" -> 4.50 (px=-10.86)
+[11:34:30] SC=84.2 T="52.3" ts="PAY Wall0(1)" -> 4.50 (px=-10.35)
+[11:34:30] SC=84.2 T="52.3" ts="PAY Wall0(1)" -> 4.50 (px=-9.88)
+[11:34:30] SC=84.3 T="52.2" ts="PAY Wall0(1)" -> 4.50 (px=-9.41)
+[11:34:30] SC=84.3 T="52.1" ts="PAY Wall0(1)" -> 4.50 (px=-8.90)
+[11:34:30] SC=84.3 T="52.1" ts="PAY Wall0(1)" -> 4.50 (px=-8.43)
+[11:34:30] SC=84.4 T="52.0" ts="PAY Wall0(1)" -> 4.50 (px=-7.96)
+[11:34:31] SC=84.4 T="51.9" ts="PAY Wall0(1)" -> 4.50 (px=-7.45)
+[11:34:31] SC=84.4 T="51.8" ts="PAY Wall0(1)" -> 4.50 (px=-6.98)
+[11:34:31] SC=84.4 T="51.8" ts="PAY Wall0(1)" -> 4.50 (px=-6.51)
+[11:34:31] SC=84.5 T="51.7" ts="PAY Wall0(1)" -> 4.50 (px=-6.01)
+[11:34:31] SC=84.5 T="51.7" ts="PAY Wall0(1)" -> 4.50 (px=-5.54)
+[11:34:31] SC=84.5 T="51.6" ts="PAY Wall0(1)" -> 4.50 (px=-5.06)
+[11:34:31] SC=74.6 T="51.5" ts="PAY Wall0(1)" -> 4.50 (px=-4.56)
+[11:34:31] SC=74.6 T="51.4" ts="PAY Wall0(1)" -> 4.50 (px=-4.09)
+[11:34:31] SC=74.6 T="51.4" ts="PAY Wall0(1)" -> 4.50 (px=-3.62)
+[11:34:31] SC=74.6 T="51.3" ts="PAY Wall0(1)" -> 4.50 (px=-3.11)
+[11:34:31] SC=74.7 T="51.3" ts="PAY Wall0(1)" -> 4.50 (px=-2.64)
+[11:34:31] SC=74.7 T="51.2" ts="PAY Wall0(1)" -> 4.50 (px=-2.17)
+[11:34:31] SC=74.7 T="51.1" ts="PAY Wall0(1)" -> 4.50 (px=-1.66)
+[11:34:31] SC=74.7 T="51.1" ts="PAY Wall0(1)" -> 4.50 (px=-1.19)
+[11:34:31] SC=74.8 T="51.0" ts="PAY Wall0(1)" -> 4.50 (px=-0.68)
+[11:34:32] SC=74.8 T="50.9" ts="PAY Wall0(1)" -> 4.50 (px=-0.21)
+[11:34:32] SC=74.8 T="50.8" ts="PAY Wall0(1)" -> 4.50 (px=0.26)
+[11:34:32] SC=74.9 T="50.8" ts="PAY Wall0(1)" -> 4.50 (px=0.73)
+[11:34:32] SC=74.9 T="50.7" ts="PAY Wall0(1)" -> 4.50 (px=1.23)
+[11:34:32] SC=74.9 T="50.7" ts="PAY Wall0(1)" -> 4.50 (px=1.71)
+[11:34:32] SC=74.9 T="50.6" ts="PAY Wall0(1)" -> 4.50 (px=2.18)
+[11:34:32] SC=75.0 T="50.5" ts="PAY Wall0(1)" -> 4.50 (px=2.68)
+[11:34:32] SC=75.0 T="50.5" ts="PAY Wall0(1)" -> 4.50 (px=3.15)
+[11:34:32] SC=75.0 T="50.4" ts="PAY Wall0(1)" -> 4.50 (px=3.66)
+[11:34:32] SC=75.0 T="50.3" ts="PAY Wall0(1)" -> 4.50 (px=4.13)
+[11:34:32] SC=75.1 T="50.3" ts="PAY Wall0(1)" -> 4.50 (px=4.67)
+[11:34:32] SC=75.1 T="50.2" ts="PAY Wall0(1)" -> 4.50 (px=5.14)
+[11:34:32] SC=75.1 T="50.1" ts="PAY Wall0(1)" -> 4.50 (px=5.24)
+[11:34:32] SC=75.1 T="50.0" ts="PAY Wall0(1)" -> 4.50 (px=4.79)
+[11:34:33] SC=75.2 T="50.0" ts="PAY Wall0(1)" -> 4.50 (px=4.32)
+[11:34:33] SC=75.2 T="49.9" ts="PAY Wall0(1)" -> 4.50 (px=3.85)
+[11:34:33] SC=75.2 T="49.9" ts="PAY Wall0(1)" -> 4.50 (px=3.57)
+[11:34:33] SC=75.2 T="49.7" ts="PAY Wall0(1)" -> 4.50 (px=4.09)
+[11:34:33] SC=75.3 T="49.7" ts="PAY Wall0 price=1 purse=9"
+[11:34:33] SC=79.3 T="49.1" * pay_done = Wall0 цена=1 потрачено=1
+[11:34:33] SC=81.3 T="49.0" ts="RECRUIT drop coin @5.4"
+[11:34:34] SC=81.3 T="48.9" * buy = Wall0(PayableUpgrade) 1 @11.5
+[11:34:34] SC=85.3 T="48.9" ts="PAY Wall0(1)" -> 11.50 (px=5.44)
+[11:34:34] SC=85.4 T="48.8" ts="PAY Wall0(1)" -> 11.50 (px=5.49)
+[11:34:34] SC=85.4 T="48.8" ts="PAY Wall0(1)" -> 11.50 (px=5.90)
+[11:34:34] SC=85.4 T="48.7" ts="PAY Wall0(1)" -> 11.50 (px=6.41)
+[11:34:34] SC=85.4 T="48.6" ts="PAY Wall0(1)" -> 11.50 (px=6.88)
+[11:34:34] SC=85.5 T="48.6" ts="PAY Wall0(1)" -> 11.50 (px=7.35)
+[11:34:34] SC=85.5 T="48.5" ts="PAY Wall0(1)" -> 11.50 (px=7.86)
+[11:34:34] SC=85.5 T="48.4" ts="PAY Wall0(1)" -> 11.50 (px=8.33)
+[11:34:34] SC=85.5 T="48.4" ts="PAY Wall0(1)" -> 11.50 (px=8.80)
+[11:34:34] SC=85.6 T="48.3" ts="PAY Wall0(1)" -> 11.50 (px=9.31)
+[11:34:34] SC=85.6 T="48.2" ts="PAY Wall0(1)" -> 11.50 (px=9.78)
+[11:34:34] SC=85.6 T="48.2" ts="PAY Wall0(1)" -> 11.50 (px=10.25)
+[11:34:34] SC=85.7 T="48.1" ts="PAY Wall0(1)" -> 11.50 (px=10.76)
+[11:34:34] SC=85.7 T="48.0" ts="PAY Wall0(1)" -> 11.50 (px=11.23)
+[11:34:35] SC=85.7 T="48.0" ts="PAY Wall0(1)" -> 11.50 (px=11.70)
+[11:34:35] SC=85.7 T="47.9" ts="PAY Wall0(1)" -> 11.50 (px=12.16)
+[11:34:35] SC=85.8 T="47.8" ts="PAY Wall0(1)" -> 11.50 (px=11.91)
+[11:34:35] SC=85.8 T="47.8" ts="PAY Wall0 price=1 purse=7"
+[11:34:35] SC=89.8 T="47.1" * recruit = бомжи рядом: 16, ближайший=22.0
+[11:34:35] SC=91.8 T="47.1" ts="RECRUIT drop coin @10.8"
+[11:34:35] SC=91.8 T="47.0" * buy = Wall0(PayableUpgrade) 1 @-12.5
+[11:34:35] SC=95.8 T="47.0" ts="PAY Wall0(1)" -> -12.50 (px=10.78)
+[11:34:36] SC=95.9 T="46.9" ts="PAY Wall0(1)" -> -12.50 (px=10.69)
+[11:34:36] SC=95.9 T="46.8" ts="PAY Wall0(1)" -> -12.50 (px=10.24)
+[11:34:36] SC=95.9 T="46.8" ts="PAY Wall0(1)" -> -12.50 (px=9.77)
+[11:34:36] SC=95.9 T="46.7" ts="PAY Wall0(1)" -> -12.50 (px=9.27)
+[11:34:36] SC=96.0 T="46.6" ts="PAY Wall0(1)" -> -12.50 (px=8.79)
+[11:34:36] SC=96.0 T="46.6" ts="PAY Wall0(1)" -> -12.50 (px=8.29)
+[11:34:36] SC=96.0 T="46.5" ts="PAY Wall0(1)" -> -12.50 (px=7.82)
+[11:34:36] SC=96.0 T="46.4" ts="PAY Wall0(1)" -> -12.50 (px=7.35)
+[11:34:36] SC=96.1 T="46.3" ts="PAY Wall0(1)" -> -12.50 (px=6.88)
+[11:34:36] SC=96.1 T="46.3" ts="PAY Wall0(1)" -> -12.50 (px=6.37)
+[11:34:36] SC=106.1 T="46.2" ts="PAY Wall0(1)" -> -12.50 (px=5.90)
+[11:34:36] SC=106.2 T="46.2" ts="PAY Wall0(1)" -> -12.50 (px=5.43)
+[11:34:36] SC=106.2 T="46.1" ts="PAY Wall0(1)" -> -12.50 (px=4.92)
+[11:34:36] SC=106.2 T="46.0" ts="PAY Wall0(1)" -> -12.50 (px=4.45)
+[11:34:37] SC=106.2 T="46.0" ts="PAY Wall0(1)" -> -12.50 (px=3.98)
+[11:34:37] SC=106.3 T="45.9" ts="PAY Wall0(1)" -> -12.50 (px=3.47)
+[11:34:37] SC=106.3 T="45.8" ts="PAY Wall0(1)" -> -12.50 (px=3.00)
+[11:34:37] SC=96.3 T="45.8" ts="PAY Wall0(1)" -> -12.50 (px=2.53)
+[11:34:37] SC=96.4 T="45.7" ts="PAY Wall0(1)" -> -12.50 (px=2.02)
+[11:34:37] SC=96.4 T="45.6" ts="PAY Wall0(1)" -> -12.50 (px=1.55)
+[11:34:37] SC=96.4 T="45.6" ts="PAY Wall0(1)" -> -12.50 (px=1.08)
+[11:34:37] SC=96.4 T="45.5" ts="PAY Wall0(1)" -> -12.50 (px=0.58)
+[11:34:37] SC=96.5 T="45.5" ts="PAY Wall0(1)" -> -12.50 (px=0.11)
+[11:34:37] SC=96.5 T="45.3" ts="PAY Wall0(1)" -> -12.50 (px=-0.37)
+[11:34:37] SC=96.5 T="45.3" ts="PAY Wall0(1)" -> -12.50 (px=-0.87)
+[11:34:37] SC=96.5 T="45.2" ts="PAY Wall0(1)" -> -12.50 (px=-1.34)
+[11:34:37] SC=96.6 T="45.2" ts="PAY Wall0(1)" -> -12.50 (px=-1.85)
+[11:34:37] SC=96.6 T="45.1" ts="PAY Wall0(1)" -> -12.50 (px=-2.32)
+[11:34:37] SC=96.6 T="45.0" ts="PAY Wall0(1)" -> -12.50 (px=-2.79)
+[11:34:38] SC=96.7 T="45.0" ts="PAY Wall0(1)" -> -12.50 (px=-3.26)
+[11:34:38] SC=96.7 T="44.9" ts="PAY Wall0(1)" -> -12.50 (px=-3.77)
+[11:34:38] SC=96.7 T="44.8" ts="PAY Wall0(1)" -> -12.50 (px=-4.24)
+[11:34:38] SC=96.7 T="44.8" ts="PAY Wall0(1)" -> -12.50 (px=-4.71)
+[11:34:38] SC=96.8 T="44.7" ts="PAY Wall0(1)" -> -12.50 (px=-5.22)
+[11:34:38] SC=96.8 T="44.7" ts="PAY Wall0(1)" -> -12.50 (px=-5.69)
+[11:34:38] SC=96.8 T="44.5" ts="PAY Wall0(1)" -> -12.50 (px=-6.16)
+[11:34:38] SC=96.8 T="44.5" ts="PAY Wall0(1)" -> -12.50 (px=-6.66)
+[11:34:38] SC=96.9 T="44.4" ts="PAY Wall0(1)" -> -12.50 (px=-7.14)
+[11:34:38] SC=96.9 T="44.4" ts="PAY Wall0(1)" -> -12.50 (px=-7.61)
+[11:34:38] SC=96.9 T="44.3" ts="PAY Wall0(1)" -> -12.50 (px=-8.11)
+[11:34:38] SC=97.0 T="44.2" ts="PAY Wall0(1)" -> -12.50 (px=-8.58)
+[11:34:38] SC=97.0 T="44.2" ts="PAY Wall0(1)" -> -12.50 (px=-9.09)
+[11:34:38] SC=97.0 T="44.1" ts="PAY Wall0(1)" -> -12.50 (px=-9.56)
+[11:34:38] SC=97.0 T="44.0" ts="PAY Wall0(1)" -> -12.50 (px=-10.03)
+[11:34:39] SC=97.1 T="44.0" ts="PAY Wall0(1)" -> -12.50 (px=-10.50)
+[11:34:39] SC=97.1 T="43.9" ts="PAY Wall0(1)" -> -12.50 (px=-11.01)
+[11:34:39] SC=97.1 T="43.8" ts="PAY Wall0(1)" -> -12.50 (px=-11.48)
+[11:34:39] SC=97.1 T="43.8" ts="PAY Wall0(1)" -> -12.50 (px=-11.95)
+[11:34:39] SC=97.2 T="43.7" ts="PAY Wall0 price=1 purse=7"
+[11:34:39] SC=116.2 T="43.1" * pay_disabled = Wall0 @-12.5 (spent=0)
+[11:34:39] SC=116.2 T="43.1" * pay_done = Wall0 цена=1 потрачено=0
+[11:34:39] SC=116.2 T="43.0" * recruit = бомжи рядом: 16, ближайший=-2.0
+[11:34:39] SC=116.2 T="43.0" ts="RECRUIT drop coin @-13.0"
+[11:34:40] SC=116.2 T="42.9" * buy = Castle0(PayableUpgrade) 1 @-4.0
+[11:34:40] SC=120.2 T="42.9" ts="PAY Castle0(1)" -> -4.00 (px=-12.97)
+[11:34:40] SC=120.2 T="42.8" ts="PAY Castle0(1)" -> -4.00 (px=-12.89)
+[11:34:40] SC=120.3 T="42.8" ts="PAY Castle0(1)" -> -4.00 (px=-12.44)
+[11:34:40] SC=120.3 T="42.7" ts="PAY Castle0(1)" -> -4.00 (px=-11.93)
+[11:34:40] SC=120.3 T="42.6" ts="PAY Castle0(1)" -> -4.00 (px=-11.46)
+[11:34:40] SC=120.4 T="42.6" ts="PAY Castle0(1)" -> -4.00 (px=-10.99)
+[11:34:40] SC=120.4 T="42.5" ts="PAY Castle0(1)" -> -4.00 (px=-10.48)
+[11:34:40] SC=120.4 T="42.4" ts="PAY Castle0(1)" -> -4.00 (px=-10.01)
+[11:34:40] SC=120.4 T="42.4" ts="PAY Castle0(1)" -> -4.00 (px=-9.54)
+[11:34:40] SC=120.5 T="42.3" ts="PAY Castle0(1)" -> -4.00 (px=-9.03)
+[11:34:40] SC=120.5 T="42.2" ts="PAY Castle0(1)" -> -4.00 (px=-8.56)
+[11:34:40] SC=120.5 T="42.2" ts="PAY Castle0(1)" -> -4.00 (px=-8.09)
+[11:34:40] SC=120.6 T="42.1" ts="PAY Castle0(1)" -> -4.00 (px=-7.59)
+[11:34:40] SC=120.6 T="42.1" ts="PAY Castle0(1)" -> -4.00 (px=-7.12)
+[11:34:41] SC=120.6 T="41.9" ts="PAY Castle0(1)" -> -4.00 (px=-6.64)
+[11:34:41] SC=120.6 T="41.9" ts="PAY Castle0(1)" -> -4.00 (px=-6.14)
+[11:34:41] SC=120.7 T="41.8" ts="PAY Castle0(1)" -> -4.00 (px=-5.67)
+[11:34:41] SC=120.7 T="41.8" ts="PAY Castle0(1)" -> -4.00 (px=-5.16)
+[11:34:41] SC=110.7 T="41.7" ts="PAY Castle0(1)" -> -4.00 (px=-4.69)
+[11:34:41] SC=110.7 T="41.6" ts="PAY Castle0(1)" -> -4.00 (px=-4.22)
+[11:34:41] SC=110.8 T="41.6" ts="PAY Castle0(1)" -> -4.00 (px=-3.75)
+[11:34:41] SC=110.8 T="41.5" ts="PAY Castle0(1)" -> -4.00 (px=-3.24)
+[11:34:41] SC=110.8 T="41.4" ts="PAY Castle0(1)" -> -4.00 (px=-2.98)
+[11:34:41] SC=110.8 T="41.4" ts="PAY Castle0(1)" -> -4.00 (px=-3.35)
+[11:34:41] SC=110.9 T="41.3" ts="PAY Castle0(1)" -> -4.00 (px=-3.86)
+[11:34:41] SC=110.9 T="41.2" ts="PAY Castle0(1)" -> -4.00 (px=-4.33)
+[11:34:41] SC=110.9 T="41.2" ts="PAY Castle0(1)" -> -4.00 (px=-4.80)
+[11:34:41] SC=110.9 T="41.1" ts="PAY Castle0(1)" -> -4.00 (px=-5.10)
+[11:34:41] SC=110.9 T="41.1" ts="PAY Castle0(1)" -> -4.00 (px=-4.73)
+[11:34:42] SC=111.0 T="40.9" ts="PAY Castle0(1)" -> -4.00 (px=-4.25)
+[11:34:42] SC=111.0 T="40.9" ts="PAY Castle0(1)" -> -4.00 (px=-3.75)
+[11:34:42] SC=111.0 T="40.8" ts="PAY Castle0(1)" -> -4.00 (px=-3.28)
+[11:34:42] SC=111.1 T="40.8" ts="PAY Castle0(1)" -> -4.00 (px=-3.00)
+[11:34:42] SC=111.1 T="40.7" ts="PAY Castle0(1)" -> -4.00 (px=-3.37)
+[11:34:42] SC=111.1 T="40.6" ts="PAY Castle0(1)" -> -4.00 (px=-3.84)
+[11:34:42] SC=111.1 T="40.6" ts="PAY Castle0(1)" -> -4.00 (px=-4.31)
+[11:34:42] SC=111.2 T="40.5" ts="PAY Castle0(1)" -> -4.00 (px=-4.82)
+[11:34:42] SC=111.2 T="40.4" ts="PAY Castle0(1)" -> -4.00 (px=-5.08)
+[11:34:42] SC=111.2 T="40.3" ts="PAY Castle0(1)" -> -4.00 (px=-4.71)
+[11:34:42] SC=111.2 T="40.3" ts="PAY Castle0(1)" -> -4.00 (px=-4.20)
+[11:34:42] SC=111.3 T="40.2" ts="PAY Castle0(1)" -> -4.00 (px=-3.73)
+[11:34:42] SC=111.3 T="40.2" ts="PAY Castle0(1)" -> -4.00 (px=-3.23)
+[11:34:42] SC=111.3 T="40.1" ts="PAY Castle0(1)" -> -4.00 (px=-3.14)
+[11:34:42] SC=111.3 T="40.0" ts="PAY Castle0(1)" -> -4.00 (px=-3.56)
+[11:34:43] SC=111.3 T="40.0" ts="PAY Castle0 price=1 purse=6"
+[11:34:43] SC=115.4 T="39.3" * pay_done = Castle0 цена=1 потрачено=1
+[11:34:43] SC=215.4 T="39.3" ts="RECRUIT drop coin @-4.9"
+[11:34:43] SC=215.4 T="39.2" * buy = Wall0(PayableUpgrade) 1 @4.5
+[11:34:43] SC=219.4 T="39.2" ts="PAY Wall0(1)" -> 4.50 (px=-4.94)
+[11:34:43] SC=219.4 T="39.1" ts="PAY Wall0(1)" -> 4.50 (px=-4.90)
+[11:34:43] SC=219.5 T="39.0" ts="PAY Wall0(1)" -> 4.50 (px=-4.48)
+[11:34:44] SC=219.5 T="39.0" ts="PAY Wall0(1)" -> 4.50 (px=-4.01)
+[11:34:44] SC=239.5 T="38.9" ts="PAY Wall0(1)" -> 4.50 (px=-3.50)
+[11:34:44] SC=239.5 T="38.9" ts="PAY Wall0(1)" -> 4.50 (px=-3.03)
+[11:34:44] SC=239.6 T="38.7" ts="PAY Wall0(1)" -> 4.50 (px=-2.56)
+[11:34:44] SC=239.6 T="38.7" ts="PAY Wall0(1)" -> 4.50 (px=-2.05)
+[11:34:44] SC=239.6 T="38.6" ts="PAY Wall0(1)" -> 4.50 (px=-1.58)
+[11:34:44] SC=239.7 T="38.6" ts="PAY Wall0(1)" -> 4.50 (px=-1.11)
+[11:34:44] SC=239.7 T="38.5" ts="PAY Wall0(1)" -> 4.50 (px=-0.61)
+[11:34:44] SC=239.7 T="38.4" ts="PAY Wall0(1)" -> 4.50 (px=-0.13)
+[11:34:44] SC=239.7 T="38.4" ts="PAY Wall0(1)" -> 4.50 (px=0.34)
+[11:34:44] SC=239.8 T="38.2" ts="PAY Wall0(1)" -> 4.50 (px=1.31)
+[11:34:44] SC=239.8 T="38.2" ts="PAY Wall0(1)" -> 4.50 (px=1.78)
+[11:34:44] SC=239.8 T="38.1" ts="PAY Wall0(1)" -> 4.50 (px=2.29)
+[11:34:44] SC=239.9 T="38.1" ts="PAY Wall0(1)" -> 4.50 (px=2.76)
+[11:34:45] SC=259.9 T="37.9" ts="PAY Wall0(1)" -> 4.50 (px=3.23)
+[11:34:45] SC=259.9 T="37.9" ts="PAY Wall0(1)" -> 4.50 (px=3.74)
+[11:34:45] SC=260.0 T="37.8" ts="PAY Wall0(1)" -> 4.50 (px=4.21)
+[11:34:45] SC=260.0 T="37.8" ts="PAY Wall0(1)" -> 4.50 (px=4.68)
+[11:34:45] SC=260.0 T="37.7" ts="PAY Wall0(1)" -> 4.50 (px=5.14)
+[11:34:45] SC=260.0 T="37.6" ts="PAY Wall0(1)" -> 4.50 (px=4.90)
+[11:34:45] SC=260.1 T="37.6" ts="PAY Wall0 price=1 purse=4"
+[11:34:46] SC=272.1 T="37.0" * pay_done = Wall0 цена=1 потрачено=3
+[11:34:46] SC=272.1 T="36.9" * recruit = бомжи рядом: 15, ближайший=-6.0
+[11:34:46] SC=274.1 T="36.9" ts="RECRUIT drop coin @3.5"
+[11:34:46] SC=278.1 T="36.8" ts="COIN @3.0"
+[11:34:46] SC=278.1 T="36.7" ts="COIN @11.0"
+[11:34:46] SC=278.1 T="36.6" ts="COIN @-13.0"
+[11:34:46] SC=278.1 T="36.6" ts="COIN @4.0"
+[11:34:46] SC=278.2 T="36.5" ts="COIN @11.0"
+[11:34:46] SC=278.2 T="36.4" ts="COIN @-13.0"
+[11:34:46] SC=278.3 T="36.2" ts="COIN @11.0"
+[11:34:46] SC=278.3 T="36.2" ts="COIN @4.0"
+[11:34:46] SC=278.3 T="36.1" ts="COIN @11.0"
+[11:34:46] SC=278.3 T="36.0" ts="COIN @4.0"
+[11:34:47] SC=278.3 T="36.0" ts="COIN @11.0"
+[11:34:47] SC=278.3 T="35.9" ts="COIN @-13.0"
+[11:34:47] SC=278.4 T="35.8" ts="COIN @4.0"
+[11:34:47] SC=278.4 T="35.7" ts="COIN @11.0"
+[11:34:47] SC=278.4 T="35.7" ts="COIN @4.0"
+[11:34:47] SC=278.4 T="35.6" ts="COIN @-13.0"
+[11:34:47] SC=268.4 T="35.6" ts="COIN @11.0"
+[11:34:47] SC=268.4 T="35.5" ts="COIN @-13.0"
+[11:34:47] SC=268.4 T="35.4" * buy = Tree(PayableTree) 1 @18.0
+[11:34:47] SC=273.5 T="35.4" ts="PAY Tree(1)" -> 18.00 (px=3.99)
+[11:34:47] SC=273.5 T="35.3" ts="PAY Tree(1)" -> 18.00 (px=3.79)
+[11:34:47] SC=273.5 T="35.3" ts="PAY Tree(1)" -> 18.00 (px=4.07)
+[11:34:47] SC=273.5 T="35.2" ts="PAY Tree(1)" -> 18.00 (px=4.54)
+[11:34:47] SC=273.5 T="35.2" ts="PAY Tree(1)" -> 18.00 (px=5.04)
+[11:34:47] SC=273.6 T="35.1" ts="PAY Tree(1)" -> 18.00 (px=5.52)
+[11:34:47] SC=273.6 T="35.0" ts="PAY Tree(1)" -> 18.00 (px=5.99)
+[11:34:48] SC=273.6 T="35.0" ts="PAY Tree(1)" -> 18.00 (px=6.49)
+[11:34:48] SC=273.6 T="34.9" ts="PAY Tree(1)" -> 18.00 (px=6.96)
+[11:34:48] SC=273.7 T="34.8" ts="PAY Tree(1)" -> 18.00 (px=7.43)
+[11:34:48] SC=273.7 T="34.8" ts="PAY Tree(1)" -> 18.00 (px=7.94)
+[11:34:48] SC=273.7 T="34.7" ts="PAY Tree(1)" -> 18.00 (px=8.41)
+[11:34:48] SC=273.8 T="34.6" ts="PAY Tree(1)" -> 18.00 (px=8.88)
+[11:34:48] SC=273.8 T="34.6" ts="PAY Tree(1)" -> 18.00 (px=9.39)
+[11:34:48] SC=273.8 T="34.5" ts="PAY Tree(1)" -> 18.00 (px=9.86)
+[11:34:48] SC=278.8 T="34.4" ts="PAY Tree(1)" -> 18.00 (px=10.33)
+[11:34:48] SC=278.9 T="34.4" ts="PAY Tree(1)" -> 18.00 (px=10.84)
+[11:34:48] SC=278.9 T="34.3" ts="PAY Tree(1)" -> 18.00 (px=11.31)
+[11:34:48] SC=278.9 T="34.2" ts="PAY Tree(1)" -> 18.00 (px=11.78)
+[11:34:48] SC=278.9 T="34.2" ts="PAY Tree(1)" -> 18.00 (px=12.29)
+[11:34:48] SC=279.0 T="34.1" ts="PAY Tree(1)" -> 18.00 (px=12.76)
+[11:34:48] SC=279.0 T="34.0" ts="PAY Tree(1)" -> 18.00 (px=13.23)
+[11:34:49] SC=279.0 T="34.0" ts="PAY Tree(1)" -> 18.00 (px=13.71)
+[11:34:49] SC=279.1 T="33.9" ts="PAY Tree(1)" -> 18.00 (px=14.10)
+[11:34:49] SC=279.1 T="33.9" ts="PAY Tree(1)" -> 18.00 (px=14.49)
+[11:34:49] SC=279.1 T="33.7" ts="PAY Tree(1)" -> 18.00 (px=14.91)
+[11:34:49] SC=279.1 T="33.7" ts="PAY Tree(1)" -> 18.00 (px=15.31)
+[11:34:49] SC=279.1 T="33.6" ts="PAY Tree(1)" -> 18.00 (px=15.70)
+[11:34:49] SC=279.2 T="33.6" ts="PAY Tree(1)" -> 18.00 (px=16.12)
+[11:34:49] SC=279.2 T="33.5" ts="PAY Tree(1)" -> 18.00 (px=16.52)
+[11:34:49] SC=279.2 T="33.4" ts="PAY Tree(1)" -> 18.00 (px=16.91)
+[11:34:49] SC=279.2 T="33.4" ts="PAY Tree(1)" -> 18.00 (px=17.33)
+[11:34:49] SC=279.3 T="33.3" ts="PAY Tree(1)" -> 18.00 (px=17.72)
+[11:34:49] SC=279.3 T="33.2" ts="PAY Tree price=1 purse=2"
+[11:34:50] SC=279.3 T="32.6" * pay_disabled = Tree @18.0 (spent=0)
+[11:34:50] SC=279.3 T="32.6" * pay_done = Tree цена=1 потрачено=0
+[11:34:50] SC=279.3 T="32.6" * recruit = бомжи рядом: 15, ближайший=20.0
+[11:34:50] SC=279.3 T="32.6" ts="RECRUIT drop coin @18.5"
+[11:34:50] SC=279.3 T="32.5" * buy = Tree(PayableTree) 1 @28.2
+[11:34:50] SC=283.3 T="32.5" ts="PAY Tree(1)" -> 28.20 (px=18.52)
+[11:34:50] SC=283.4 T="32.4" ts="PAY Tree(1)" -> 28.20 (px=18.82)
+[11:34:50] SC=283.4 T="32.3" ts="PAY Tree(1)" -> 28.20 (px=19.21)
+[11:34:50] SC=283.4 T="32.2" ts="PAY Tree(1)" -> 28.20 (px=19.60)
+[11:34:50] SC=283.4 T="32.2" ts="PAY Tree(1)" -> 28.20 (px=20.00)
+[11:34:50] SC=283.5 T="32.1" ts="PAY Tree(1)" -> 28.20 (px=20.42)
+[11:34:50] SC=283.5 T="32.1" ts="PAY Tree(1)" -> 28.20 (px=20.81)
+[11:34:51] SC=283.5 T="31.9" ts="PAY Tree(1)" -> 28.20 (px=21.24)
+[11:34:51] SC=283.5 T="31.9" ts="PAY Tree(1)" -> 28.20 (px=21.63)
+[11:34:51] SC=283.6 T="31.8" ts="PAY Tree(1)" -> 28.20 (px=22.02)
+[11:34:51] SC=283.6 T="31.8" ts="PAY Tree(1)" -> 28.20 (px=22.44)
+[11:34:51] SC=283.6 T="31.7" ts="PAY Tree(1)" -> 28.20 (px=22.84)
+[11:34:51] SC=283.6 T="31.6" ts="PAY Tree(1)" -> 28.20 (px=23.23)
+[11:34:51] SC=283.6 T="31.6" ts="PAY Tree(1)" -> 28.20 (px=23.65)
+[11:34:51] SC=283.7 T="31.5" ts="PAY Tree(1)" -> 28.20 (px=24.04)
+[11:34:51] SC=283.7 T="31.4" ts="PAY Tree(1)" -> 28.20 (px=24.44)
+[11:34:51] SC=283.7 T="31.3" ts="PAY Tree(1)" -> 28.20 (px=24.86)
+[11:34:51] SC=303.7 T="31.3" ts="PAY Tree(1)" -> 28.20 (px=25.25)
+[11:34:51] SC=303.8 T="31.2" ts="PAY Tree(1)" -> 28.20 (px=25.65)
+[11:34:51] SC=303.8 T="31.2" ts="PAY Tree(1)" -> 28.20 (px=26.07)
+[11:34:51] SC=303.8 T="31.1" ts="PAY Tree(1)" -> 28.20 (px=26.46)
+[11:34:51] SC=303.8 T="31.0" ts="PAY Tree(1)" -> 28.20 (px=26.85)
+[11:34:52] SC=303.9 T="31.0" ts="PAY Tree(1)" -> 28.20 (px=27.28)
+[11:34:52] SC=303.9 T="30.9" ts="PAY Tree(1)" -> 28.20 (px=27.67)
+[11:34:52] SC=303.9 T="30.8" ts="PAY Tree(1)" -> 28.20 (px=28.06)
+[11:34:52] SC=303.9 T="30.8" ts="PAY Tree(1)" -> 28.20 (px=28.48)
+[11:34:52] SC=304.0 T="30.7" ts="PAY Tree(1)" -> 28.20 (px=28.79)
+[11:34:52] SC=304.0 T="30.6" ts="PAY Tree(1)" -> 28.20 (px=28.50)
+[11:34:52] SC=304.0 T="30.6" * pay_giveup = Tree @28.2
+[11:34:52] SC=304.0 T="30.6" * pay_disabled = Tree @28.2 (spent=-1)
+[11:34:52] SC=304.0 T="30.6" * pay_done = Tree цена=1 потрачено=-1
+[11:34:52] SC=304.0 T="30.5" * recruit = бомжи рядом: 14, ближайший=23.0
+[11:34:52] SC=301.5 T="30.5" ts="RECRUIT drop coin @27.7"
+[11:34:52] SC=305.5 T="30.4" ts="COIN @27.0"
+[11:34:53] SC=295.6 T="29.2" * recruit = бомжи рядом: 21, ближайший=27.0
+[11:34:53] SC=300.6 T="29.2" ts="RECRUIT drop coin @27.6"
+[11:34:53] SC=300.6 T="29.1" * coin_skip = 27.0
+[11:34:53] SC=302.1 T="29.1" * status = SCORE=302.1 | d0 t17.3 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=0
+[11:34:54] SC=302.1 T="28.8" * status = SCORE=302.1 | d0 t17.4 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=0
+[11:34:54] SC=302.1 T="28.5" * status = SCORE=302.1 | d0 t17.5 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=0
+[11:34:54] SC=302.1 T="28.3" * status = SCORE=302.1 | d0 t17.6 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=0
+[11:34:54] SC=302.1 T="28.1" * status = SCORE=302.1 | d0 t17.7 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=0
+[11:34:55] SC=302.2 T="27.9" * status = SCORE=302.2 | d0 t17.7 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=0
+[11:34:55] SC=322.2 T="27.8" * status = SCORE=322.2 | d0 t17.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=0
+[11:34:55] SC=322.2 T="27.6" * status = SCORE=322.2 | d0 t17.9 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=0
+[11:34:55] SC=322.2 T="27.4" * status = SCORE=322.2 | d0 t18.0 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=0
+[11:34:55] SC=322.2 T="27.1" * status = SCORE=322.2 | d0 t18.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=0
+[11:34:56] SC=322.2 T="26.9" * status = SCORE=322.2 | d0 t18.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:56] SC=322.2 T="26.8" * status = SCORE=322.2 | d0 t18.2 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:56] SC=322.2 T="26.5" * status = SCORE=322.2 | d0 t18.3 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:56] SC=322.2 T="26.3" * status = SCORE=322.2 | d0 t18.4 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:56] SC=322.2 T="26.1" * status = SCORE=322.2 | d0 t18.5 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:57] SC=322.3 T="25.8" * status = SCORE=322.3 | d0 t18.5 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:57] SC=322.3 T="25.8" * status = SCORE=322.3 | d0 t18.6 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:57] SC=322.3 T="25.5" * status = SCORE=322.3 | d0 t18.7 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:57] SC=322.3 T="25.3" * status = SCORE=322.3 | d0 t18.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:57] SC=322.3 T="25.1" * status = SCORE=322.3 | d0 t18.9 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:58] SC=322.3 T="24.8" * status = SCORE=322.3 | d0 t19.0 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:58] SC=322.3 T="24.6" * status = SCORE=322.3 | d0 t19.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:58] SC=322.3 T="24.3" * status = SCORE=322.3 | d0 t19.2 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:58] SC=322.3 T="24.1" * status = SCORE=322.3 | d0 t19.3 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:59] SC=322.4 T="23.9" * status = SCORE=322.4 | d0 t19.3 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:59] SC=322.4 T="23.8" * status = SCORE=322.4 | d0 t19.4 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:59] SC=322.4 T="23.5" * status = SCORE=322.4 | d0 t19.5 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:59] SC=322.4 T="23.3" * status = SCORE=322.4 | d0 t19.6 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:34:59] SC=322.4 T="23.1" * status = SCORE=322.4 | d0 t19.7 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:00] SC=322.4 T="22.8" * status = SCORE=322.4 | d0 t19.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:00] SC=282.4 T="22.8" * status = SCORE=282.4 | d0 t19.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:00] SC=282.4 T="22.6" * status = SCORE=282.4 | d0 t19.9 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:00] SC=282.4 T="22.3" * status = SCORE=282.4 | d0 t20.0 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:00] SC=282.4 T="22.1" * status = SCORE=282.4 | d0 t20.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:01] SC=282.5 T="21.9" * status = SCORE=282.5 | d0 t20.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:01] SC=282.5 T="21.7" * status = SCORE=282.5 | d0 t20.2 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:01] SC=282.5 T="21.6" * status = SCORE=282.5 | d0 t20.3 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:01] SC=282.5 T="21.3" * status = SCORE=282.5 | d0 t20.4 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:01] SC=282.5 T="21.0" * status = SCORE=282.5 | d0 t20.5 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:02] SC=282.5 T="20.8" * status = SCORE=282.5 | d0 t20.6 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:02] SC=282.5 T="20.6" * status = SCORE=282.5 | d0 t20.7 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:02] SC=282.5 T="20.3" * status = SCORE=282.5 | d0 t20.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:02] SC=282.5 T="20.1" * status = SCORE=282.5 | d0 t20.9 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:03] SC=282.6 T="19.9" * status = SCORE=282.6 | d0 t20.9 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:03] SC=282.6 T="19.8" * status = SCORE=282.6 | d0 t21.0 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:03] SC=282.6 T="19.6" * status = SCORE=282.6 | d0 t21.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:03] SC=282.6 T="19.3" * status = SCORE=282.6 | d0 t21.2 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:03] SC=282.6 T="19.0" * status = SCORE=282.6 | d0 t21.3 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:04] SC=282.6 T="18.9" * status = SCORE=282.6 | d0 t21.4 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:04] SC=282.6 T="18.6" * status = SCORE=282.6 | d0 t21.5 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:04] SC=282.6 T="18.3" * status = SCORE=282.6 | d0 t21.6 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:04] SC=282.6 T="18.0" * status = SCORE=282.6 | d0 t21.7 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:05] SC=282.7 T="17.8" * status = SCORE=282.7 | d0 t21.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:05] SC=238.7 T="17.8" * status = SCORE=238.7 | d0 t21.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:05] SC=238.7 T="17.6" * status = SCORE=238.7 | d0 t21.9 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:05] SC=238.7 T="17.3" * status = SCORE=238.7 | d0 t22.0 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:05] SC=238.7 T="17.1" * status = SCORE=238.7 | d0 t22.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:06] SC=238.7 T="16.8" * status = SCORE=238.7 | d0 t22.2 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:06] SC=238.7 T="16.5" * status = SCORE=238.7 | d0 t22.3 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:06] SC=238.7 T="16.3" * status = SCORE=238.7 | d0 t22.4 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:06] SC=238.7 T="16.0" * status = SCORE=238.7 | d0 t22.5 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:07] SC=238.8 T="15.9" * status = SCORE=238.8 | d0 t22.5 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=1
+[11:35:07] SC=238.8 T="15.8" * status = SCORE=238.8 | d0 t22.6 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:07] SC=238.8 T="15.6" * status = SCORE=238.8 | d0 t22.7 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:07] SC=238.8 T="15.3" * status = SCORE=238.8 | d0 t22.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:07] SC=238.8 T="15.1" * status = SCORE=238.8 | d0 t22.9 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:08] SC=238.8 T="14.8" * status = SCORE=238.8 | d0 t23.0 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:08] SC=238.8 T="14.6" * status = SCORE=238.8 | d0 t23.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:08] SC=238.8 T="14.3" * status = SCORE=238.8 | d0 t23.2 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:08] SC=238.8 T="14.0" * status = SCORE=238.8 | d0 t23.3 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:09] SC=238.9 T="13.9" * status = SCORE=238.9 | d0 t23.3 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:09] SC=238.9 T="13.8" * status = SCORE=238.9 | d0 t23.4 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:09] SC=238.9 T="13.6" * status = SCORE=238.9 | d0 t23.5 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:09] SC=238.9 T="13.3" * status = SCORE=238.9 | d0 t23.6 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:09] SC=238.9 T="13.1" * status = SCORE=238.9 | d0 t23.7 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:10] SC=238.9 T="12.8" * status = SCORE=238.9 | d0 t23.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:10] SC=190.5 T="12.8" * status = SCORE=190.5 | d0 t23.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:10] SC=190.5 T="12.5" * status = SCORE=190.5 | d0 t23.9 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:10] SC=190.5 T="12.3" * status = SCORE=190.5 | d0 t24.0 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:10] SC=190.5 T="12.1" * status = SCORE=190.5 | d1 t0.0 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:10] SC=190.5 T="12.1" * status = SCORE=190.5 | d1 t0.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:11] SC=190.6 T="11.9" * status = SCORE=190.6 | d1 t0.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:11] SC=190.6 T="11.8" * status = SCORE=190.6 | d1 t0.2 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:11] SC=190.6 T="11.6" * status = SCORE=190.6 | d1 t0.3 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:11] SC=190.6 T="11.3" * status = SCORE=190.6 | d1 t0.4 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:11] SC=190.6 T="11.2" ts="FLEE Troll P9@37.0 d=9"
+[11:35:11] SC=190.6 T="11.1" ts="FLEE Troll P9@36.0 d=9"
+[11:35:11] SC=190.7 T="11.0" ts="FLEE Troll P9@36.0 d=10"
+[11:35:12] SC=190.8 T="11.0" ts="FLEE Troll P9@35.0 d=9"
+[11:35:12] SC=190.9 T="10.9" * status = SCORE=190.9 | d1 t0.5 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:12] SC=190.9 T="10.9" ts="FLEE Troll P9@34.0 d=10"
+[11:35:12] SC=190.9 T="10.7" * status = SCORE=190.9 | d1 t0.6 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:12] SC=191.0 T="10.7" ts="FLEE Troll P9@33.0 d=10"
+[11:35:12] SC=191.0 T="10.6" ts="FLEE Troll P9@32.0 d=9"
+[11:35:12] SC=191.1 T="10.4" ts="FLEE Troll P9@31.0 d=9"
+[11:35:12] SC=191.2 T="10.4" ts="FLEE Troll P9@31.0 d=10"
+[11:35:12] SC=191.3 T="10.3" ts="FLEE Troll P9@30.0 d=10"
+[11:35:12] SC=191.4 T="10.2" * status = SCORE=191.4 | d1 t0.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:12] SC=191.4 T="10.0" ts="FLEE Troll P9@28.0 d=9"
+[11:35:13] SC=191.4 T="9.9" ts="FLEE Troll P9@27.0 d=8"
+[11:35:13] SC=191.5 T="9.9" ts="FLEE Troll P9@27.0 d=9"
+[11:35:13] SC=191.5 T="9.7" ts="FLEE Troll P9@26.0 d=9"
+[11:35:13] SC=191.7 T="9.6" ts="FLEE Troll P9@25.0 d=9"
+[11:35:13] SC=191.8 T="9.6" ts="FLEE Troll P9@25.0 d=10"
+[11:35:13] SC=191.9 T="9.5" ts="FLEE Troll P9@24.0 d=10"
+[11:35:13] SC=192.0 T="9.4" * status = SCORE=192.0 | d1 t1.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:13] SC=192.1 T="9.4" * status = SCORE=192.1 | d1 t1.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:13] SC=192.1 T="9.3" * status = SCORE=192.1 | d1 t1.2 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:13] SC=192.1 T="9.1" ts="FLEE Troll P9@21.0 d=9"
+[11:35:14] SC=192.1 T="9.0" ts="FLEE Troll P9@20.0 d=9"
+[11:35:14] SC=192.2 T="8.9" ts="FLEE Troll P9@19.0 d=9"
+[11:35:14] SC=192.3 T="8.7" ts="FLEE Troll P9@19.0 d=10"
+[11:35:14] SC=192.4 T="8.7" ts="FLEE Troll P9@18.0 d=10"
+[11:35:14] SC=192.5 T="8.6" * status = SCORE=192.5 | d1 t1.4 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:14] SC=192.6 T="8.6" * status = SCORE=192.6 | d1 t1.5 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:14] SC=192.6 T="8.3" ts="FLEE Troll P9@15.0 d=9"
+[11:35:14] SC=192.6 T="8.2" ts="FLEE Troll P9@14.0 d=8"
+[11:35:14] SC=192.7 T="8.1" ts="FLEE Troll P9@14.0 d=9"
+[11:35:14] SC=192.7 T="8.0" ts="FLEE Troll P9@13.0 d=8"
+[11:35:15] SC=192.8 T="8.0" ts="FLEE Troll P9@13.0 d=9"
+[11:35:15] SC=192.9 T="7.9" ts="FLEE Troll P9@12.0 d=9"
+[11:35:15] SC=139.7 T="7.8" ts="FLEE Troll P9@12.0 d=10"
+[11:35:15] SC=139.8 T="7.7" ts="FLEE Troll P9@11.0 d=9"
+[11:35:15] SC=139.9 T="7.7" * status = SCORE=139.9 | d1 t1.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:15] SC=140.0 T="7.6" * status = SCORE=140.0 | d1 t1.8 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:15] SC=140.0 T="7.6" * status = SCORE=140.0 | d1 t1.9 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:15] SC=140.1 T="7.5" * status = SCORE=140.1 | d1 t1.9 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:15] SC=140.1 T="7.4" ts="FLEE Troll P9@8.0 d=9"
+[11:35:15] SC=140.1 T="7.2" ts="FLEE Troll P9@7.0 d=9"
+[11:35:15] SC=140.2 T="7.2" ts="FLEE Troll P9@7.0 d=10"
+[11:35:15] SC=140.3 T="7.1" ts="FLEE Troll P9@6.0 d=9"
+[11:35:15] SC=140.4 T="7.0" * status = SCORE=140.4 | d1 t2.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:16] SC=140.5 T="7.0" * status = SCORE=140.5 | d1 t2.1 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:16] SC=140.5 T="6.8" * status = SCORE=140.5 | d1 t2.2 purse=0 arc=0 wrk=0 frm=0 knt=0 wall=2 portal=6 en=2
+[11:35:16] SC=140.5 T="6.7" ts="FLEE Troll P9@3.0 d=9"
+[11:35:16] SC=140.6 T="6.6" ts="FLEE Troll P9@2.0 d=8"
+[11:35:16] SC=140.6 T="6.5" ts="FLEE Troll P9@1.0 d=8"
+[11:35:16] SC=140.7 T="6.4" ts="FLEE Troll P10@-15.0 d=7"
+[11:35:16] SC=140.8 T="6.4" ts="FLEE Troll P10@-14.0 d=5"
+[11:35:16] SC=140.9 T="6.2" ts="FLEE Troll P10@-13.0 d=5"
+[11:35:16] SC=141.0 T="6.1" ts="FLEE Troll P10@-12.0 d=4"
+[11:35:16] SC=141.1 T="6.0" ts="FLEE Troll P10@-12.0 d=5"
+[11:35:17] SC=141.2 T="6.0" ts="FLEE Troll P10@-11.0 d=5"
+[11:35:17] SC=141.3 T="5.9" ts="FLEE Troll P9@1.0 d=6"
+[11:35:17] SC=141.3 T="5.9" ts="FLEE Troll P10@-10.0 d=6"
+[11:35:17] SC=141.4 T="5.7" ts="FLEE Troll P10@-9.0 d=5"
+[11:35:17] SC=141.4 T="5.6" ts="FLEE Troll P10@-8.0 d=5"
+[11:35:17] SC=141.4 T="5.6" ts="FLEE Troll P10@-7.0 d=5"
+[11:35:17] SC=141.6 T="5.4" ts="FLEE Troll P10@-7.0 d=6"
+[11:35:17] SC=141.7 T="5.4" ts="FLEE Troll P9@7.0 d=7"
+[11:35:17] SC=141.8 T="5.3" ts="FLEE Troll P9@8.0 d=7"
+[11:35:17] SC=141.8 T="5.2" ts="FLEE Troll P9@8.0 d=6"
+[11:35:17] SC=141.8 T="5.2" ts="FLEE Troll P9@9.0 d=8"
+[11:35:17] SC=141.9 T="5.1" ts="FLEE Troll P9@10.0 d=9"
+[11:35:17] SC=141.9 T="5.0" ts="COIN @11.0"
+[11:35:18] SC=142.0 T="5.0" ts="COIN @-12.0"
+[11:35:18] SC=142.0 T="4.9" ts="COIN @12.0"
+[11:35:18] SC=142.0 T="4.9" ts="COIN @-14.0"
+[11:35:18] SC=142.0 T="4.8" ts="COIN @13.0"
+[11:35:18] SC=142.0 T="4.7" ts="COIN @-14.0"
+[11:35:18] SC=142.0 T="4.7" ts="COIN @14.0"
+[11:35:18] SC=142.0 T="4.6" ts="COIN @-16.0"
+[11:35:18] SC=142.1 T="4.6" ts="COIN @16.0"
+[11:35:18] SC=142.1 T="4.5" ts="COIN @-17.0"
+[11:35:18] SC=142.1 T="4.4" ts="COIN @-18.0"
+[11:35:18] SC=142.1 T="4.3" ts="COIN @-19.0"
+[11:35:18] SC=142.1 T="4.3" ts="COIN @18.0"
+[11:35:18] SC=142.1 T="4.2" ts="COIN @-20.0"
+[11:35:18] SC=142.2 T="4.2" ts="COIN @-21.0"
+[11:35:18] SC=142.2 T="4.0" ts="COIN @21.0"
+[11:35:19] SC=142.2 T="4.0" ts="COIN @-23.0"
+[11:35:19] SC=142.2 T="3.9" ts="COIN @23.0"
+[11:35:19] SC=142.3 T="3.8" ts="COIN @-24.0"
+[11:35:19] SC=142.3 T="3.8" ts="COIN @-25.0"
+[11:35:19] SC=142.3 T="3.7" ts="COIN @25.0"
+[11:35:19] SC=142.3 T="3.6" ts="COIN @26.0"
+[11:35:19] SC=142.3 T="3.6" ts="COIN @-27.0"
+[11:35:19] SC=142.3 T="3.5" ts="COIN @-28.0"
+[11:35:19] SC=142.3 T="3.5" ts="COIN @28.0"
+[11:35:19] SC=142.4 T="3.4" ts="COIN @-29.0"
+[11:35:19] SC=142.4 T="3.3" ts="COIN @29.0"
+[11:35:19] SC=142.4 T="3.2" ts="COIN @30.0"
+[11:35:19] SC=142.4 T="3.2" ts="COIN @-31.0"
+[11:35:19] SC=142.5 T="3.1" ts="COIN @31.0"
+[11:35:19] SC=142.5 T="3.0" ts="COIN @-33.0"
+[11:35:20] SC=142.5 T="2.9" ts="COIN @-34.0"
+[11:35:20] SC=142.5 T="2.8" ts="COIN @-35.0"
+[11:35:20] SC=84.0 T="2.8" ts="COIN @35.0"
+[11:35:20] SC=84.0 T="2.7" ts="COIN @-36.0"
+[11:35:20] SC=84.0 T="2.6" ts="COIN @-37.0"
+[11:35:20] SC=84.0 T="2.6" ts="COIN @-38.0"
+[11:35:20] SC=84.1 T="2.5" ts="COIN @-39.0"
+[11:35:20] SC=84.2 T="2.4" ts="COIN @-40.0"
+[11:35:20] SC=84.2 T="2.3" ts="COIN @-41.0"
+[11:35:20] SC=84.4 T="2.2" ts="COIN @-42.0"
+[11:35:20] SC=84.5 T="2.1" ts="COIN @-43.0"
+[11:35:20] SC=84.6 T="2.0" ts="COIN @-44.0"
+[11:35:21] SC=84.8 T="1.9" ts="COIN @-45.0"
+[11:35:21] SC=84.9 T="1.8" ts="COIN @-46.0"
+[11:35:21] SC=85.1 T="1.7" ts="COIN @-47.0"
+[11:35:21] SC=85.2 T="1.6" ts="COIN @-48.0"
+[11:35:21] SC=85.3 T="1.6" ts="COIN @-49.0"
+[11:35:21] SC=85.5 T="1.4" ts="COIN @-50.0"
+[11:35:21] SC=85.5 T="1.4" ts="COIN @-51.0"
+[11:35:21] SC=85.7 T="1.2" ts="COIN @-52.0"
+[11:35:21] SC=85.8 T="1.2" ts="COIN @-53.0"
+[11:35:21] SC=85.9 T="1.1" ts="COIN @-54.0"
+[11:35:22] SC=86.0 T="0.9" ts="COIN @-55.0"
+[11:35:22] SC=86.1 T="0.9" ts="COIN @-56.0"
+[11:35:22] SC=86.3 T="0.8" ts="COIN @-57.0"
+[11:35:22] SC=86.3 T="0.7" ts="COIN @-58.0"
+[11:35:22] SC=86.3 T="0.7" ts="COIN @-59.0"
+[11:35:22] SC=86.6 T="0.5" ts="COIN @-60.0"
+[11:35:22] SC=86.7 T="0.4" ts="COIN @-61.0"
+[11:35:22] SC=86.8 T="0.3" ts="COIN @-62.0"
+[11:35:22] SC=87.0 T="0.2" ts="COIN @-63.0"
+[11:35:22] SC=87.1 T="0.1" ts="COIN @-64.0"
+[11:35:22] SC=87.3 T="0.0" ts="COIN @-65.0"
+[11:35:23] SC=87.3 T="0.0" ts="COIN @-66.0"
+[11:35:23] итог эпизода: {'coins_in': 15.0, 'coins_spent': 15.0, 'buys': 4, 'buildings': 4, 'citizens': 1, 'crown_lost': 0, 'recruited_beggars': 3, 'day': 1, 'deaths': 0, 'crown_picked': 0, 'buildings_started': 4, 'buildings_completed': 4, 'max_buildings': 4, 'min_trees': 96, 'trees_marked': 0, 'trees_chopped': 0, 'first_archer': 0, 'first_worker': 0, 'tool_buys': 0, 'hammer_buys': 0, 'bow_buys': 0, 'scythe_buys': 0, 'castle_base_buys': 1, 'castle_upgrade_buys': 0, 'castle_upgrade_buys_with_workers': 0, 'castle_upgrade_buys_without_workers': 0, 'buildings_with_workers': 0, 'buildings_without_workers': 4, 'distance': 224.66999999999996, 'walk_distance': 151.79000000000002, 'run_distance': 72.88000000000005, 'horse_exhaustion': 0, 'horse_rest_time': 0.24986577033996582, 'final_purse': 0, 'inactivity_penalty': 5, 'tree_chops_with_workers': 0, 'tree_chops_without_workers': 0, 'failed_coin': 1, 'failed_buy': 0, 'failed_recruit': 6, 'failed_tree': 1, 'unpicked_coins': 10, 'coins_lost': 0, 'generation': 10, 'seconds': 55.039013147354126, 'score': 87.31149647832733}
+[11:35:23] остановлено

@@ -1,0 +1,162 @@
+[07:00:30] скорость игры: 4.0x (записано в C:\Program Files (x86)\Steam\steamapps\common\Kingdom\Kingdom_Data\speed.txt)
+[07:00:30] окно игры: 633608012  режим: LIVE  эпизод: 15.0  own_focus: True
+[07:00:30] SC=0.0 T="15.0" * focus = игра в фокусе
+[07:00:30] SC=0.0 T="15.0" ts="COIN @-14.0"
+[07:00:30] SC=37.6 T="14.9" ts="COIN @-17.0"
+[07:00:30] SC=37.6 T="14.8" ts="COIN @-16.0"
+[07:00:30] SC=37.7 T="14.8" ts="COIN @-17.0"
+[07:00:30] SC=37.9 T="14.7" ts="COIN @-14.0"
+[07:00:30] SC=38.1 T="14.5" ts="COIN @-16.0"
+[07:00:30] SC=38.1 T="14.5" ts="COIN @-14.0"
+[07:00:30] SC=38.1 T="14.4" ts="COIN @-17.0"
+[07:00:30] SC=38.4 T="14.3" ts="COIN @-14.0"
+[07:00:30] SC=38.5 T="14.2" ts="COIN @-16.0"
+[07:00:31] SC=38.5 T="14.2" ts="COIN @-17.0"
+[07:00:31] SC=38.5 T="14.1" ts="COIN @-14.0"
+[07:00:31] SC=38.6 T="14.0" ts="COIN @-17.0"
+[07:00:31] SC=38.6 T="13.9" ts="COIN @-16.0"
+[07:00:31] SC=38.7 T="13.8" ts="COIN @-17.0"
+[07:00:31] SC=38.7 T="13.8" ts="COIN @-14.0"
+[07:00:31] SC=38.7 T="13.7" ts="COIN @-17.0"
+[07:00:31] SC=38.7 T="13.6" ts="COIN @-14.0"
+[07:00:31] SC=38.8 T="13.5" ts="COIN @-16.0"
+[07:00:31] SC=38.8 T="13.5" ts="COIN @-14.0"
+[07:00:31] SC=38.8 T="13.4" ts="COIN @-17.0"
+[07:00:31] SC=38.8 T="13.3" ts="COIN @-14.0"
+[07:00:31] SC=38.8 T="13.3" * recruit = бомжи рядом: 16, ближайший=-2.0
+[07:00:31] SC=43.9 T="13.3" ts="RECRUIT walk" -> -1.0
+[07:00:32] SC=74.1 T="12.8" ts="RECRUIT drop coin @-13.6"
+[07:00:32] SC=74.1 T="12.7" * buy = Castle0(PayableUpgrade) 1 @-4.0
+[07:00:32] SC=74.1 T="12.7" ts="PAY Castle0(1)" -> -4.00 (px=-13.09)
+[07:00:32] SC=79.1 T="12.7" ts="PAY Castle0(1)" -> -4.00 (px=-12.62)
+[07:00:32] SC=84.1 T="12.6" ts="PAY Castle0(1)" -> -4.00 (px=-12.15)
+[07:00:32] SC=84.1 T="12.5" ts="PAY Castle0(1)" -> -4.00 (px=-11.64)
+[07:00:32] SC=84.2 T="12.4" ts="PAY Castle0(1)" -> -4.00 (px=-11.17)
+[07:00:32] SC=84.2 T="12.4" ts="PAY Castle0(1)" -> -4.00 (px=-10.70)
+[07:00:32] SC=84.3 T="12.3" ts="PAY Castle0(1)" -> -4.00 (px=-10.19)
+[07:00:32] SC=84.3 T="12.3" ts="PAY Castle0(1)" -> -4.00 (px=-9.72)
+[07:00:33] SC=84.3 T="12.2" ts="PAY Castle0(1)" -> -4.00 (px=-9.25)
+[07:00:33] SC=84.3 T="12.1" ts="PAY Castle0(1)" -> -4.00 (px=-8.74)
+[07:00:33] SC=84.4 T="12.0" ts="PAY Castle0(1)" -> -4.00 (px=-8.27)
+[07:00:33] SC=84.4 T="12.0" ts="PAY Castle0(1)" -> -4.00 (px=-7.80)
+[07:00:33] SC=84.4 T="11.9" ts="PAY Castle0(1)" -> -4.00 (px=-7.29)
+[07:00:33] SC=84.4 T="11.9" ts="PAY Castle0(1)" -> -4.00 (px=-6.82)
+[07:00:33] SC=84.5 T="11.8" ts="PAY Castle0(1)" -> -4.00 (px=-6.35)
+[07:00:33] SC=84.5 T="11.7" ts="PAY Castle0(1)" -> -4.00 (px=-5.85)
+[07:00:33] SC=84.5 T="11.7" ts="PAY Castle0(1)" -> -4.00 (px=-5.38)
+[07:00:33] SC=84.6 T="11.6" ts="PAY Castle0(1)" -> -4.00 (px=-4.91)
+[07:00:33] SC=74.6 T="11.5" ts="PAY Castle0(1)" -> -4.00 (px=-4.40)
+[07:00:33] SC=74.6 T="11.4" ts="PAY Castle0 price=1 purse=9"
+[07:00:34] SC=78.7 T="10.8" * pay_done = Castle0 цена=1 потрачено=1
+[07:00:34] SC=178.7 T="10.8" ts="RECRUIT drop coin @-3.0"
+[07:00:34] SC=178.7 T="10.7" * buy = Castle1(PayableUpgrade) 3 @-4.0
+[07:00:34] SC=182.7 T="10.7" ts="PAY Castle1(3)" -> -4.00 (px=-3.05)
+[07:00:34] SC=182.7 T="10.6" ts="PAY Castle1(3)" -> -4.00 (px=-3.07)
+[07:00:34] SC=182.7 T="10.5" ts="PAY Castle1(3)" -> -4.00 (px=-3.48)
+[07:00:34] SC=202.8 T="10.4" ts="PAY Castle1(3)" -> -4.00 (px=-4.42)
+[07:00:34] SC=202.8 T="10.3" ts="PAY Castle1(3)" -> -4.00 (px=-4.56)
+[07:00:34] SC=202.8 T="10.2" ts="PAY Castle1(3)" -> -4.00 (px=-4.22)
+[07:00:34] SC=202.8 T="10.2" ts="PAY Castle1(3)" -> -4.00 (px=-3.75)
+[07:00:35] SC=202.9 T="10.1" ts="PAY Castle1(3)" -> -4.00 (px=-3.24)
+[07:00:35] SC=202.9 T="10.1" ts="PAY Castle1(3)" -> -4.00 (px=-2.98)
+[07:00:35] SC=202.9 T="10.0" ts="PAY Castle1(3)" -> -4.00 (px=-3.35)
+[07:00:35] SC=202.9 T="9.9" ts="PAY Castle1(3)" -> -4.00 (px=-3.86)
+[07:00:35] SC=203.0 T="9.8" ts="PAY Castle1(3)" -> -4.00 (px=-4.33)
+[07:00:35] SC=203.0 T="9.8" ts="PAY Castle1(3)" -> -4.00 (px=-4.80)
+[07:00:35] SC=203.0 T="9.7" ts="PAY Castle1(3)" -> -4.00 (px=-5.08)
+[07:00:35] SC=203.0 T="9.7" ts="PAY Castle1(3)" -> -4.00 (px=-4.70)
+[07:00:35] SC=203.0 T="9.6" ts="PAY Castle1(3)" -> -4.00 (px=-4.23)
+[07:00:35] SC=203.1 T="9.5" ts="PAY Castle1(3)" -> -4.00 (px=-3.73)
+[07:00:35] SC=223.1 T="9.4" ts="PAY Castle1(3)" -> -4.00 (px=-3.25)
+[07:00:35] SC=223.1 T="9.4" ts="PAY Castle1(3)" -> -4.00 (px=-2.98)
+[07:00:35] SC=223.1 T="9.3" ts="PAY Castle1(3)" -> -4.00 (px=-3.35)
+[07:00:35] SC=223.2 T="9.2" ts="PAY Castle1(3)" -> -4.00 (px=-3.82)
+[07:00:35] SC=223.2 T="9.2" ts="PAY Castle1(3)" -> -4.00 (px=-4.29)
+[07:00:36] SC=223.2 T="9.1" ts="PAY Castle1(3)" -> -4.00 (px=-4.80)
+[07:00:36] SC=223.2 T="9.1" ts="PAY Castle1(3)" -> -4.00 (px=-5.06)
+[07:00:36] SC=223.3 T="9.0" ts="PAY Castle1(3)" -> -4.00 (px=-4.69)
+[07:00:36] SC=223.3 T="8.9" ts="PAY Castle1(3)" -> -4.00 (px=-4.18)
+[07:00:36] SC=223.3 T="8.8" ts="PAY Castle1(3)" -> -4.00 (px=-3.71)
+[07:00:36] SC=223.3 T="8.8" ts="PAY Castle1(3)" -> -4.00 (px=-3.24)
+[07:00:36] SC=223.4 T="8.7" ts="PAY Castle1(3)" -> -4.00 (px=-2.94)
+[07:00:36] SC=223.4 T="8.6" ts="PAY Castle1(3)" -> -4.00 (px=-3.31)
+[07:00:36] SC=223.4 T="8.6" ts="PAY Castle1(3)" -> -4.00 (px=-3.78)
+[07:00:36] SC=223.4 T="8.5" ts="PAY Castle1(3)" -> -4.00 (px=-4.29)
+[07:00:36] SC=223.5 T="8.5" ts="PAY Castle1(3)" -> -4.00 (px=-4.76)
+[07:00:36] SC=223.5 T="8.4" ts="PAY Castle1(3)" -> -4.00 (px=-4.86)
+[07:00:36] SC=223.5 T="8.3" ts="PAY Castle1(3)" -> -4.00 (px=-4.41)
+[07:00:36] SC=223.5 T="8.2" * pay_giveup = Castle1 @-4.0
+[07:00:36] SC=223.5 T="8.2" * pay_disabled = Castle1 @-4.0 (spent=-7)
+[07:00:36] SC=223.5 T="8.2" * pay_done = Castle1 цена=3 потрачено=-7
+[07:00:36] SC=223.5 T="8.2" * recruit = бомжи рядом: 15, ближайший=-3.0
+[07:00:36] SC=222.6 T="8.2" ts="RECRUIT drop coin @-3.5"
+[07:00:37] SC=222.6 T="8.1" * buy = ShopHammer(PayableShop) 3 @-8.5
+[07:00:37] SC=226.6 T="8.1" ts="PAY ShopHammer(3)" -> -8.50 (px=-3.07)
+[07:00:37] SC=226.6 T="8.0" ts="PAY ShopHammer(3)" -> -8.50 (px=-3.06)
+[07:00:37] SC=226.6 T="8.0" ts="PAY ShopHammer(3)" -> -8.50 (px=-3.13)
+[07:00:37] SC=226.6 T="7.9" ts="PAY ShopHammer(3)" -> -8.50 (px=-3.60)
+[07:00:37] SC=226.6 T="7.9" ts="PAY ShopHammer(3)" -> -8.50 (px=-4.07)
+[07:00:37] SC=226.7 T="7.8" ts="PAY ShopHammer(3)" -> -8.50 (px=-4.54)
+[07:00:37] SC=226.7 T="7.7" ts="PAY ShopHammer(3)" -> -8.50 (px=-5.04)
+[07:00:37] SC=226.7 T="7.6" ts="PAY ShopHammer(3)" -> -8.50 (px=-5.51)
+[07:00:37] SC=226.8 T="7.6" ts="PAY ShopHammer(3)" -> -8.50 (px=-5.98)
+[07:00:37] SC=226.8 T="7.5" ts="PAY ShopHammer(3)" -> -8.50 (px=-6.49)
+[07:00:37] SC=226.8 T="7.5" ts="PAY ShopHammer(3)" -> -8.50 (px=-6.96)
+[07:00:37] SC=226.8 T="7.4" ts="PAY ShopHammer(3)" -> -8.50 (px=-7.43)
+[07:00:37] SC=226.9 T="7.3" ts="PAY ShopHammer(3)" -> -8.50 (px=-7.94)
+[07:00:37] SC=226.9 T="7.3" ts="PAY ShopHammer price=3 purse=6"
+[07:00:38] SC=258.9 T="6.6" * pay_done = ShopHammer цена=3 потрачено=3
+[07:00:38] SC=258.9 T="6.6" * recruit = бомжи рядом: 14, ближайший=22.0
+[07:00:38] SC=269.0 T="6.6" ts="RECRUIT walk" -> 22.0
+[07:00:41] SC=285.1 T="3.8" ts="PAY Tree(1)" -> 18.00 (px=10.22)
+[07:00:41] SC=285.1 T="3.8" ts="PAY Tree(1)" -> 18.00 (px=10.73)
+[07:00:41] SC=285.1 T="3.7" ts="PAY Tree(1)" -> 18.00 (px=11.20)
+[07:00:41] SC=285.1 T="3.7" ts="PAY Tree(1)" -> 18.00 (px=11.67)
+[07:00:41] SC=285.2 T="3.6" ts="PAY Tree(1)" -> 18.00 (px=12.14)
+[07:00:41] SC=285.2 T="3.5" ts="PAY Tree(1)" -> 18.00 (px=12.64)
+[07:00:41] SC=285.2 T="3.4" ts="PAY Tree(1)" -> 18.00 (px=13.12)
+[07:00:41] SC=285.2 T="3.4" ts="PAY Tree(1)" -> 18.00 (px=13.58)
+[07:00:41] SC=285.3 T="3.3" ts="PAY Tree(1)" -> 18.00 (px=14.01)
+[07:00:41] SC=285.3 T="3.3" ts="PAY Tree(1)" -> 18.00 (px=14.40)
+[07:00:42] SC=285.3 T="3.2" ts="PAY Tree(1)" -> 18.00 (px=14.79)
+[07:00:42] SC=285.3 T="3.1" ts="PAY Tree(1)" -> 18.00 (px=15.21)
+[07:00:42] SC=285.4 T="3.0" ts="PAY Tree(1)" -> 18.00 (px=15.61)
+[07:00:42] SC=285.4 T="3.0" ts="PAY Tree(1)" -> 18.00 (px=16.03)
+[07:00:42] SC=285.4 T="2.9" ts="PAY Tree(1)" -> 18.00 (px=16.42)
+[07:00:42] SC=285.4 T="2.8" ts="PAY Tree(1)" -> 18.00 (px=16.81)
+[07:00:42] SC=285.5 T="2.8" ts="PAY Tree(1)" -> 18.00 (px=17.21)
+[07:00:42] SC=285.5 T="2.7" ts="PAY Tree(1)" -> 18.00 (px=17.63)
+[07:00:42] SC=285.5 T="2.7" ts="PAY Tree price=1 purse=3"
+[07:00:43] SC=289.6 T="2.1" * pay_done = Tree цена=1 потрачено=1
+[07:00:43] SC=289.6 T="2.0" * recruit = бомжи рядом: 14, ближайший=19.0
+[07:00:43] SC=291.6 T="2.0" ts="RECRUIT drop coin @18.4"
+[07:00:43] SC=295.6 T="1.9" ts="PAY Tree(1)" -> 18.00 (px=18.43)
+[07:00:43] SC=295.6 T="1.8" ts="PAY Tree(1)" -> 18.00 (px=18.36)
+[07:00:43] SC=295.6 T="1.6" ts="PAY Tree(1)" -> 18.00 (px=17.62)
+[07:00:43] SC=295.6 T="1.6" ts="PAY Tree(1)" -> 18.00 (px=17.61)
+[07:00:43] SC=295.6 T="1.5" ts="PAY Tree(1)" -> 18.00 (px=17.70)
+[07:00:43] SC=295.6 T="1.5" * pay_scan = Tree @18.0 -> 18.50 sel=None
+[07:00:43] SC=295.7 T="1.3" * pay_scan = Tree @18.0 -> 17.50 sel=None
+[07:00:43] SC=295.7 T="1.2" ts="PAY Tree(1)" -> 17.50 (px=18.55)
+[07:00:44] SC=295.7 T="1.1" ts="PAY Tree(1)" -> 17.50 (px=18.46)
+[07:00:44] SC=295.7 T="1.0" ts="PAY Tree(1)" -> 17.50 (px=18.07)
+[07:00:44] SC=295.7 T="1.0" ts="PAY Tree(1)" -> 17.50 (px=17.68)
+[07:00:44] SC=295.8 T="0.9" ts="PAY Tree(1)" -> 17.50 (px=17.26)
+[07:00:44] SC=295.8 T="0.9" ts="PAY Tree(1)" -> 17.50 (px=16.87)
+[07:00:44] SC=295.8 T="0.8" ts="PAY Tree(1)" -> 17.50 (px=16.81)
+[07:00:44] SC=315.8 T="0.7" ts="PAY Tree(1)" -> 17.50 (px=17.21)
+[07:00:44] SC=315.9 T="0.6" ts="PAY Tree(1)" -> 17.50 (px=17.99)
+[07:00:44] SC=315.9 T="0.5" ts="PAY Tree(1)" -> 17.50 (px=18.31)
+[07:00:44] SC=315.9 T="0.5" ts="PAY Tree(1)" -> 17.50 (px=18.07)
+[07:00:44] SC=315.9 T="0.4" ts="PAY Tree(1)" -> 17.50 (px=17.68)
+[07:00:44] SC=315.9 T="0.3" ts="PAY Tree(1)" -> 17.50 (px=17.26)
+[07:00:44] SC=316.0 T="0.2" ts="PAY Tree(1)" -> 17.50 (px=16.87)
+[07:00:44] SC=316.0 T="0.2" ts="PAY Tree(1)" -> 17.50 (px=16.66)
+[07:00:45] SC=316.0 T="0.1" ts="PAY Tree(1)" -> 17.50 (px=17.01)
+[07:00:45] SC=316.0 T="0.0" * pay_giveup = Tree @18.0
+[07:00:45] SC=316.0 T="0.0" * pay_disabled = Tree @18.0 (spent=-1)
+[07:00:45] SC=316.0 T="0.0" * pay_done = Tree цена=1 потрачено=-1
+[07:00:45] SC=316.0 T="0.0" * recruit = бомжи рядом: 13, ближайший=19.0
+[07:00:45] SC=313.5 T="0.0" ts="RECRUIT drop coin @17.8"
+[07:00:45] итог эпизода: {'coins_in': 9.0, 'coins_spent': 8.0, 'buys': 3, 'buildings': 2, 'citizens': 3, 'crown_lost': 0, 'recruited_beggars': 3, 'day': 0, 'deaths': 0, 'crown_picked': 0, 'buildings_started': 1, 'buildings_completed': 2, 'max_buildings': 2, 'min_trees': 96, 'trees_marked': 1, 'trees_chopped': 0, 'first_archer': 0, 'first_worker': 1, 'tool_buys': 1, 'hammer_buys': 1, 'bow_buys': 0, 'scythe_buys': 0, 'castle_base_buys': 1, 'castle_upgrade_buys': 0, 'castle_upgrade_buys_with_workers': 0, 'castle_upgrade_buys_without_workers': 0, 'buildings_with_workers': 0, 'buildings_without_workers': 2, 'distance': 85.31999999999992, 'walk_distance': 76.50999999999992, 'run_distance': 8.809999999999999, 'horse_exhaustion': 0, 'horse_rest_time': 0.0, 'final_purse': 1, 'inactivity_penalty': 0.0, 'tree_chops_with_workers': 2, 'tree_chops_without_workers': 0, 'failed_coin': 0, 'failed_buy': 1, 'failed_recruit': 1, 'failed_tree': 1, 'unpicked_coins': 10, 'coins_lost': 0, 'generation': 2, 'seconds': 15.068699836730957, 'score': 313.54614188838826}
+[07:00:45] остановлено
