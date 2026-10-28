@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+_tmp_*.json
+_tmp_*.py
+*.spec
+
+# Build artifacts
+build/
+dist/
+bin/
+obj/
+
+# Logs
+logs/
+
+# Temp
+*.log
+ KCbot.spec

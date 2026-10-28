@@ -1,0 +1,48 @@
+{
+  "app_title": "KC Bot",
+  "params_title": "Parameters",
+  "details_title": "Details",
+  "settings_title": "Settings",
+  "help_title": "Help",
+  "theme_title": "Themes",
+  "language_title": "Language",
+
+  "param_pop": "Population",
+  "param_rounds": "Rounds",
+  "param_episode": "Episode, sec",
+  "param_episode_increment": "Increment, sec",
+  "param_speed": "Speed",
+  "param_top_percent": "Top",
+
+  "desc_pop": "Bots per generation. More = accurate but slower.",
+  "desc_rounds": "Generations to train. More = better result.",
+  "desc_episode": "Duration of one episode in seconds (at 1x).",
+  "desc_episode_increment": "How many seconds the episode grows each round.",
+  "desc_speed": "Game speed (1x-4x). 8x breaks the game.",
+  "desc_top_percent": "Share of best bots carried to next generation (0.1 = 10%).",
+
+  "btn_default": "Default",
+  "btn_start": "Start",
+  "btn_stop": "Stop",
+  "btn_apply": "Apply",
+  "btn_close": "Close",
+  "btn_help": "Help",
+  "btn_theme": "Theme",
+  "btn_language": "Language",
+
+  "theme_applied": "Theme applied: {name}",
+  "lang_applied": "Language changed: {name}. Restart for full effect.",
+
+  "help_search_placeholder": "Search help...",
+  "help_intro": "KC Bot — evolutionary bot for Kingdom: Classic. Controls only the king (A/D/Shift/S).",
+
+  "param_section": "Launch parameters",
+  "how_it_works": "How the bot works",
+  "how_it_works_text": "The bot uses a genetic algorithm: each bot has a genome (neural net weights). Each round bots play an episode and earn fitness (points for actions). Best genomes are selected (elitism), crossed and mutated to create a new generation. Repeats for rounds.",
+
+  "death_penalty": "Death penalty",
+  "idle_penalty": "Idle penalty",
+
+  "console_title": "Console",
+  "detail_title": "Details"
+}

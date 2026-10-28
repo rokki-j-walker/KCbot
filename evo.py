@@ -26,7 +26,10 @@ import subprocess
 import sys
 import time
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, 'frozen', False):
+    HERE = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+else:
+    HERE = os.path.dirname(os.path.abspath(__file__))
 GAME_DIR = r'C:\Program Files (x86)\Steam\steamapps\common\Kingdom'
 SAVE = os.path.join(os.environ['USERPROFILE'], 'AppData', 'LocalLow',
                     'noio', 'Kingdom', 'storage_v26_AUTO.dat')
@@ -363,7 +366,14 @@ def run_episode(genome, episode, restart, generation=1, speed=4.0, log_file=None
            '--generation', str(generation), '--speed', str(speed)]
     if log_file:
         cmd += ['--log-file', log_file]
-    proc = subprocess.Popen(cmd, cwd=HERE)
+    if getattr(sys, 'frozen', False):
+        env = os.environ.copy()
+        env['KC_RUN_MODULE'] = 'bot3'
+        # drop the script path; pass args after exe
+        child_cmd = [sys.executable] + cmd[1:]
+        proc = subprocess.Popen(child_cmd, cwd=HERE, env=env)
+    else:
+        proc = subprocess.Popen(cmd, cwd=HERE)
     t0 = time.time()
     pause_time = 0.0
     last_iter = time.time()

@@ -32,9 +32,38 @@ except ImportError:
     HAS_MPL = False
 
 if getattr(sys, 'frozen', False):
-    HERE = os.path.dirname(sys.executable)
+    HERE = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
 else:
     HERE = os.path.dirname(os.path.abspath(__file__))
+
+# ---------- Локализация ----------
+LOCALE_DIR = os.path.join(HERE, 'locales')
+_CURRENT_LOCALE = {}
+
+
+def load_locale(lang):
+    global _CURRENT_LOCALE
+    path = os.path.join(LOCALE_DIR, '%s.json' % lang)
+    if not os.path.exists(path):
+        path = os.path.join(LOCALE_DIR, 'ru.json')
+    try:
+        with open(path, encoding='utf-8') as f:
+            _CURRENT_LOCALE = json.load(f)
+    except Exception:
+        _CURRENT_LOCALE = {}
+    return _CURRENT_LOCALE
+
+
+def t(key, **kwargs):
+    val = _CURRENT_LOCALE.get(key, key)
+    try:
+        return val.format(**kwargs) if kwargs else val
+    except Exception:
+        return val
+
+
+# Загрузить локаль по умолчанию (из конфига подгрузится позже в App)
+load_locale('ru')
 APPDATA_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'KCbot')
 CONFIG_FILE = os.path.join(APPDATA_DIR, 'launcher_config.json')
 HISTORY_FILE = os.path.join(HERE, 'data', 'evo_history.json')
@@ -68,6 +97,17 @@ def apply_taskbar_style(win):
         ctypes.windll.user32.ShowWindow(hwnd, 5)  # SW_SHOW
         ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0,
                                          0x0002 | 0x0001 | 0x0004 | 0x0020 | 0x0040)
+        try:
+            icon_path = os.path.join(HERE, 'assets', 'kc_bot.ico')
+            LR_LOADFROMFILE = 0x00000010
+            IMAGE_ICON = 1
+            hicon = ctypes.windll.user32.LoadImageW(None, icon_path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE)
+            if hicon:
+                WM_SETICON = 0x0080
+                ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, 0, hicon)
+                ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, 1, hicon)
+        except Exception:
+            pass
     except Exception:
         pass
 
@@ -92,8 +132,25 @@ class GUID(ctypes.Structure):
 
 
 def setup_scrollbar_style():
-    # Заглушка: sv_ttk сам стилизует ttk-виджеты.
-    return
+    try:
+        import tkinter.ttk as _ttk
+        _style = _ttk.Style()
+        cfg = load_config()
+        theme_name = cfg.get('theme', 'dark')
+        colors = COLOR_SCHEMES.get(theme_name, COLOR_SCHEMES['dark'])
+        bg = colors.get('entry_bg', '#252525')
+        fg = colors.get('fg', '#e0e0e0')
+        trough = colors.get('bg', '#1a1a1a')
+        hover = colors.get('btn_hover', bg)
+        accent = colors.get('accent', bg)
+        for orient in ('Vertical', 'Horizontal'):
+            _style.configure('%s.TScrollbar' % orient,
+                            background=bg, troughcolor=trough,
+                            bordercolor=trough, arrowcolor=fg, width=12)
+            _style.map('%s.TScrollbar' % orient,
+                       background=[('active', hover), ('pressed', accent)])
+    except Exception:
+        pass
 
 os.makedirs(APPDATA_DIR, exist_ok=True)
 
@@ -115,6 +172,7 @@ DEFAULTS = {
     'console_side': 'right',
     'detail_detached': False,
     'console_detached': False,
+    'language': 'ru',
 }
 
 COLOR_SCHEMES = {
@@ -236,12 +294,38 @@ def load_history_scores():
         return [], []
 
 
-def create_themed_toplevel(parent, title, colors, width=800, height=600, attach_callback=None):
+def create_themed_toplevel(parent, title, colors, width=800, height=600, attach_callback=None, geometry_key=None):
     """Создаёт Toplevel окно с кастомным заголовком и тёмной темой."""
     win = tk.Toplevel(parent)
     win.title(title)
     win.overrideredirect(True)
-    win.geometry('%dx%d' % (width, height))
+    if geometry_key is None:
+        geometry_key = title
+    win._geometry_key = geometry_key
+    # Восстановить сохранённую геометрию
+    _saved = load_config().get('window_geometries', {}).get(geometry_key)
+    if _saved:
+        win.geometry(_saved)
+    else:
+        # Центрировать относительно родителя
+        try:
+            px = parent.winfo_x(); py = parent.winfo_y()
+            pw = parent.winfo_width(); ph = parent.winfo_height()
+            x = px + (pw - width) // 2
+            y = py + (ph - height) // 2
+            win.geometry('%dx%d+%d+%d' % (width, height, x, y))
+        except Exception:
+            win.geometry('%dx%d' % (width, height))
+    # Сохранить геометрию при закрытии
+    def _save_geo(event=None):
+        try:
+            cfg = load_config()
+            cfg.setdefault('window_geometries', {})
+            cfg['window_geometries'][geometry_key] = win.geometry()
+            save_config(cfg)
+        except Exception:
+            pass
+    win.bind('<Destroy>', _save_geo)
     win.configure(bg=colors['bg'])
     # Иконка
     icon_path = os.path.join(HERE, 'assets', 'kc_bot.ico')
@@ -435,8 +519,6 @@ class ConsoleWindow:
                   bg=c['entry_bg'], fg=c['fg']).pack(side=tk.LEFT, padx=2)
         tk.Button(toolbar_frame, text='Сброс', command=self._reset_detail_zoom,
                   bg=c['entry_bg'], fg=c['fg']).pack(side=tk.LEFT, padx=2)
-        tk.Button(toolbar_frame, text='Панорама', command=self._toggle_pan_detail,
-                  bg=c['entry_bg'], fg=c['fg']).pack(side=tk.LEFT, padx=2)
 
         # Поле информации о точке
         self.graph_info_label = tk.Label(gd_content, text='Наведите мышь на точку графика',
@@ -530,41 +612,29 @@ class ConsoleWindow:
             self.detail_ax.set_ylim(self._original_ylim)
         self.detail_canvas.draw()
 
-    def _toggle_pan_detail(self):
-        self._panning_detail = not self._panning_detail
-        if hasattr(self, 'graph_info_label'):
-            if self._panning_detail:
-                self.graph_info_label.config(text='Режим панорамы: зажмите ЛКМ и тащите')
-            else:
-                self.graph_info_label.config(text='Наведите мышь на точку графика')
-
     def _start_pan_detail(self, event):
-        if not self._panning_detail:
-            return
         try:
             xdata, ydata = self.detail_ax.transData.inverted().transform((event.x, event.y))
             self._pan_start_detail = (xdata, ydata)
         except Exception:
             self._pan_start_detail = None
+        except Exception:
+            self._pan_start_detail = None
 
     def _do_pan_detail(self, event):
-        if not self._panning_detail or self._pan_start_detail is None:
+        if self._pan_start_detail is None:
             return
         try:
             xdata, ydata = self.detail_ax.transData.inverted().transform((event.x, event.y))
         except Exception:
             return
-        if xdata is None or ydata is None:
+        if xdata is None:
             return
         dx = self._pan_start_detail[0] - xdata
-        dy = self._pan_start_detail[1] - ydata
         xlim = self.detail_ax.get_xlim()
-        ylim = self.detail_ax.get_ylim()
         self.detail_ax.set_xlim(xlim[0] + dx, xlim[1] + dx)
-        self.detail_ax.set_ylim(ylim[0] + dy, ylim[1] + dy)
         self.detail_canvas.draw()
-        self._pan_start_detail = (xdata, ydata)
-
+        self._pan_start_detail = (xdata, self._pan_start_detail[1])
     def _end_pan_detail(self, event):
         self._pan_start_detail = None
 
@@ -869,8 +939,19 @@ class SettingsDialog:
         # Кнопки
         btn_frame = tk.Frame(self._content, bg=c['bg'])
         btn_frame.pack(pady=15)
+        tk.Button(btn_frame, text='По умолчанию', command=self.set_defaults, bg=c['entry_bg'], fg=c['fg']).pack(side=tk.LEFT, padx=5)
         tk.Button(btn_frame, text='Применить', command=self.apply, bg=c['accent'], fg='white').pack(side=tk.LEFT, padx=5)
         tk.Button(btn_frame, text='Закрыть', command=self.win.destroy, bg=c['entry_bg'], fg=c['fg']).pack(side=tk.LEFT, padx=5)
+
+    def set_defaults(self):
+        # Рекомендованные настройки
+        self.theme_var.set('dark')
+        if hasattr(self, 'content_var'):
+            self.content_var.set('both')
+        if hasattr(self, 'show_console_var'):
+            self.show_console_var.set(True)
+        if hasattr(self, 'show_params_var'):
+            self.show_params_var.set(True)
 
     def apply(self):
         self.config['theme'] = self.theme_var.get()
@@ -890,6 +971,7 @@ class App:
     def __init__(self, root):
         self.root = root
         self.config = load_config()
+        load_locale(self.config.get('language', 'ru'))
         self.colors = COLOR_SCHEMES.get(self.config.get('theme', 'dark'), COLOR_SCHEMES['dark'])
         self.console_window = None
         self.process_running = False
@@ -924,10 +1006,23 @@ class App:
         self.title_bar.pack(fill=tk.X, side=tk.TOP)
         self.title_bar.pack_propagate(False)
 
-        gear_btn = tk.Button(self.title_bar, text='\u2699', font=('Segoe UI', 13),
+        # Кнопка выбора темы
+        self.theme_btn = tk.Button(self.title_bar, text='\u263c', font=('Segoe UI', 13),
                              bg=c['title_bg'], fg=c['fg'], relief=tk.FLAT,
-                             borderwidth=0, cursor='hand2', command=self.toggle_settings)
-        gear_btn.pack(side=tk.LEFT, padx=(10, 2))
+                             borderwidth=0, cursor='hand2', command=self._open_theme_menu)
+        self.theme_btn.pack(side=tk.LEFT, padx=(10, 2))
+
+        # Кнопка выбора языка
+        self.lang_btn = tk.Button(self.title_bar, text='\U0001F310', font=('Segoe UI', 11),
+                             bg=c['title_bg'], fg=c['fg'], relief=tk.FLAT,
+                             borderwidth=0, cursor='hand2', command=self._open_language_menu)
+        self.lang_btn.pack(side=tk.LEFT, padx=2)
+
+        # Кнопка справки
+        self.help_btn = tk.Button(self.title_bar, text='?', font=('Segoe UI', 12, 'bold'),
+                             bg=c['title_bg'], fg=c['fg'], relief=tk.FLAT,
+                             borderwidth=0, cursor='hand2', command=self._open_help)
+        self.help_btn.pack(side=tk.LEFT, padx=2)
 
         title_label = tk.Label(self.title_bar, text='KC Bot', bg=c['title_bg'], fg=c['fg'],
                                font=('Segoe UI', 10))
@@ -1013,18 +1108,19 @@ class App:
         self.params_frame = tk.Frame(self.main_frame, bg=c['bg'], width=260)
         self.params_frame.pack_propagate(False)
         if self.config.get('show_params', True):
-            self.params_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 5))
+            _params_expand = (self.config.get('detail_side', 'left') == 'right') and not self.config.get('detail_detached', False)
+            self.params_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=_params_expand, padx=(0, 5))
 
-        tk.Label(self.params_frame, text='Параметры', bg=c['bg'], fg=c['fg'],
+        tk.Label(self.params_frame, text=t('params_title'), bg=c['bg'], fg=c['fg'],
                  font=('Segoe UI', 13, 'bold')).pack(pady=(0, 8))
 
         fields = [
-            ('pop', 'Популяция', 'int'),
-            ('rounds', 'Раунды', 'int'),
-            ('episode', 'Эпизод, сек', 'float'),
-            ('episode_increment', 'Прирост, сек', 'float'),
-            ('speed', 'Скорость', 'float'),
-            ('top_percent', 'Топ', 'float'),
+            ('pop', t('param_pop'), 'int'),
+            ('rounds', t('param_rounds'), 'int'),
+            ('episode', t('param_episode'), 'float'),
+            ('episode_increment', t('param_episode_increment'), 'float'),
+            ('speed', t('param_speed'), 'float'),
+            ('top_percent', t('param_top_percent'), 'float'),
         ]
 
         self.entries = {}
@@ -1032,15 +1128,20 @@ class App:
         for key, label, typ in fields:
             row = tk.Frame(self.params_frame, bg=c['bg'])
             row.pack(fill=tk.X, pady=2)
-            tk.Label(row, text=label, bg=c['bg'], fg=c['fg'], width=16, anchor='w',
+            tk.Label(row, text=label, bg=c['bg'], fg=c['fg'], width=22, anchor='w',
                      font=('Segoe UI', 10)).pack(side=tk.LEFT)
-            e = tk.Entry(row, width=10, font=('Consolas', 11), bg=c['entry_bg'], fg=c['fg'],
+            e = tk.Entry(row, width=6, font=('Consolas', 11), bg=c['entry_bg'], fg=c['fg'],
                          insertbackground=c['fg'], relief=tk.FLAT, borderwidth=1)
             e.insert(0, str(self.config.get(key, DEFAULTS[key])))
             e.pack(side=tk.RIGHT)
             self.entries[key] = (e, typ)
             e.bind('<KeyRelease>', lambda ev: self._on_param_change())
             e.bind('<FocusOut>', lambda ev: self._on_param_change())
+
+            # Комментарий-подсказка под полем
+            desc = tk.Label(self.params_frame, text=t('desc_' + key), bg=c['bg'], fg='#888888',
+                            font=('Segoe UI', 9), justify=tk.LEFT, wraplength=250, anchor='w')
+            desc.pack(fill=tk.X, pady=(0, 4))
 
         # Подсказки для валидации (под полями)
         self._hint_labels = {}
@@ -1078,8 +1179,21 @@ class App:
                                  padx=16, pady=4)
         # Кнопка Стоп скрыта по умолчанию (показывается при запуске обучения)
 
+        # Кнопка сброса параметров к рекомендованным
+        def _reset_defaults():
+            rec = {'pop': 50, 'rounds': 15, 'episode': 20.0, 'episode_increment': 5.0,
+                   'speed': 4.0, 'top_percent': 0.1}
+            for key, (e, typ) in self.entries.items():
+                if key in rec:
+                    e.delete(0, tk.END)
+                    e.insert(0, str(rec[key]))
+            self._on_param_change()
+        tk.Button(self.params_frame, text=t('btn_default'), command=_reset_defaults,
+                  bg=c['entry_bg'], fg=c['fg'], relief=tk.FLAT, cursor='hand2').pack(
+            fill=tk.X, pady=(8, 4))
+
         self.result_label = tk.Label(self.params_frame, text='', bg=c['bg'], fg=c['fg'],
-                                    font=('Consolas', 12, 'bold'), justify=tk.LEFT)
+                                     font=('Consolas', 12, 'bold'), justify=tk.LEFT)
         self.result_label.pack(pady=8, anchor='w')
         self.result_detail = tk.Label(self.params_frame, text='', bg=c['bg'], fg=c['fg'],
                                      font=('Consolas', 10), justify=tk.LEFT)
@@ -1088,25 +1202,8 @@ class App:
         # Валидация при запуске
         self.root.after(100, self._validate_pop)
 
-        # Правая панель: подробности
-        self.detail_frame = tk.Frame(self.main_frame, bg=c.get('panel_bg', c['entry_bg']), width=300)
-        self.detail_frame.pack_propagate(False)
-        self.detail_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=(5, 0))
-
-        dh = tk.Frame(self.detail_frame, bg=c['title_bg'], height=26)
-        dh.pack(fill=tk.X)
-        dh.pack_propagate(False)
-        tk.Label(dh, text='Детали', bg=c['title_bg'], fg=c['fg'],
-                 font=('Segoe UI', 10, 'bold')).pack(side=tk.LEFT, padx=8)
-
-        ds = ttk.Scrollbar(self.detail_frame, orient=tk.VERTICAL)
-        self.detail_text = tk.Text(self.detail_frame, font=('Consolas', 10), wrap=tk.WORD,
-                                  bg=c.get('panel_bg', c['entry_bg']), fg=c['fg'],
-                                  insertbackground=c['fg'], selectbackground='#264f78',
-                                  relief=tk.FLAT, borderwidth=0, yscrollcommand=ds.set, padx=8, pady=8)
-        ds.config(command=self.detail_text.yview)
-        self.detail_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        ds.pack(side=tk.RIGHT, fill=tk.Y)
+        # Панель подробностей (через _build_detail_panel для консистентности)
+        self._build_detail_panel()
 
         self.result_label = tk.Label(self.params_frame, text='', bg=c['bg'], fg=c['fg'],
                                     font=('Consolas', 12, 'bold'), justify=tk.LEFT)
@@ -1187,9 +1284,9 @@ class App:
 
         # Упаковать в правильную позицию
         if self.config.get('detail_side', 'left') == 'left':
-            self.detail_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 5))
+            self.detail_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
         else:
-            self.detail_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 5))
+            self.detail_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=False, padx=(0, 5))
 
     def _build_detail_content(self, parent, c):
         detail_scroll = ttk.Scrollbar(parent, orient=tk.VERTICAL)
@@ -1419,13 +1516,292 @@ class App:
         self.root.configure(bg=c2['bg'])
         self.title_bar.configure(bg=c2['title_bg'])
         if self.config.get('show_params', True):
-            self.params_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 5))
+            _params_expand = (self.config.get('detail_side', 'left') == 'right') and not self.config.get('detail_detached', False)
+            self.params_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=_params_expand, padx=(0, 5))
         else:
             self.params_frame.pack_forget()
         self._build_detail_panel()
         settings_win.destroy()
         tk.Button(btn_frame, text='Применить', command=apply_and_close, bg=c['accent'], fg='white').pack(side=tk.LEFT, padx=5)
         tk.Button(btn_frame, text='Закрыть', command=settings_win.destroy, bg=c['entry_bg'], fg=c['fg']).pack(side=tk.LEFT, padx=5)
+
+    def _open_theme_menu(self):
+        c = self.colors
+        menu = tk.Menu(self.root, tearoff=0, bg=c['entry_bg'], fg=c['fg'],
+                       activebackground=c['accent'], activeforeground='white')
+        for name in COLOR_SCHEMES:
+            menu.add_command(label=name, command=lambda n=name: self._apply_theme(n))
+        try:
+            x = self.theme_btn.winfo_rootx()
+            y = self.theme_btn.winfo_rooty() + self.theme_btn.winfo_height()
+            menu.post(x, y)
+        except Exception:
+            menu.post(self.root.winfo_pointerx(), self.root.winfo_pointery())
+
+    def _apply_theme(self, name):
+        self.config['theme'] = name
+        save_config(self.config)
+        if HAS_SV_TTK:
+            sv_theme = 'light' if name in ('light', 'white') else 'dark'
+            sv_ttk.set_theme(sv_theme)
+        setup_scrollbar_style()
+        self.colors = COLOR_SCHEMES.get(name, COLOR_SCHEMES['dark'])
+        self.root.configure(bg=self.colors['bg'])
+        # Перестроить интерфейс с новыми цветами
+        self._rebuild_ui()
+
+    def _open_language_menu(self):
+        c = self.colors
+        menu = tk.Menu(self.root, tearoff=0, bg=c['entry_bg'], fg=c['fg'],
+                       activebackground=c['accent'], activeforeground='white')
+        for code, label in (('ru', 'Русский'), ('en', 'English')):
+            menu.add_command(label=label, command=lambda cd=code, lb=label: self._apply_language(cd, lb))
+        try:
+            x = self.lang_btn.winfo_rootx()
+            y = self.lang_btn.winfo_rooty() + self.lang_btn.winfo_height()
+            menu.post(x, y)
+        except Exception:
+            menu.post(self.root.winfo_pointerx(), self.root.winfo_pointery())
+
+    def _apply_language(self, code, label):
+        self.config['language'] = code
+        save_config(self.config)
+        load_locale(code)
+        # Полностью перестроить UI
+        self._rebuild_ui()
+        try:
+            from tkinter import messagebox
+            messagebox.showinfo('KC Bot', t('lang_applied', name=label))
+        except Exception:
+            pass
+
+    def _rebuild_ui(self):
+        # Уничтожить старые фреймы
+        for attr in ('title_bar', 'main_frame'):
+            w = getattr(self, attr, None)
+            if w is not None:
+                try:
+                    if w.winfo_exists():
+                        w.destroy()
+                except Exception:
+                    pass
+                setattr(self, attr, None)
+        # Перестроить
+        self._build_title_bar()
+        self._build_main()
+
+    def _open_help(self):
+        win, content = create_themed_toplevel(self.root, t('help_title'), self.colors, 760, 620,
+                                            geometry_key='help_window')
+        c = self.colors
+        # Панель поиска
+        search_frame = tk.Frame(content, bg=c['bg'])
+        search_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
+        tk.Label(search_frame, text=t('help_search_placeholder'), bg=c['bg'], fg=c['fg'],
+                 font=('Segoe UI', 9)).pack(side=tk.LEFT)
+        search_var = tk.StringVar()
+        search_entry = tk.Entry(search_frame, textvariable=search_var, bg=c['entry_bg'], fg=c['fg'],
+                                insertbackground=c['fg'], relief=tk.FLAT, borderwidth=1, width=30)
+        search_entry.pack(side=tk.LEFT, padx=(5, 5))
+        prev_btn = tk.Button(search_frame, text='◀', bg=c['entry_bg'], fg=c['fg'], relief=tk.FLAT,
+                             cursor='hand2', width=3)
+        prev_btn.pack(side=tk.LEFT, padx=2)
+        next_btn = tk.Button(search_frame, text='▶', bg=c['entry_bg'], fg=c['fg'], relief=tk.FLAT,
+                             cursor='hand2', width=3)
+        next_btn.pack(side=tk.LEFT, padx=2)
+        count_label = tk.Label(search_frame, text='', bg=c['bg'], fg=c['fg'], font=('Segoe UI', 9))
+        count_label.pack(side=tk.LEFT, padx=8)
+
+        text_frame = tk.Frame(content, bg=c['bg'])
+        text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        scroll = ttk.Scrollbar(text_frame, orient=tk.VERTICAL)
+        help_text = tk.Text(text_frame, wrap=tk.WORD, bg=c['entry_bg'], fg=c['fg'],
+                            font=('Segoe UI', 10), relief=tk.FLAT, borderwidth=0,
+                            yscrollcommand=scroll.set, padx=8, pady=8)
+        scroll.config(command=help_text.yview)
+        help_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Подробное содержимое справки
+        body = []
+        body.append(t('help_intro'))
+        body.append('')
+        body.append('=' * 60)
+        body.append(t('param_section').upper())
+        body.append('=' * 60)
+        body.append('')
+        params_detail = [
+            ('pop', 'Популяция (population)',
+             'Сколько ботов (геномов) в одном поколении. Каждый бот играет отдельный эпизод. '
+             'Больше = разнообразнее поиск и точнее отбор, но линейно растёт время обучения. '
+             'Рекомендуется 30-80. Минимум 50 (защита от вырождения).'),
+            ('rounds', 'Раунды (generations)',
+             'Сколько поколений будет обучаться бот. Каждый раунд: все боты играют эпизод → отбор лучших → скрещивание/мутация → новое поколение. '
+             'Больше раундов = лучше финальный геном. Рекомендуется 10-25.'),
+            ('episode', 'Эпизод, сек (episode length)',
+             'Длительность одного эпизода в секундах при скорости 1x. За это время бот должен набрать максимум очков. '
+             'Короткий эпизод = быстрое обучение, но бот не успевает развиться. Рекомендуется 20-40.'),
+            ('episode_increment', 'Прирост, сек (episode increment)',
+             'На сколько секунд растёт эпизод каждый следующий раунд. Позволяет постепенно усложнять задачу: сначала короткие эпизоды, потом длинные. '
+             'Рекомендуется 3-10. 0 = фиксированная длина.'),
+            ('speed', 'Скорость (game speed)',
+             'Скорость игры: 1x, 2x, 4x. При 4x обучение в 4 раза быстрее, игра это выдерживает. 8x ломает игру (тайминги). '
+             'Рекомендуется 4.0.'),
+            ('top_percent', 'Топ (elitism fraction)',
+             'Доля лучших ботов, которые переходят в следующее поколение без изменений (элитизм). '
+             '0.1 = 10% лучших сохраняются. Остальные 90% — скрещивание/мутация. Рекомендуется 0.1-0.25.'),
+        ]
+        for key, name, desc in params_detail:
+            body.append('%s [%s]' % (name, key))
+            body.append('  ' + desc)
+            body.append('')
+        body.append('Дополнительные (через командную строку / evo.py):')
+        body.append('  --elite-window N  Окно сглаживания элитного генома (по умолч. 3).')
+        body.append('  --crossover-rate  Вероятность скрещивания (по умолч. 0.5).')
+        body.append('  --mut-strength    Начальная сила мутации (по умолч. 0.15).')
+        body.append('  --mut-decay       Затухание мутации по раундам (по умолч. 0.9).')
+        body.append('  --mut-min         Минимальная сила мутации (по умолч. 0.03).')
+        body.append('  --restart         Перезапускать игру между раундами (по умолч. вкл.).')
+        body.append('  --no-restart      Не перезапускать игру.')
+        body.append('  --baseline        Запустить baseline на случайных геномах.')
+        body.append('  --resetAll        Сбросить все данные (геномы, история, baseline).')
+        body.append('  --human-genomes   Путь к human_genome_*.json (через запятую).')
+        body.append('')
+        body.append('=' * 60)
+        body.append('КАК РАБОТАЕТ БОТ')
+        body.append('=' * 60)
+        body.append('')
+        body.append(t('how_it_works_text'))
+        body.append('')
+        body.append('Управление: бот контролирует только короля (клавиши A/D/Shift/S). '
+                    'Окно игры не захватывается без необходимости.')
+        body.append('Горячие клавиши (обрабатываются в evo.py): F8 — пауза, F9 — стоп бота, F12 — полный стоп.')
+        body.append('')
+        body.append('Скоринг:')
+        body.append('  - Здания/деревья: очки начисляются только при завершении постройки/сруба.')
+        body.append('  - Найм: очки только при успешном найме нищего (recruited_beggars).')
+        body.append('  - Смерть: -10000 (повторная атака без монет или корона унесена в портал).')
+        body.append('  - Бездействие: idle=-5, no_interaction=-5 (смягчено, но не убрано).')
+        body.append('  - Прогресс: множитель 1.05, дневной бонус 0.05.')
+        body.append('')
+        body.append('Геномы людей: файлы human_genome_*.json автоматически подгружаются из папки проекта.')
+        body.append('Скорость игры: максимум 4x (8x ломает игру).')
+        body.append('')
+        body.append('=' * 60)
+        body.append('КОМАНДНАЯ СТРОКА')
+        body.append('=' * 60)
+        body.append('')
+        body.append('Запуск обучения вручную:')
+        body.append('  py evo.py --pop 50 --rounds 15 --episode 20 --episode-increment 5 --speed 4 --top-percent 0.1')
+        body.append('')
+        body.append('Все аргументы:')
+        body.append('  --pop N               Популяция (умолч. 12)')
+        body.append('  --rounds N            Раунды (умолч. 10)')
+        body.append('  --episode F           Длина эпизода, сек (умолч. 30.0)')
+        body.append('  --episode-increment F Прирост длины (умолч. 10.0)')
+        body.append('  --speed F             Скорость игры 1-4 (умолч. 4.0)')
+        body.append('  --top-percent F       Доля элиты 0-1 (умолч. 0.25)')
+        body.append('  --elite-window N      Окно сглаживания (умолч. 3)')
+        body.append('  --crossover-rate F    Скрещивание (умолч. 0.5)')
+        body.append('  --mut-strength F      Сила мутации (умолч. 0.15)')
+        body.append('  --mut-decay F         Затухание (умолч. 0.9)')
+        body.append('  --mut-min F           Мин. мутация (умолч. 0.03)')
+        body.append('  --restart / --no-restart   Перезапуск игры')
+        body.append('  --baseline            Baseline-режим')
+        body.append('  --resetAll            Полный сброс')
+        body.append('  --human-genomes PATH  Человеческие геномы')
+        body.append('')
+        body.append('=' * 60)
+        body.append('ЛАУНЧЕР (launcher.py)')
+        body.append('=' * 60)
+        body.append('')
+        body.append('Параметры вводятся в левой панели. Кнопка «По умолчанию» сбрасывает к рекомендованным.')
+        body.append('Тема: кнопка солнца в заголовке → выбор из списка, применяется на лету.')
+        body.append('Язык: кнопка глобуса → Русский/English, локализация из locales/*.json.')
+        body.append('Справка: кнопка «?» → это окно. Поиск: введите текст, подсветятся все совпадения,')
+        body.append('переход по результатам кнопками ◀ ▶, счётчик показывает текущий/всего.')
+        body.append('Панели можно двигать стрелками ← → в заголовке панели.')
+        body.append('Консоль и детали можно открепить в отдельные окна (кнопка ↙).')
+        body.append('Геометрия всех окон сохраняется в %APPDATA%/KCbot/ и восстанавливается при перезапуске.')
+        body.append('')
+        body.append('Логи: logs/<время_запуска>/<N> generation_<M> bot.log — не удаляются очисткой.')
+
+        full_text = '\n'.join(body)
+        help_text.insert('1.0', full_text)
+        help_text.config(state=tk.DISABLED)
+
+        # Поиск с навигацией
+        matches = []
+
+        def do_search(*args):
+            nonlocal matches
+            query = search_var.get().strip()
+            help_text.config(state=tk.NORMAL)
+            help_text.tag_remove('found', '1.0', tk.END)
+            help_text.tag_remove('current', '1.0', tk.END)
+            matches = []
+            if query:
+                idx = '1.0'
+                while True:
+                    pos = help_text.search(query, idx, nocase=True, stopindex=tk.END)
+                    if not pos:
+                        break
+                    end_pos = '%s+%dc' % (pos, len(query))
+                    help_text.tag_add('found', pos, end_pos)
+                    matches.append((pos, end_pos))
+                    idx = end_pos
+            help_text.tag_config('found', background='#ffeb3b', foreground='#000000')
+            help_text.tag_config('current', background='#ff9800', foreground='#000000')
+            if matches:
+                # перейти к первому
+                help_text.see(matches[0][0])
+                help_text.tag_add('current', matches[0][0], matches[0][1])
+                help_text.tag_remove('found', matches[0][0], matches[0][1])
+                count_label.config(text='1/%d' % len(matches))
+            else:
+                count_label.config(text='0/0' if query else '')
+            help_text.config(state=tk.DISABLED)
+
+        current_index = [0]
+
+        def go_next():
+            if not matches:
+                return
+            current_index[0] = (current_index[0] + 1) % len(matches)
+            i = current_index[0]
+            pos, end_pos = matches[i]
+            help_text.config(state=tk.NORMAL)
+            # восстановить предыдущий в found
+            help_text.tag_remove('current', '1.0', tk.END)
+            # перетегать все found заново проще: добавить current поверх
+            help_text.see(pos)
+            help_text.tag_add('current', pos, end_pos)
+            count_label.config(text='%d/%d' % (i + 1, len(matches)))
+            help_text.config(state=tk.DISABLED)
+
+        def go_prev():
+            if not matches:
+                return
+            current_index[0] = (current_index[0] - 1) % len(matches)
+            i = current_index[0]
+            pos, end_pos = matches[i]
+            help_text.config(state=tk.NORMAL)
+            help_text.tag_remove('current', '1.0', tk.END)
+            help_text.see(pos)
+            help_text.tag_add('current', pos, end_pos)
+            count_label.config(text='%d/%d' % (i + 1, len(matches)))
+            help_text.config(state=tk.DISABLED)
+
+        # Обернуть do_search чтобы сбрасывать индекс
+        orig_search = do_search
+        def do_search2(*args):
+            nonlocal matches
+            current_index[0] = 0
+            orig_search(*args)
+        search_var.trace_add('write', do_search2)
+        search_entry.bind('<Return>', lambda e: go_next())
+        prev_btn.config(command=go_prev)
+        next_btn.config(command=go_next)
 
     def get_params(self):
         # Валидация pop
@@ -1562,9 +1938,20 @@ class App:
             self.console_window.console_text.config(state=tk.DISABLED)
 
         # Запуск процесса
-        self.process = subprocess.Popen(cmd, shell=True, cwd=HERE,
-                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                       text=True, bufsize=1)
+        if getattr(sys, 'frozen', False):
+            args_part = cmd
+            if args_part.startswith('py evo.py '):
+                args_part = args_part[len('py evo.py '):]
+            env = os.environ.copy()
+            env['KC_EVO_ARGS'] = args_part
+            env['KC_RUN_MODULE'] = 'evo'
+            self.process = subprocess.Popen([sys.executable], shell=False, cwd=HERE,
+                                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                           text=True, bufsize=1, env=env)
+        else:
+            self.process = subprocess.Popen(cmd, shell=True, cwd=HERE,
+                                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                           text=True, bufsize=1)
         self.process_running = True
         self.reader_thread = threading.Thread(target=self._read_output, daemon=True)
         self.reader_thread.start()
@@ -1609,6 +1996,13 @@ class App:
         self.start_btn.pack(side=tk.LEFT, padx=4)
 
     def _on_close(self):
+        # Сохранить размер/позицию окна
+        try:
+            cfg = load_config()
+            cfg['window_geometry'] = self.root.geometry()
+            save_config(cfg)
+        except Exception:
+            pass
         # Остановить обучение и закрыть игру
         self.stop_training()
         # Убить игру
@@ -1696,51 +2090,133 @@ class App:
         return left + ['main'] + right
 
 if __name__ == '__main__':
-        # AppUserModelID для корректной иконки/кнопки в панели задач
+    # Режим запуска модуля (замороженное exe)
+    mod = os.environ.get('KC_RUN_MODULE')
+    if mod in ('evo', 'bot3'):
+        if mod == 'evo':
+            import shlex
+            args_str = os.environ.get('KC_EVO_ARGS', '')
+            sys.argv = ['evo.py'] + (shlex.split(args_str) if args_str else [])
+            import evo
+            evo.main()
+        else:
+            sys.argv = ['bot3.py'] + sys.argv[1:]
+            import bot3
+            bot3.main()
+        sys.exit(0)
+    root = tk.Tk()
+    root.title('KC Bot')
+    # DPI-awareness
+    try:
+        dpi = root.winfo_fpixels('1i')
+        root.tk.call('tk', 'scaling', dpi / 72.0)
+    except Exception:
+        pass
+    # Иконка
+    icon_path = os.path.join(HERE, 'assets', 'kc_bot.ico')
+    if os.path.exists(icon_path):
         try:
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('KCbot.Launcher')
-        except Exception:
-            pass
-        # Убрать консольное окно (если запуск через консольный python),
-        # чтобы в панели задач отображалось только GUI-окно
-        pass  # Console hiding disabled for debugging
-        # DPI-awareness (Per-Monitor V2) — до создания Tk
-        try:
-            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+            root.iconbitmap(icon_path)
         except Exception:
             try:
-                ctypes.windll.user32.SetProcessDPIAware()
+                from PIL import Image, ImageTk
+                img = Image.open(icon_path)
+                photo = ImageTk.PhotoImage(img)
+                root.iconphoto(True, photo)
+                root._icon_photo = photo
             except Exception:
                 pass
-        root = tk.Tk()
-        root.title('KC Bot')
+
+    # Восстановить размер/позицию окна
+    saved_geo = load_config().get('window_geometry', None) if 'load_config' in globals() else None
+    if saved_geo:
+        root.geometry(saved_geo)
+    else:
+        screen_w = root.winfo_screenwidth()
+        screen_h = root.winfo_screenheight()
+        win_w, win_h = 1000, 700
+        x = (screen_w - win_w) // 2
+        y = (screen_h - win_h) // 2
+        root.geometry('%dx%d+%d+%d' % (win_w, win_h, x, y))
+    root.minsize(800, 500)
+
+    # Кастомный заголовок (overrideredirect)
+    root.overrideredirect(True)
+
+    # Показать в панели задач
+    try:
+        GA_ROOT = 2
+        hwnd = ctypes.windll.user32.GetAncestor(root.winfo_id(), GA_ROOT)
+        if not hwnd:
+            hwnd = root.winfo_id()
+        GWL_EXSTYLE = -20
+        WS_EX_APPWINDOW = 0x00040000
+        WS_EX_TOOLWINDOW = 0x00000080
         try:
-            dpi = root.winfo_fpixels('1i')
-            root.tk.call('tk', 'scaling', dpi / 72.0)
-        except Exception:
-            pass
-        # Иконка
-        icon_path = os.path.join(HERE, 'assets', 'kc_bot.ico')
-        if os.path.exists(icon_path):
-            try:
-                root.iconbitmap(icon_path)
-            except Exception:
-                try:
-                    from PIL import Image, ImageTk
-                    img = Image.open(icon_path)
-                    photo = ImageTk.PhotoImage(img)
-                    root.iconphoto(True, photo)
-                    root._icon_photo = photo
-                except Exception:
-                    pass
+            get_long = ctypes.windll.user32.GetWindowLongPtrW
+            set_long = ctypes.windll.user32.SetWindowLongPtrW
+        except AttributeError:
+            get_long = ctypes.windll.user32.GetWindowLongW
+            set_long = ctypes.windll.user32.SetWindowLongW
+        style = get_long(hwnd, GWL_EXSTYLE)
+        style = (style & ~WS_EX_TOOLWINDOW) | WS_EX_APPWINDOW
+        set_long(hwnd, GWL_EXSTYLE, style)
+        SWP_FRAMECHANGED = 0x0020
+        ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, SWP_FRAMECHANGED | 0x0001 | 0x0002 | 0x0004)
+    except Exception as e:
+        print('taskbar error:', e)
 
-        root.geometry('1000x700')
-        root.minsize(800, 500)
+    # Установить иконку в панели задач через WM_SETICON
+    try:
+        hwnd = ctypes.windll.user32.GetAncestor(root.winfo_id(), 2)
+        if not hwnd:
+            hwnd = root.winfo_id()
+        LR_LOADFROMFILE = 0x00000010
+        IMAGE_ICON = 1
+        hicon = ctypes.windll.user32.LoadImageW(None, icon_path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE)
+        if hicon:
+            WM_SETICON = 0x0080
+            ICON_SMALL = 0
+            ICON_BIG = 1
+            ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, ICON_SMALL, hicon)
+            ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG, hicon)
+    except Exception as e:
+        print('icon error:', e)
 
-        # root.overrideredirect(True)  # отключено - окно не показывалось
+    root.configure(bg='#1e1e1e')
 
-        app = App(root)
-        root.deiconify()
-        root.update()
-        root.lift()
-        root.mainloop()
+    app = App(root)
+    root.deiconify()
+    root.update()
+    root.lift()
+
+    # Установить иконку в панели задач ПОСЛЕ показа окна (иначе не подхватывается)
+    def _apply_icon_now():
+        try:
+            hwnd = ctypes.windll.user32.GetAncestor(root.winfo_id(), 2)
+            if not hwnd:
+                hwnd = root.winfo_id()
+            icon_path = os.path.join(HERE, 'assets', 'kc_bot.ico')
+            LR_LOADFROMFILE = 0x00000010
+            IMAGE_ICON = 1
+            hicon = ctypes.windll.user32.LoadImageW(None, icon_path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE)
+            if hicon:
+                WM_SETICON = 0x0080
+                ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, 0, hicon)
+                ctypes.windll.user32.SendMessageW(hwnd, WM_SETICON, 1, hicon)
+            apply_taskbar_style(root)
+        except Exception as e:
+            print('icon apply error:', e)
+
+    root.after(50, _apply_icon_now)
+    root.after(300, _apply_icon_now)
+
+    root.mainloop()
+
+    # Сохранить геометрию при выходе
+    try:
+        cfg = load_config()
+        cfg['window_geometry'] = root.geometry()
+        save_config(cfg)
+    except Exception:
+        pass
