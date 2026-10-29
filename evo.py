@@ -638,8 +638,8 @@ def main():
                    m['buildings'], m['citizens'], m['crown_lost']), flush=True)
 
         # ранжирование: оценка элиты = среднее по последним эпизодам (сглаживание шума)
-        for r in results:
-            r['rank_score'] = r['score']
+        for idx, r in enumerate(results, 1):
+            r['rank_score'] = r['score'] = r['score']
         elite_res = results[0]
         if elite_res['score'] > -1e8:
             elite_hist.append(elite_res['score'])
@@ -654,7 +654,7 @@ def main():
         prev_ranked = ranked
         best = elite
         save_genome(BEST_GENOME, best)
-        for r in results:
+        for idx, r in enumerate(results, 1):
             history.append({'score': r['score'], 'coins_in': r['coins_in'],
                             'coins_spent': r['coins_spent'], 'buys': r['buys'],
                             'buildings': r['buildings'],
@@ -666,6 +666,7 @@ def main():
                             'recruited_beggars': r.get('recruited_beggars', 0),
                             'seconds': r['seconds'],
                             'round': rnd, 'episode': episode_len,
+                            'bot': idx, 'run': log_session,
                             'genome': r['genome']})
         with open(HISTORY, 'w', encoding='utf-8') as f:
             json.dump(history, f, ensure_ascii=False, indent=2)
