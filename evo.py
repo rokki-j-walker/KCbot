@@ -18,6 +18,7 @@
 import argparse
 import ctypes
 import ctypes.wintypes as wt
+import gamepath
 import json
 import os
 import random
@@ -30,7 +31,8 @@ if getattr(sys, 'frozen', False):
     HERE = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
 else:
     HERE = os.path.dirname(os.path.abspath(__file__))
-GAME_DIR = r'C:\Program Files (x86)\Steam\steamapps\common\Kingdom'
+# Папка игры задаётся лаунчером через --game-dir (сохраняется в настройках приложения).
+GAME_DIR = ''
 SAVE = os.path.join(os.environ['USERPROFILE'], 'AppData', 'LocalLow',
                     'noio', 'Kingdom', 'storage_v26_AUTO.dat')
 SAVES_DIR = os.path.join(HERE, 'saves')
@@ -152,6 +154,8 @@ def tap(sc, hold=0.08):
 
 def restart_game():
     """Убить игру, восстановить baseline, запустить игру, дождаться playing=True."""
+    if not GAME_DIR:
+        raise RuntimeError('не указана папка игры (--game-dir)')
     subprocess.run(['taskkill', '/F', '/IM', 'Kingdom.exe'],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(2)
@@ -364,6 +368,8 @@ def run_episode(genome, episode, restart, generation=1, speed=4.0, log_file=None
     cmd = [PYTHON, BOT, '--genome', gpath, '--episode', str(episode),
            '--result', rpath, '--live-result', lpath, '--own-focus',
            '--generation', str(generation), '--speed', str(speed)]
+    if GAME_DIR:
+        cmd += ['--game-dir', GAME_DIR]
     if log_file:
         cmd += ['--log-file', log_file]
     if getattr(sys, 'frozen', False):
@@ -470,24 +476,27 @@ def main():
                     help='сбросить всё обучение: удалить геном, историю, baseline, логи')
     ap.add_argument('--human-genomes', type=str, default=None,
                     help='пути к геномам человека через запятую (human_genome_1.json,...)')
+    ap.add_argument('--game-dir', type=str, default=None,
+                    help='папка с установленной игрой Kingdom: Classic')
     args = ap.parse_args()
 
-    # загрузка геномов человека (автоматически из human_genome_*.json)
+    global GAME_DIR
+    GAME_DIR = (args.game_dir or '').strip().strip('"') \
+        or (os.environ.get('KCBOT_GAME_DIR') or '').strip() \
+        or gamepath.game_dir()
+
+    # Загрузка геномов ручного обучения (только если лаунчер их передал).
     human_genomes = []
     if args.human_genomes:
         for path in args.human_genomes.split(","):
             path = path.strip()
+            if not path:
+                continue
             if not os.path.isabs(path):
                 path = os.path.join(HERE, path)
             if os.path.exists(path):
                 human_genomes.append(load_genome(path))
                 print("  загружен human геном:", path)
-    else:
-        # автоматически ищем human_genome_*.json
-        import glob
-        for path in sorted(glob.glob(os.path.join(HERE, 'data', 'human_genome_*.json'))):
-            human_genomes.append(load_genome(path))
-            print("  загружен human геном:", os.path.basename(path))
     if human_genomes:
         print("  human геномов: %d" % len(human_genomes))
 
@@ -505,6 +514,14 @@ def main():
                 print('  удалён:', f)
             except FileNotFoundError:
                 print('  не найден:', f)
+        # записи и геномы ручного обучения
+        import glob as _glob
+        for f in sorted(_glob.glob(os.path.join(HERE, 'data', 'human_*.json'))):
+            try:
+                os.remove(f)
+                print('  удалён:', f)
+            except OSError:
+                pass
         # очистка папки логов
         logs_dir = os.path.join(HERE, 'logs')
         if os.path.exists(logs_dir):

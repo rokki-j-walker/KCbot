@@ -16,7 +16,10 @@ import subprocess
 import sys
 import time
 
-GAME_EXE = r'C:\Program Files (x86)\Steam\steamapps\common\Kingdom\Kingdom.exe'
+import gamepath
+
+GAME_DIR = gamepath.require_game_dir()
+GAME_EXE = os.path.join(GAME_DIR, 'Kingdom.exe')
 SAVE = os.path.join(os.environ['LOCALAPPDATA'], r'Low\noio\Kingdom\storage_v26_AUTO.dat')
 
 user32 = ctypes.windll.user32

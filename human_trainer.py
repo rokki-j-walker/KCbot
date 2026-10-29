@@ -24,8 +24,10 @@ import subprocess
 import sys
 import time
 
+import gamepath
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-GAME_DIR = r'C:\Program Files (x86)\Steam\steamapps\common\Kingdom'
+GAME_DIR = gamepath.require_game_dir()
 GAME_EXE = os.path.join(GAME_DIR, 'Kingdom.exe')
 SAVE = os.path.join(os.environ['USERPROFILE'], 'AppData', 'LocalLow',
                     'noio', 'Kingdom', 'storage_v26_AUTO.dat')
@@ -139,6 +141,13 @@ def main():
 
     print()
     print('=== Конвертация записей в геномы ===')
+    # старые геномы удаляем, чтобы в эволюцию не попали записи прошлых запусков
+    import glob as _glob
+    for old in _glob.glob(os.path.join(HERE, 'data', 'human_genome_*.json')):
+        try:
+            os.remove(old)
+        except OSError:
+            pass
     for s in range(1, sessions + 1):
         inp = os.path.join(HERE, 'data', 'human_%d.json' % s)
         out = os.path.join(HERE, 'data', 'human_genome_%d.json' % s)

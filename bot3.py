@@ -18,6 +18,7 @@
 """
 import ctypes
 import ctypes.wintypes as wt
+import gamepath
 import json
 import os
 import random
@@ -25,9 +26,19 @@ import re
 import sys
 import time
 
-GAME_DIR = r'C:\Program Files (x86)\Steam\steamapps\common\Kingdom'
-KCDBG = os.path.join(GAME_DIR, 'Kingdom_Data', 'kcdbg.txt')
-SPEED_FILE = os.path.join(GAME_DIR, 'Kingdom_Data', 'speed.txt')
+def _argv_value(name):
+    """Значение аргумента командной строки вида `--name value`."""
+    try:
+        i = sys.argv.index(name)
+        return sys.argv[i + 1]
+    except (ValueError, IndexError):
+        return None
+
+
+# Папка игры задаётся лаунчером через --game-dir (сохраняется в настройках приложения).
+GAME_DIR = _argv_value('--game-dir') or os.environ.get('KCBOT_GAME_DIR', '') or gamepath.game_dir()
+KCDBG = os.path.join(GAME_DIR, 'Kingdom_Data', 'kcdbg.txt') if GAME_DIR else ''
+SPEED_FILE = os.path.join(GAME_DIR, 'Kingdom_Data', 'speed.txt') if GAME_DIR else ''
 HERE = os.path.dirname(os.path.abspath(__file__))
 LOGFILE = os.path.join(HERE, 'bot_log.txt')
 
@@ -1838,6 +1849,9 @@ def main():
     for i, a in enumerate(sys.argv):
         if a == '--live-result' and i + 1 < len(sys.argv):
             live_result_path = sys.argv[i + 1]
+    if not GAME_DIR and not dry:
+        print('!! папка игры не задана (--game-dir), запустите через лаунчер KC Bot')
+        return
     if genome:
         load_genome(genome)
     inp = Input()

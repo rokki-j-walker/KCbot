@@ -14,8 +14,10 @@ import os
 import sys
 import time
 
+import gamepath
+
 HERE = os.path.dirname(os.path.abspath(__file__))
-GAME_DIR = r'C:\Program Files (x86)\Steam\steamapps\common\Kingdom'
+GAME_DIR = gamepath.require_game_dir()
 KCDBG = os.path.join(GAME_DIR, 'Kingdom_Data', 'kcdbg.txt')
 
 # добавляем путь к bot3 для парсера
