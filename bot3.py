@@ -506,7 +506,7 @@ CFG = dict(
     target_farmers=6,
     target_knights=2,
     danger_dist=11.0,       # враг ближе - убегаем
-    flee_dist=22.0,
+    flee_dist=28.0,
     keep_coins=1,           # 1 = оставлять 1 монету в запасе
     low_gold_threshold=5,   # если монет меньше этого - фармить деревья
     tax_min_coins=2,        # у кого брать налог (монет > этого)
@@ -515,10 +515,10 @@ CFG = dict(
     pay_giveup=3.0,         # сколько секунд искать точку оплаты, потом забить
     pay_black_time=90.0,    # на сколько забыть неоплачиваемый объект
     coin_timeout=5.0,       # сколько ждать монету, которую не подобрали
-    coin_black_time=40.0,
+    coin_black_time=15.0,
     tree_prio=90,           # деревья - самый дешёвый доход
-    sprint_min_dist=8.0,
-    sprint_min_stamina=0.30,
+    sprint_min_dist=4.0,
+    sprint_min_stamina=0.15,
     idle_x=None,            # None = у костра
     # веса покупок (меньше = важнее) - по умолчанию из DEFAULT_GENOME
     w_mason=12, w_castle=14, w_workshop=16, w_wall3=18,
@@ -539,12 +539,12 @@ DEFAULT_GENOME = {
     'low_gold_threshold': 5,
     'tax_min_coins': 2,
     'danger_dist': 11.0,
-    'flee_dist': 22.0,
+    'flee_dist': 28.0,
     'pay_tol': 0.6,
     'pay_giveup': 7.0,
     'coin_timeout': 5.0,
-    'sprint_min_dist': 8.0,
-    'sprint_min_stamina': 0.30,
+    'sprint_min_dist': 4.0,
+    'sprint_min_stamina': 0.15,
     'tree_prio': 90,
     # сколько хотим граждан
     'target_archers': 6,
@@ -765,6 +765,7 @@ class Bot(object):
         self.pay_purse0 = 0
         self.pay_wait_sel = 0.0
         self.pay_since = 0.0          # когда начали искать точку оплаты
+        self._pay_settle = 0.0        # когда полностью остановились у точки оплаты
         self.scan_x = None            # текущая точка оплаты
         self.scan_i = 0
         self.scan_t = 0.0
@@ -1498,6 +1499,11 @@ class Bot(object):
                 self.note('task', 'IDLE -> campfire')
                 self.walk_to(st, 0.0, sprint=False, tol=2.0)
                 return
+            # нет задач - возвращаемся к базе (там спавн бомжей и налоги)
+            if abs(st.px) > 5.0:
+                self.note('task', 'IDLE -> base')
+                self.walk_to(st, 0.0, sprint=False, tol=3.0)
+                return
             # текущий счёт (для отображения в консоли)
             _m = self.metrics()
             _score = _m.get('score', 0)
@@ -1621,13 +1627,20 @@ class Bot(object):
         dx = target - st.px
         if abs(dx) > CFG['pay_tol']:
             self.release_s()
+            self._pay_settle = 0.0
             self.note('task', 'PAY %s(%d) -> %.2f (px=%.2f)' %
                       (p.base, p.price, target, st.px))
             self.walk_to(st, target, sprint=False, tol=CFG['pay_tol'])
             return
 
-        # --- стоим на месте
+        # --- полностью остановиться: кружки оплаты появляются только в покое
         self.stop_move()
+        if self._pay_settle == 0.0:
+            self._pay_settle = now
+            self.note('task', 'PAY stop, ждём кружки %s' % p.base)
+        if now - self._pay_settle < 0.5 / self.speed:
+            return
+
         if st.sel is not None and self.same_payable(st.sel, p):
             if st.purse <= 0:
                 return
@@ -1647,6 +1660,7 @@ class Bot(object):
             self.scan_t = 0.0
             self.scan_i = (self.scan_i + 1) % len(SCAN)
             self.scan_x = p.x + SCAN[self.scan_i]
+            self._pay_settle = 0.0
             self.note('pay_scan', '%s @%.1f -> %.2f sel=%s' %
                       (p.base, p.x, self.scan_x, st.sel))
         if now - self.pay_since > self.pay_giveup:
@@ -1670,7 +1684,7 @@ class Bot(object):
         # если монеты не списались — объект недоступен (условия не выполнены): бан на 60 с
         if spent <= 0:
             key = '%s@%.0f' % (p.base, p.x)
-            self.pay_black[key] = self.now() + 60.0
+            self.pay_black[key] = self.now() + 20.0
             self.note('pay_disabled', '%s @%.1f (spent=%d)' % (p.base, p.x, spent))
         self.note('pay_done', '%s цена=%d потрачено=%d' % (p.base, p.price, spent))
         # успешная покупка: сбрасываем таймер бездействия
@@ -1712,6 +1726,7 @@ class Bot(object):
         self.scan_i = 0
         self.scan_t = 0.0
         self.pay_since = 0.0
+        self._pay_settle = 0.0
         self.last_recruit_drop = 0.0
         # взаимодействие
         if hasattr(self, 'fit') and self.fit.get('last_interaction') is not None:
