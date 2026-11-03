@@ -1419,7 +1419,7 @@ class Bot(object):
         # сортируем по расстоянию до базы
         beggars_sorted = sorted(beggars, key=lambda b: abs(b[0]))
         # ближайший к базе бомж
-        base_near = [b for b in beggars if abs(b[0] - st.px) < 12]
+        base_near = [b for b in beggars if abs(b[0] - st.px) < 3]  # монета падает у короля - бомж должен быть рядом
         if not base_near:
             # идём к бомжу, ближайшему к базе
             target = beggars_sorted[0]
@@ -1429,7 +1429,7 @@ class Bot(object):
         # бомж рядом - бросаем монету к ближайшему к базе (только если sel is None)
         if st.sel is not None:
             return None   # не можем бросить - сначала уйти от Payable
-        if self.now() - getattr(self, 'last_recruit_drop', 0) < 3.0 / self.speed:
+        if self.now() - getattr(self, 'last_recruit_drop', 0) < 5.0 / self.speed:
             return None   # кулдаун
         nearest = min(base_near, key=lambda b: abs(b[0]))  # ближайший к базе
         return ('recruit_drop', nearest[0])
