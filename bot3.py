@@ -1337,6 +1337,12 @@ class Bot(object):
         if self.pay_target is not None:
             return ('pay', self.pay_target)
 
+        # много монет на земле - собираем, чтобы не копить штраф unpicked_coins
+        if len(st.ground_coins) >= 5:
+            t = self.coin_task(st)
+            if t:
+                return t
+
         # 3. наём бомжей (высокий приоритет - нужны граждане)
         t = self.recruit_task(st)
         if t:
@@ -1863,6 +1869,12 @@ class Bot(object):
                         self.note('skip_tutorial', 'начал')
                         if not self.dry:
                             self.inp.down(SC_S)
+            # скип обучения: удерживаем S 3 секунды
+            if not self.dry and st.day == 0 and self.now() - getattr(self, '_intro_skip_time', 0.0) > 4.0:
+                self._intro_skip_time = self.now()
+                self.inp.force_focus()
+                self.inp.down(SC_S); time.sleep(3.0); self.inp.up(SC_S)
+                self.note('intro_skip', 'удержание S для скипа обучения')
             self.note('not_playing', st.next)
             return
 

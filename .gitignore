@@ -17,3 +17,6 @@ logs/
 # Temp
 *.log
  KCbot.spec
+
+# game analysis (decompiled copy, do not commit)
+_game_analysis/
