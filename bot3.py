@@ -1134,9 +1134,11 @@ class Bot(object):
         if dx < 0:
             self.inp.up(SC_D)
             self.inp.down(SC_A)
+            self._last_move_dir = -1
         else:
             self.inp.up(SC_A)
             self.inp.down(SC_D)
+            self._last_move_dir = 1
         self.set_sprint(sprint, st)
 
     def walk_to(self, st, x, sprint=False, tol=0.5):
@@ -1581,10 +1583,9 @@ class Bot(object):
             self._recruit_drop_x = st.px
             # не подбираем свою же монету
             self.coin_black[st.px] = self.now() + 4.0
-            # отходим от бомжа, чтобы он поднял монету
-            bx = payload
-            away = 3.0 if st.px >= bx else -3.0
-            self._retreat_x = st.px + away
+            # монета падает назад от короля -> уходим ВПЕРЁД (по направлению движения)
+            forward = 1.0 if getattr(self, '_last_move_dir', 1) >= 0 else -1.0
+            self._retreat_x = st.px + forward * 4.0
             self._retreat_until = self.now() + 1.2
             return
 
