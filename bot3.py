@@ -787,6 +787,14 @@ class Bot(object):
         self.pay_wait_sel = 0.0
         self.pay_since = 0.0          # когда начали искать точку оплаты
         self._pay_settle = 0.0        # когда полностью остановились у точки оплаты
+        self._pay_last_px = None      # для проверки реальной остановки
+        self._pay_still_since = 0.0
+        self._recruit_check_time = 0.0
+        self._recruit_check_p_count = 0
+        self._recruit_check_purse = 0
+        self._recruit_drop_x = None
+        self._retreat_until = 0.0
+        self._retreat_x = 0.0
         self.scan_x = None            # текущая точка оплаты
         self.scan_i = 0
         self.scan_t = 0.0
@@ -1505,6 +1513,12 @@ class Bot(object):
 
     # =========================================================== исполнение
     def execute(self, st):
+        # после броска монеты отходим, чтобы бомж успел её подобрать
+        if self.now() < self._retreat_until:
+            self.note('task', 'RECRUIT retreat -> %.1f' % self._retreat_x)
+            self.release_s()
+            self.walk_to(st, self._retreat_x, sprint=False, tol=1.0)
+            return
         kind, payload = self.task
 
         if kind == 'idle':
@@ -1554,10 +1568,18 @@ class Bot(object):
             self.last_recruit_drop = self.now()
             self._recruit_drop_until = self.now() + 2.0
             self.stat['last_recruit'] = self.now()
-            # проверим через 2 сек, появился ли новый Peasant
+            # запоминаем состояние до найма и проверяем, появился ли Peasant
             self._recruit_check_time = self.now() + self.recruit_check
             self._recruit_check_purse = st.purse
             self._recruit_check_p_count = len(st.cit('P'))
+            self._recruit_drop_x = st.px
+            # не подбираем свою же монету
+            self.coin_black[st.px] = self.now() + 4.0
+            # отходим от бомжа, чтобы он поднял монету
+            bx = payload
+            away = 3.0 if st.px >= bx else -3.0
+            self._retreat_x = st.px + away
+            self._retreat_until = self.now() + 1.2
             return
 
         if kind == 'crown':
@@ -1659,10 +1681,19 @@ class Bot(object):
 
         # --- полностью остановиться: кружки оплаты появляются только в покое
         self.stop_move()
-        if self._pay_settle == 0.0:
-            self._pay_settle = now
+        if self._pay_last_px is None or abs(st.px - self._pay_last_px) >= 0.05:
+            # король ещё движется (инерция) - ждём
+            self._pay_last_px = st.px
+            self._pay_still_since = now
+            self._pay_settle = 0.0
+            return
+        if self._pay_still_since == 0.0:
+            self._pay_still_since = now
+        if now - self._pay_still_since < 0.5 / self.speed:
             self.note('task', 'PAY stop, ждём кружки %s' % p.base)
-        if now - self._pay_settle < 0.5 / self.speed:
+            return
+        # стоим неподвижно 0.5с - даём игре показать кружки
+        if self.pay_since > 0 and now - self.pay_since < 1.2 / self.speed:
             return
 
         if st.sel is not None and self.same_payable(st.sel, p):
@@ -1751,6 +1782,14 @@ class Bot(object):
         self.scan_t = 0.0
         self.pay_since = 0.0
         self._pay_settle = 0.0
+        self._pay_last_px = None
+        self._pay_still_since = 0.0
+        self._recruit_check_time = 0.0
+        self._recruit_check_p_count = 0
+        self._recruit_check_purse = 0
+        self._recruit_drop_x = None
+        self._retreat_until = 0.0
+        self._retreat_x = 0.0
         self.last_recruit_drop = 0.0
         # взаимодействие
         if hasattr(self, 'fit') and self.fit.get('last_interaction') is not None:
