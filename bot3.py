@@ -483,8 +483,29 @@ def parse_line(line):
     return st
 
 
+KCDBG_MAX = 256 * 1024 * 1024   # 256 МБ
+_last_cleanup = 0.0
+
+
+def _cleanup_kcdbg(path):
+    """Периодически чистим разросшийся kcdbg.txt (игра пишет в него бесконечно)."""
+    global _last_cleanup
+    now = time.time()
+    if now - _last_cleanup < 5.0:
+        return
+    _last_cleanup = now
+    try:
+        if os.path.getsize(path) > KCDBG_MAX:
+            with open(path, 'wb'):
+                pass
+            print('kcdbg.txt превысил лимит - очищен')
+    except OSError:
+        pass
+
+
 def read_state(path=KCDBG):
     """Последняя строка KC| из лога."""
+    _cleanup_kcdbg(path)
     try:
         size = os.path.getsize(path)
         with open(path, 'rb') as f:
@@ -1367,9 +1388,22 @@ class Bot(object):
         return ('idle', None)
 
     def coin_task(self, st):
-        """Монета на земле. Если её не удаётся подобрать (забрал нищий) - забиваем."""
+        """Монета на земле. Держимся одной цели, пока она не исчезнет."""
         now = self.now()
-        # собрать кандидатов (до 3 ближайших) для рандома
+        # если цель ещё на земле - не переключаемся (иначе король дёргается между монетами)
+        if self.coin_target is not None:
+            still = any(abs(self.coin_target - c) < 0.6 for c in st.ground_coins)
+            if still and self.coin_black.get(self.coin_target, 0) <= now:
+                if now - self.coin_since > self.coin_timeout and st.purse <= self.coin_purse:
+                    self.coin_black[self.coin_target] = now + CFG['coin_black_time']
+                    self.note('coin_skip', '%.1f' % self.coin_target)
+                    if hasattr(self, 'fit'):
+                        self.fit['failed_coin'] = self.fit.get('failed_coin', 0) + 1
+                    self.coin_target = None
+                else:
+                    return ('coin', self.coin_target)
+            else:
+                self.coin_target = None
         candidates = []
         for c in st.ground_coins:
             if self.coin_black.get(c, 0) > now:
@@ -1382,21 +1416,11 @@ class Bot(object):
         if not candidates:
             self.coin_target = None
             return None
-        # рандом среди 3 ближайших
-        pick_idx = random.randrange(min(3, len(candidates)))
-        c = candidates[pick_idx][1]
-        if self.coin_target is None or abs(c - self.coin_target) > 1.5:
-            self.coin_target = c
-            self.coin_since = now
-            self.coin_purse = st.purse
-        elif now - self.coin_since > self.coin_timeout and st.purse <= self.coin_purse:
-            # монету не подобрали - скорее всего забрал нищий
-            self.coin_black[c] = now + CFG['coin_black_time']
-            self.coin_target = None
-            self.note('coin_skip', '%.1f' % c)
-            if hasattr(self, 'fit'):
-                self.fit['failed_coin'] = self.fit.get('failed_coin', 0) + 1
-            return None
+        # берём ближайшую монету и фиксируем её
+        c = candidates[0][1]
+        self.coin_target = c
+        self.coin_since = now
+        self.coin_purse = st.purse
         return ('coin', c)
 
     def recruit_task(self, st):
