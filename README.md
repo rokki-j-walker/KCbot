@@ -72,3 +72,6 @@ py evo.py --resetAll --game-dir "C:\...\Kingdom"
 ## Релизы
 
 Готовые сборки лаунчера (инсталлер и портабл) доступны на странице [Releases](https://github.com/rokki-j-walker/KCbot/releases).
+## Документация
+
+Подробная база знаний: C:\Users\joker\CodeProjects\aAI\_obsidian\KCbot (проект) и ...\KCbot-game (игра). Открываются как vault в Obsidian.
