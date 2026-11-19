@@ -291,13 +291,19 @@ def save_config(cfg):
 
 
 def build_command(cfg):
-    cmd = 'py evo.py --pop %d --rounds %d --episode %s --episode-increment %s --speed %s --top-percent %s' % (
-        cfg['pop'], cfg['rounds'], cfg['episode'], cfg['episode_increment'],
-        cfg['speed'], cfg['top_percent'])
-    if cfg.get('restart', True):
-        cmd += ' --restart'
-    else:
-        cmd += ' --no-restart'
+    """Список аргументов запуска evo.py.
+
+    Список, а не строка: subprocess.Popen работает без shell, поэтому не
+    тянет cmd.exe и не интерпретирует кавычки/спецсимволы (аудит №14).
+    """
+    cmd = ['py', 'evo.py',
+           '--pop', str(cfg['pop']),
+           '--rounds', str(cfg['rounds']),
+           '--episode', str(cfg['episode']),
+           '--episode-increment', str(cfg['episode_increment']),
+           '--speed', str(cfg['speed']),
+           '--top-percent', str(cfg['top_percent'])]
+    cmd.append('--restart' if cfg.get('restart', True) else '--no-restart')
     return cmd
 
 
@@ -1838,9 +1844,9 @@ class App:
         env = os.environ.copy()
         env['PYTHONUTF8'] = '1'
         if getattr(sys, 'frozen', False):
-            args_part = cmd
-            if args_part.startswith('py evo.py '):
-                args_part = args_part[len('py evo.py '):]
+            # 'py evo.py ...' -> '...' для KC_EVO_ARGS (его читает shlex)
+            args_part = ' '.join(cmd[2:]) if cmd[:2] == ['py', 'evo.py'] \
+                else ' '.join(cmd)
             env['KC_EVO_ARGS'] = args_part
             env['KC_RUN_MODULE'] = 'evo'
             self.process = subprocess.Popen([sys.executable], shell=False, cwd=HERE,
@@ -1848,7 +1854,7 @@ class App:
                                            text=True, bufsize=1, env=env,
                                            encoding='utf-8', errors='replace')
         else:
-            self.process = subprocess.Popen(cmd, shell=True, cwd=HERE,
+            self.process = subprocess.Popen(cmd, shell=False, cwd=HERE,
                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                            text=True, bufsize=1, env=env,
                                            encoding='utf-8', errors='replace')

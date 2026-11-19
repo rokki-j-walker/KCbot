@@ -22,10 +22,10 @@
 coin_collect = 5.0
 
 # Сбор налога (tax_collect)
-tax_collect = 3.0
+# [НЕ читается кодом] tax_collect = 3.0
 
 # Доход от срубленного дерева (tree_yield)
-tree_yield = 2.0
+# [НЕ читается кодом] tree_yield = 2.0
 
 
 # =============================================================================
@@ -124,31 +124,31 @@ defense_day_bonus = 0.05
 #  вхождения не применялась. Оставлено одно определение выше.)
 
 # Покупка стены (buy_wall)
-buy_wall = 15.0
+# [НЕ читается кодом] buy_wall = 15.0
 
 # Покупка башни (buy_tower)
-buy_tower = 15.0
+# [НЕ читается кодом] buy_tower = 15.0
 
 # Покупка фермы (buy_farmhouse)
-buy_farmhouse = 20.0
+# [НЕ читается кодом] buy_farmhouse = 20.0
 
 # Покупка статуи (buy_statue)
-buy_statue = 10.0
+# [НЕ читается кодом] buy_statue = 10.0
 
 # Покупка границы/рыцаря (buy_border)
-buy_border = 25.0
+# [НЕ читается кодом] buy_border = 25.0
 
 # Покупка торговца (buy_merchant)
-buy_merchant = 10.0
+# [НЕ читается кодом] buy_merchant = 10.0
 
 # Покупка коня (buy_steed)
-buy_steed = 10.0
+# [НЕ читается кодом] buy_steed = 10.0
 
 # Покупка каменщика (buy_mason)
-buy_mason = 15.0
+# [НЕ читается кодом] buy_mason = 15.0
 
 # Покупка мастерской (buy_workshop)
-buy_workshop = 15.0
+# [НЕ читается кодом] buy_workshop = 15.0
 
 # Отметка дерева для рубки (tree_mark)
 # Бот оплатил дерево (стоит 1 монету).
@@ -177,7 +177,7 @@ coin_lost_enemy = -10.0
 
 # Потеря монеты (coin_lost_overflow)
 # Кошелёк переполнен или монета выпала по другой причине.
-coin_lost_overflow = -5.0
+# [НЕ читается кодом] coin_lost_overflow = -5.0
 
 # Не подобранные монеты (unpicked_coin)
 # Базовый коэффициент для не подобранных монет.
@@ -212,7 +212,7 @@ failure_penalty_ratio = 0.5
 recruit_beggar = 20.0
 
 # Найм рыцаря (recruit_knight)
-recruit_knight = 30.0
+# [НЕ читается кодом] recruit_knight = 30.0
 
 # Сбор налога (tax_collect) - определён выше, в секции "Сбор налога"
 # (дубль удалён: парсер берёт последнее вхождение)
@@ -227,23 +227,23 @@ recruit_knight = 30.0
 
 # Апгрейд стен (wall_upgrade)
 # Улучшение существующих стен (wall1 -> wall2 -> wall3).
-wall_upgrade = 20.0
+# [НЕ читается кодом] wall_upgrade = 20.0
 
 # Строительство стен (wall_build)
 # Строительство новых стен (wall0).
-wall_build = 15.0
+# [НЕ читается кодом] wall_build = 15.0
 
 # Апгрейд башен (tower_upgrade)
-tower_upgrade = 18.0
+# [НЕ читается кодом] tower_upgrade = 18.0
 
 # Строительство башен (tower_build)
-tower_build = 15.0
+# [НЕ читается кодом] tower_build = 15.0
 
 # Апгрейд ферм (farm_upgrade)
-farm_upgrade = 12.0
+# [НЕ читается кодом] farm_upgrade = 12.0
 
 # Строительство ферм (farm_build)
-farm_build = 10.0
+# [НЕ читается кодом] farm_build = 10.0
 
 # Начало строительства (building_start)
 # Бот оплатил строительство (стена, башня, ферма, замок).
@@ -256,13 +256,13 @@ building_start = 0.0
 building_complete = 10.0
 
 # Здание (building) - общее
-building = 10.0
+# [НЕ читается кодом] building = 10.0
 
 # Открытие портала (portal_open)
-portal_open = 5.0
+# [НЕ читается кодом] portal_open = 5.0
 
 # Зарядка статуи (statue_charge)
-statue_charge = 10.0
+# [НЕ читается кодом] statue_charge = 10.0
 
 
 # =============================================================================
@@ -273,7 +273,7 @@ statue_charge = 10.0
 survival = 0.05
 
 # Бегство от врага (flee_enemy)
-flee_enemy = 5.0
+# [НЕ читается кодом] flee_enemy = 5.0
 
 # Подбор короны (crown_pickup)
 crown_pickup = 1000.0
@@ -331,13 +331,13 @@ no_interaction = -15.0
 # =============================================================================
 
 # Убийство врага (kill_enemy)
-kill_enemy = 10.0
+# [НЕ читается кодом] kill_enemy = 10.0
 
 # Урон от врага (take_damage)
-take_damage = -5.0
+# [НЕ читается кодом] take_damage = -5.0
 
 # Успешная защита (successful_defense)
-successful_defense = 15.0
+# [НЕ читается кодом] successful_defense = 15.0
 
 
 # =============================================================================
@@ -345,22 +345,22 @@ successful_defense = 15.0
 # =============================================================================
 
 # Подбор предмета (pickup_item)
-pickup_item = 2.0
+# [НЕ читается кодом] pickup_item = 2.0
 
 # Использование способности (use_ability)
-use_ability = 5.0
+# [НЕ читается кодом] use_ability = 5.0
 
 # Завершение дня (day_complete)
-day_complete = 20.0
+# [НЕ читается кодом] day_complete = 20.0
 
 # Завершение ночи (night_complete)
-night_complete = 15.0
+# [НЕ читается кодом] night_complete = 15.0
 
 # Исследование карты (map_explore)
-map_explore = 1.0
+# [НЕ читается кодом] map_explore = 1.0
 
 # Взаимодействие с NPC (npc_interact)
-npc_interact = 5.0
+# [НЕ читается кодом] npc_interact = 5.0
 
 # Фарм деревьев (tree_yield) - определён выше, в секции "Доход"
 # (дубль удалён: парсер берёт последнее вхождение)
