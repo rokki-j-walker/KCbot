@@ -1701,6 +1701,11 @@ class Bot(object):
 
     # =========================================================== исполнение
     def execute(self, st):
+        """Выполнить текущий task: диспетчер по его типу.
+
+        Рефакторинг D27: ветки вынесены в _exec_*. Порядок и поведение
+        прежние; неизвестный task, как и раньше, молча игнорируется.
+        """
         # после броска монеты отходим, чтобы бомж успел её подобрать
         if self.now() < self._retreat_until:
             self.note('task', 'RECRUIT retreat -> %.1f' % self._retreat_x)
@@ -1708,114 +1713,130 @@ class Bot(object):
             self.walk_to(st, self._retreat_x, sprint=False, tol=1.0)
             return
         kind, payload = self.task
-
         if kind == 'idle':
-            self.stop_all()
-            # если есть монеты и нет рабочих - идём к ближайшему бомжу
-            beggars = [x for (t, x, c) in st.citizens if t == 'B']
-            if beggars and st.purse >= 1 and st.wrk < CFG['target_workers']:
-                target = min(beggars, key=lambda x: abs(x - st.px))
-                if abs(target - st.px) < 80:
-                    self.note('task', 'IDLE -> beggar @%.1f' % target)
-                    self.walk_to(st, target, sprint=False, tol=1.0)
-                    return
-            # если есть монеты и нет граждан - идём к костру (там бомжи)
-            if st.purse >= 1 and not st.citizens:
-                # идём к 0 (костёр)
-                self.note('task', 'IDLE -> campfire')
-                self.walk_to(st, 0.0, sprint=False, tol=2.0)
+            self._exec_idle(st)
+        elif kind == 'recruit_walk':
+            self._exec_recruit_walk(st, payload)
+        elif kind == 'recruit_drop':
+            self._exec_recruit_drop(st)
+        elif kind == 'crown':
+            self._exec_crown(st, payload)
+        elif kind == 'flee':
+            self._exec_flee(st, payload)
+        elif kind == 'coin':
+            self._exec_coin(st, payload)
+        elif kind == 'tax':
+            self._exec_tax(st, payload)
+        elif kind == 'pay':
+            self._exec_pay(st, payload)
+
+    def _exec_idle(self, st):
+        """Нет задач: к бомжу / к костру / к базе, иначе статус в консоль."""
+        self.stop_all()
+        # если есть монеты и нет рабочих - идём к ближайшему бомжу
+        beggars = [x for (t, x, c) in st.citizens if t == 'B']
+        if beggars and st.purse >= 1 and st.wrk < CFG['target_workers']:
+            target = min(beggars, key=lambda x: abs(x - st.px))
+            if abs(target - st.px) < 80:
+                self.note('task', 'IDLE -> beggar @%.1f' % target)
+                self.walk_to(st, target, sprint=False, tol=1.0)
                 return
-            # нет задач - возвращаемся к базе (там спавн бомжей и налоги)
-            if abs(st.px) > 5.0:
-                self.note('task', 'IDLE -> base')
-                self.walk_to(st, 0.0, sprint=False, tol=3.0)
-                return
-            # текущий счёт (для отображения в консоли)
-            _m = self.metrics()
-            _score = _m.get('score', 0)
-            self.note('status', 'SCORE=%.1f | d%d t%.1f purse=%d arc=%d wrk=%d frm=%d knt=%d '
-                               'wall=%d portal=%d en=%d' %
-                       (_score, st.day, st.time, st.purse, st.arc, st.wrk, st.frm, st.knt,
-                        st.wall, st.portal, st.enemies))
+        # если есть монеты и нет граждан - идём к костру (там бомжи)
+        if st.purse >= 1 and not st.citizens:
+            # идём к 0 (костёр)
+            self.note('task', 'IDLE -> campfire')
+            self.walk_to(st, 0.0, sprint=False, tol=2.0)
             return
+        # нет задач - возвращаемся к базе (там спавн бомжей и налоги)
+        if abs(st.px) > 5.0:
+            self.note('task', 'IDLE -> base')
+            self.walk_to(st, 0.0, sprint=False, tol=3.0)
+            return
+        # текущий счёт (для отображения в консоли)
+        _m = self.metrics()
+        _score = _m.get('score', 0)
+        self.note('status', 'SCORE=%.1f | d%d t%.1f purse=%d arc=%d wrk=%d frm=%d knt=%d '
+                            'wall=%d portal=%d en=%d' %
+                   (_score, st.day, st.time, st.purse, st.arc, st.wrk, st.frm, st.knt,
+                    st.wall, st.portal, st.enemies))
 
-        if kind == 'recruit_walk':
-            x = payload
-            self.note('task', 'RECRUIT walk -> %.1f' % x)
+    def _exec_recruit_walk(self, st, payload):
+        """Найм: подойти к бомжу перед броском монеты."""
+        x = payload
+        self.note('task', 'RECRUIT walk -> %.1f' % x)
+        self.release_s()
+        self.walk_to(st, x, sprint=False, tol=1.0)
+
+    def _exec_recruit_drop(self, st):
+        """Найм: бросить монету и отойти, чтобы бомж её подобрал."""
+        self.note('task', 'RECRUIT drop coin @%.1f' % st.px)
+        if not self.dry:
+            self.inp.down(SC_S)
+            time.sleep(0.15 / self.speed)
+            self.inp.up(SC_S)
+        self.last_recruit_drop = self.now()
+        self._recruit_drop_until = self.now() + 2.0
+        self.stat['last_recruit'] = self.now()
+        # запоминаем состояние до найма и проверяем, появился ли Peasant
+        self._recruit_check_time = self.now() + self.recruit_check
+        self._recruit_check_p_count = len(st.cit('P'))
+        # не подбираем свою же монету
+        self.coin_black[st.px] = self.now() + 4.0
+        # монета падает назад от короля -> уходим ВПЕРЁД (по направлению движения)
+        forward = 1.0 if getattr(self, '_last_move_dir', 1) >= 0 else -1.0
+        self._retreat_x = st.px + forward * 4.0
+        self._retreat_until = self.now() + 1.2
+
+    def _exec_crown(self, st, payload):
+        """Поднять корону."""
+        self.note('task', 'CROWN @%.1f' % payload)
+        self.release_s()
+        self.walk_to(st, payload, sprint=self.safe_sprint(st), tol=1.0)
+
+    def _exec_flee(self, st, payload):
+        """Убежать от врага (дальше от него, через CFG['flee_dist'])."""
+        name, ex, atk, d = payload
+        away = 1 if st.px >= ex else -1
+        target = st.px + away * CFG['flee_dist']
+        self.note('task', 'FLEE %s@%.1f d=%.0f' % (name, ex, d))
+        self.release_s()
+        self.walk_to(st, target, sprint=True, tol=2.0)
+
+    def _exec_coin(self, st, payload):
+        """Подобрать монету на земле."""
+        self.note('task', 'COIN @%.1f' % payload)
+        self.release_s()
+        self.walk_to(st, payload, sprint=self.safe_sprint(st), tol=0.6)
+
+    def _exec_tax(self, st, payload):
+        """Собрать налог с подданного (ждём CFG['tax_wait'], если он рядом)."""
+        x = payload
+        near = None
+        for (t, cx, c) in st.citizens:
+            if t in ('F', 'A', 'W') and c > CFG['tax_min_coins'] and abs(cx - st.px) < 2.2:
+                near = (t, cx, c)
+                break
+        if near:
+            self.stop_move()
             self.release_s()
-            self.walk_to(st, x, sprint=False, tol=1.0)
-            return
-
-        if kind == 'recruit_drop':
-            # бросить монету (кратковременно нажать S, когда sel is None)
-            self.note('task', 'RECRUIT drop coin @%.1f' % st.px)
-            if not self.dry:
-                self.inp.down(SC_S)
-                time.sleep(0.15 / self.speed)
-                self.inp.up(SC_S)
-            self.last_recruit_drop = self.now()
-            self._recruit_drop_until = self.now() + 2.0
-            self.stat['last_recruit'] = self.now()
-            # запоминаем состояние до найма и проверяем, появился ли Peasant
-            self._recruit_check_time = self.now() + self.recruit_check
-            self._recruit_check_p_count = len(st.cit('P'))
-            # не подбираем свою же монету
-            self.coin_black[st.px] = self.now() + 4.0
-            # монета падает назад от короля -> уходим ВПЕРЁД (по направлению движения)
-            forward = 1.0 if getattr(self, '_last_move_dir', 1) >= 0 else -1.0
-            self._retreat_x = st.px + forward * 4.0
-            self._retreat_until = self.now() + 1.2
-            return
-
-        if kind == 'crown':
-            self.note('task', 'CROWN @%.1f' % payload)
-            self.release_s()
-            self.walk_to(st, payload, sprint=self.safe_sprint(st), tol=1.0)
-            return
-
-        if kind == 'flee':
-            name, ex, atk, d = payload
-            away = 1 if st.px >= ex else -1
-            target = st.px + away * CFG['flee_dist']
-            self.note('task', 'FLEE %s@%.1f d=%.0f' % (name, ex, d))
-            self.release_s()
-            self.walk_to(st, target, sprint=True, tol=2.0)
-            return
-
-        if kind == 'coin':
-            self.note('task', 'COIN @%.1f' % payload)
-            self.release_s()
-            self.walk_to(st, payload, sprint=self.safe_sprint(st), tol=0.6)
-            return
-
-        if kind == 'tax':
-            x = payload
-            near = None
-            for (t, cx, c) in st.citizens:
-                if t in ('F', 'A', 'W') and c > CFG['tax_min_coins'] and abs(cx - st.px) < 2.2:
-                    near = (t, cx, c)
-                    break
-            if near:
-                self.stop_move()
-                self.release_s()
-                if self.tax_until == 0.0:
-                    self.tax_until = self.now() + CFG['tax_wait']
-                if self.now() < self.tax_until:
-                    return
-                self.tax_until = 0.0
+            if self.tax_until == 0.0:
+                self.tax_until = self.now() + CFG['tax_wait']
+            if self.now() < self.tax_until:
                 return
             self.tax_until = 0.0
-            self.note('task', 'TAX -> %.1f' % x)
-            self.release_s()
-            # налог снимается только когда король НЕ бежит
-            self.walk_to(st, x, sprint=False, tol=0.6)
             return
+        self.tax_until = 0.0
+        self.note('task', 'TAX -> %.1f' % x)
+        self.release_s()
+        # налог снимается только когда король НЕ бежит
+        self.walk_to(st, x, sprint=False, tol=0.6)
 
-        if kind == 'pay':
-            p = payload
-            if p is None:
-                return
-            self.do_pay(st, p)
+    def _exec_pay(self, st, payload):
+        """Оплатить Payable (здания/деревья/налоги) - см. do_pay()."""
+        p = payload
+        if p is None:
+            return
+        self.do_pay(st, p)
 
     # -------------------------------------------------------- оплата
     def same_payable(self, a, b):
