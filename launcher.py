@@ -10,6 +10,7 @@ import ctypes
 import gamepath
 import json
 import os
+import patcher
 import queue
 import subprocess
 import sys
@@ -737,6 +738,93 @@ class App:
         # Применить стиль панели задач после отображения окна
         pass  # _apply_taskbar_style отключён (скрывал окно)
 
+        # Проверка патча игры при запуске (после отрисовки окна, чтобы
+        # модальный диалог не встал раньше, чем окно показалось)
+        self._patch_prompted = False
+        self.root.after(400, lambda: self._ensure_patched(
+            t('patch_needed'), check_dir=True))
+
+    # ------------------------------------------------------------ патч игры
+    def _ensure_patched(self, message, check_dir=False):
+        """Проверить патч Assembly-CSharp.dll и предложить пропатчить.
+
+        Возвращает True, если игра пропатчена (или патч применён успешно).
+        Повторно не спрашивает в рамках одной сессии, если пользователь
+        отказался.
+        """
+        if check_dir and not self._refresh_game_dir_status():
+            return False                # папка игры не настроена - не спорим
+        if self._patch_prompted:
+            return False                # уже спрашивали и получили отказ
+
+        from tkinter import messagebox
+        game_dir = (self.game_dir_var.get() or '').strip()
+        try:
+            code, msg = patcher.status(game_dir or None)
+        except Exception as e:
+            messagebox.showwarning(t('patch_title'),
+                                   t('patch_check_fail', err=e))
+            return False
+
+        if code == 'ok':
+            return True
+        if code == 'missing':
+            # папка игры не настроена - об этом уже сообщает статус-строка
+            return False
+
+        # not_patched -> спрашиваем про патч
+        if not messagebox.askyesno(t('patch_title'), message):
+            self._patch_prompted = True
+            return False
+
+        # затем - про бэкап (решение D22)
+        make_backup = messagebox.askyesno(t('patch_title'),
+                                          t('patch_backup_q'))
+        logs = []
+
+        def _log(s):
+            logs.append(s)
+            if self.console_window is not None:
+                self.console_window.append('  %s\n' % s)
+
+        if self.console_window is None or not self.console_window.window.winfo_exists():
+            self.console_window = ConsoleWindow(self.root, self.colors,
+                                                detached=True, content='both')
+        self.console_window.append('\n--- %s ---\n' % t('patch_title'))
+
+        try:
+            if make_backup:
+                patcher.make_backup(game_dir, log=_log)
+            ok = patcher.patch(game_dir=game_dir, log=_log)
+        except Exception as e:
+            ok = False
+            _log('!! %r' % (e,))
+
+        if ok:
+            messagebox.showinfo(t('patch_title'), t('patch_ok'))
+            self.console_window.append('=== %s ===\n' % t('patch_ok'))
+            self._patch_prompted = True
+            return True
+
+        messagebox.showerror(t('patch_title'),
+                             t('patch_fail', err='\n'.join(logs[-3:]) or '?'))
+        self._patch_prompted = True
+        return False
+
+    def _on_speed_change(self, event=None):
+        """Смена скорости: игра должна быть пропатчена, иначе лог не пишется."""
+        e = self.entries.get('speed')
+        if e is None:
+            return
+        try:
+            val = float(e[0].get().strip())
+        except (ValueError, TypeError):
+            return
+        if getattr(self, '_speed_seen', None) == val:
+            return
+        self._speed_seen = val
+        self._ensure_patched(t('patch_speed'))
+
     def _migrate_config(self):
         """Привести сохранённый конфиг к текущим допустимым диапазонам.
 
@@ -982,6 +1070,13 @@ class App:
             desc = tk.Label(self.params_frame, text=t('desc_' + key), bg=c['bg'], fg='#888888',
                             font=('Segoe UI', 9), justify=tk.LEFT, wraplength=250, anchor='w')
             desc.pack(fill=tk.X, pady=(0, 4))
+
+        # Смена скорости требует пропатченной игры: без патча kcdbg.txt не
+        # пишется и бот не видит состояние (ТЗ: проверка при изменении скорости)
+        if 'speed' in self.entries:
+            _sp = self.entries['speed'][0]
+            _sp.bind('<FocusOut>', self._on_speed_change, add='+')
+            _sp.bind('<Return>', self._on_speed_change, add='+')
 
         # Подсказки для валидации (под полями)
         self._hint_labels = {}

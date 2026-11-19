@@ -52,6 +52,14 @@
   "game_dir_missing": "Game folder is missing or has no Kingdom.exe",
   "game_dir_not_found": "Game not found automatically - pick the folder manually",
 
+  "patch_title": "Game patch",
+  "patch_needed": "The game is not patched.\n\nWithout the patch KCLog5 does not write kcdbg.txt, so the bot cannot read the game state.\n\nPatch it now?",
+  "patch_backup_q": "Create a backup of Assembly-CSharp.dll before patching?\n\nThe backup lets you restore the original file with \"Unpatch\".",
+  "patch_ok": "Game patched",
+  "patch_fail": "Could not patch:\n{err}",
+  "patch_check_fail": "Could not check the patch:\n{err}",
+  "patch_speed": "Speed can only be changed in a patched game - otherwise the bot cannot see the state.\n\nPatch now?",
+
   "console_filter_all": "All",
   "console_filter_warn": "Warnings",
   "console_filter_error": "Errors",
