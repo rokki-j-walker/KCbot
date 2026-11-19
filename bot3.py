@@ -20,6 +20,7 @@ import ctypes
 import ctypes.wintypes as wt
 import gamepath
 import json
+import kc_common
 import os
 import random
 import re
@@ -624,8 +625,8 @@ INT_GENOME = ('keep_coins', 'tax_min_coins', 'target_archers', 'target_workers',
 
 
 def save_genome(path, g):
-    with open(path, 'w', encoding='utf-8') as f:
-        json.dump(g, f, ensure_ascii=False, indent=2)
+    """Атомарная запись генома (см. kc_common.atomic_json_dump)."""
+    kc_common.atomic_json_dump(path, g)
 
 
 def load_genome(path=None):

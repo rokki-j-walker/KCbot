@@ -20,6 +20,7 @@ import ctypes
 import ctypes.wintypes as wt
 import gamepath
 import json
+import kc_common
 import os
 import random
 import shutil
@@ -33,6 +34,8 @@ else:
     HERE = os.path.dirname(os.path.abspath(__file__))
 # Папка игры задаётся лаунчером через --game-dir (сохраняется в настройках приложения).
 GAME_DIR = ''
+# Идёт ли обучение: если да - игра обязана быть закрыта даже при исключении.
+_TRAINING = False
 # Единая точка правды — gamepath.save_file() (раньше путь был захардкожен здесь,
 # в restart.py и human_trainer.py с жёсткой версией storage_v26).
 SAVE = gamepath.save_file()
@@ -197,22 +200,84 @@ def load_genome(path):
 
 
 def save_genome(path, g):
-    with open(path, 'w', encoding='utf-8') as f:
-        json.dump(g, f, ensure_ascii=False, indent=2)
+    """Атомарная запись (kc_common): обрыв не оставляет битый best_genome."""
+    kc_common.atomic_json_dump(path, g)
+
+
+_DEFAULT_GENOME_CACHE = None
 
 
 def default_genome():
-    import importlib.util
-    spec = importlib.util.spec_from_file_location('bot3', BOT)
-    m = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(m)
-    return dict(m.DEFAULT_GENOME)
+    """DEFAULT_GENOME из bot3.py.
+
+    Кэшируется: раньше модуль исполнялся заново при КАЖДОМ клампе мутации
+    (importlib + exec 92 КБ ради одного словаря).
+    """
+    global _DEFAULT_GENOME_CACHE
+    if _DEFAULT_GENOME_CACHE is None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('bot3', BOT)
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        _DEFAULT_GENOME_CACHE = dict(m.DEFAULT_GENOME)
+    return dict(_DEFAULT_GENOME_CACHE)
+
+
+# Диапазоны генома. Мутация не должна выворачивать логику бота: отрицательные
+# цели найма (нанимать никогда), отрицательные веса покупок, нулевые дистанции.
+# Ранее клампился только 5 ключей, остальные уходили за границы (аудит E7).
+GENOME_BOUNDS = {
+    # пороги и таймауты - строго положительные
+    'danger_dist': (0.1, None),
+    'flee_dist': (0.1, None),
+    'pay_tol': (0.05, None),
+    'pay_giveup': (0.1, None),
+    'coin_timeout': (0.1, None),
+    'sprint_min_dist': (0.0, None),
+    'sprint_min_stamina': (0.0, 1.0),
+    'pay_black_time': (0.0, None),
+    'coin_black_time': (0.0, None),
+    # счётчики и пороги - неотрицательные
+    'keep_coins': (0, None),
+    'low_gold_threshold': (0, None),
+    'tax_min_coins': (0, None),
+    'tree_prio': (0, None),
+    'target_archers': (0, None),
+    'target_workers': (0, None),
+    'target_farmers': (0, None),
+    'target_knights': (0, None),
+}
+
+
+def clamp_genome(g):
+    """Вернуть геном, приведённый к допустимым диапазонам.
+
+    За границей диапазона значение заменяется на дефолт (а не отрезается
+    краем): так бот получает осмысленный параметр вместо краевого значения.
+    """
+    out = dict(g)
+    defaults = None
+    for k, v in out.items():
+        if isinstance(v, bool) or not isinstance(v, (int, float)):
+            continue
+        if k in GENOME_BOUNDS:
+            lo, hi = GENOME_BOUNDS[k]
+        elif k.startswith('w_'):
+            lo, hi = 0, None          # веса покупок (меньше = важнее)
+        else:
+            continue
+        bad = (v < lo) or (hi is not None and v > hi)
+        if bad:
+            if defaults is None:
+                defaults = default_genome()
+            out[k] = defaults.get(k, lo)
+    return out
 
 
 def mutate(g, rate=0.15, strength=0.25):
     out = dict(g)
     for k, v in list(g.items()):
-        if not isinstance(v, (int, float)):
+        if not isinstance(v, (int, float)) or isinstance(v, bool):
             continue
         if random.random() < rate:
             delta = random.uniform(-strength, strength)
@@ -220,10 +285,7 @@ def mutate(g, rate=0.15, strength=0.25):
             if isinstance(v, int) or (isinstance(v, float) and float(v).is_integer() and abs(v) < 100):
                 new = int(round(new))
             out[k] = new
-    for k in ('danger_dist', 'flee_dist', 'pay_tol', 'coin_timeout', 'pay_giveup'):
-        if k in out and out[k] <= 0:
-            out[k] = default_genome()[k]
-    return out
+    return clamp_genome(out)
 
 
 def crossover(a, b):
@@ -514,8 +576,13 @@ def main():
             if not os.path.isabs(path):
                 path = os.path.join(HERE, path)
             if os.path.exists(path):
-                human_genomes.append(load_genome(path))
-                print("  загружен human геном:", path)
+                try:
+                    human_genomes.append(load_genome(path))
+                    print("  загружен human геном:", path)
+                except Exception as e:
+                    # один битый файл не должен ронять всё обучение
+                    print("  !! human геном %s не читается (%r) - пропускаю"
+                          % (path, e))
     if human_genomes:
         print("  human геномов: %d" % len(human_genomes))
 
@@ -569,9 +636,21 @@ def main():
         print('   py evo.py --baseline')
         return
 
+    # С этого момента мы обязаны закрыть игру даже при исключении/Ctrl+C.
+    # Раньше main() не был обёрнут в try/finally: RuntimeError или сбой Popen
+    # роняли обучение и оставляли Kingdom.exe висеть.
+    global _TRAINING
+    _TRAINING = True
+
     best = None
     if os.path.exists(BEST_GENOME):
-        best = load_genome(BEST_GENOME)
+        try:
+            best = load_genome(BEST_GENOME)
+        except Exception as e:
+            # битый JSON не должен убивать всю сессию - откатываемся к дефолту
+            print('!! %s не читается (%r) - использую геном по умолчанию'
+                  % (os.path.basename(BEST_GENOME), e))
+            best = None
     if best is None:
         best = default_genome()
         save_genome(BEST_GENOME, best)
@@ -619,11 +698,15 @@ def main():
                 pop.append(mutate(parent['genome'], rate=0.2, strength=s_now))
         # подмешивание human геномов (вместо худших): заменяем последние N ботов
         if human_genomes:
-            n_h = len(human_genomes)
-            # обрезаем популяцию, чтобы освободить место для human
-            if len(pop) + n_h > args.pop:
-                pop = pop[:args.pop - n_h]
-            for hg in human_genomes:
+            # Никогда не выбрасываем элиту (pop[0]) и не опускаем популяцию
+            # ниже 1 бота: раньше при n_h >= pop срез pop[:args.pop - n_h]
+            # вырождался в пустой список/отрицательный слайс, и вся логика
+            # elite_res/elite_hist (results[0] = элита) ломалась.
+            n_h = min(len(human_genomes), max(1, args.pop - 1))
+            keep = max(1, args.pop - n_h)
+            if len(pop) > keep:
+                pop = pop[:keep]
+            for hg in list(human_genomes)[:n_h]:
                 g = dict(hg) if rnd == 1 else mutate(hg, rate=0.1, strength=0.1)
                 pop.append(g)
             # гарантируем размер популяции
@@ -704,8 +787,8 @@ def main():
                             'round': rnd, 'episode': episode_len,
                             'bot': idx, 'run': log_session,
                             'genome': r['genome']})
-        with open(HISTORY, 'w', encoding='utf-8') as f:
-            json.dump(history, f, ensure_ascii=False, indent=2)
+        # атомарно: обрыв в момент записи не должен затирать всю историю
+        kc_common.atomic_json_dump(HISTORY, history)
         print('  лучший очки=%.1f (топ-3: %s)' %
               (results[0]['score'],
                ', '.join('%.1f' % r['score'] for r in results[:3])))
@@ -741,4 +824,19 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('\nОстановлено пользователем (Ctrl+C)')
+    except SystemExit:
+        raise
+    except Exception as e:
+        print('!! обучение прервано: %r' % (e,))
+        raise
+    finally:
+        # игра не должна остаться висеть после падения/прерывания обучения.
+        # (при штатном завершении main() уже закрыл игру - повторный taskkill
+        #  безвреден)
+        if _TRAINING:
+            subprocess.run(['taskkill', '/F', '/IM', 'Kingdom.exe'],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
