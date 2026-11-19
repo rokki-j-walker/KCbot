@@ -53,62 +53,8 @@ def user32():
 
 
 def find_window(title='Kingdom'):
-    res = []
-
-    def cb(hwnd, lp):
-        # сначала проверяем процесс: окно должно принадлежать Kingdom.exe
-        pid = wt.DWORD()
-        user32().GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
-        is_kingdom = False
-        try:
-            hproc = ctypes.windll.kernel32.OpenProcess(0x0410, False, pid.value)
-            if hproc:
-                modbuf = ctypes.create_unicode_buffer(260)
-                ctypes.windll.psapi.GetModuleBaseNameW(hproc, None, modbuf, 260)
-                ctypes.windll.kernel32.CloseHandle(hproc)
-                if 'kingdom' in modbuf.value.lower():
-                    is_kingdom = True
-        except Exception:
-            pass
-        if not is_kingdom:
-            return True
-        # процесс Kingdom — проверяем заголовок
-        n = user32().GetWindowTextLengthW(hwnd)
-        if n == 0:
-            return True
-        buf = ctypes.create_unicode_buffer(n + 1)
-        user32().GetWindowTextW(hwnd, buf, n + 1)
-        title_val = buf.value.strip()
-        if title_val.lower() == title.lower() or title.lower() in title_val.lower():
-            visible = user32().IsWindowVisible(hwnd)
-            area = 0
-            if visible:
-                r = wt.RECT()
-                user32().GetWindowRect(hwnd, ctypes.byref(r))
-                area = (r.right - r.left) * (r.bottom - r.top)
-            res.append((hwnd, area, visible))
-        return True
-
-    EnumProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wt.HWND, wt.LPARAM)
-    user32().EnumWindows(EnumProc(cb), 0)
-    if res:
-        res.sort(key=lambda x: (x[2], x[1]), reverse=True)
-        return res[0][0]
-    # fallback: по подстроке
-    res2 = []
-    def cb2(hwnd, lp):
-        if not user32().IsWindowVisible(hwnd):
-            return True
-        n = user32().GetWindowTextLengthW(hwnd)
-        if n == 0:
-            return True
-        buf = ctypes.create_unicode_buffer(n + 1)
-        user32().GetWindowTextW(hwnd, buf, n + 1)
-        if title.lower() in buf.value.lower():
-            res2.append(hwnd)
-        return True
-    user32().EnumWindows(EnumProc(cb2), 0)
-    return res2[0] if res2 else None
+    """Единая реализация - kc_common.find_window (проверка процесса)."""
+    return kc_common.find_window(title)
 
 
 def wait_window(timeout=90):

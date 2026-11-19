@@ -28,6 +28,7 @@ import sys
 import time
 
 import gamepath
+import kc_common
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SAVES_DIR = os.path.join(HERE, 'saves')
@@ -65,39 +66,8 @@ def autosave_path():
 
 # ------------------------------------------------------------------- окно/ввод
 def find_window(title='Kingdom'):
-    """Окно игры. Проверяем и заголовок, и имя процесса (Kingdom.exe)."""
-    import ctypes.wintypes as wt
-    proc = wt.DWORD()
-    res = []
-
-    def cb(hwnd, lparam):
-        if not user32.IsWindowVisible(hwnd):
-            return True
-        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(proc))
-        is_kingdom = False
-        try:
-            h = kernel32.OpenProcess(0x0410, False, proc.value)  # QUERY|VM_READ
-            if h:
-                buf = ctypes.create_unicode_buffer(260)
-                ctypes.windll.psapi.GetModuleBaseNameW(h, None, buf, 260)
-                kernel32.CloseHandle(h)
-                is_kingdom = 'kingdom' in buf.value.lower()
-        except Exception:
-            pass
-        if not is_kingdom:
-            return True
-        n = user32.GetWindowTextLengthW(hwnd)
-        if n == 0:
-            return True
-        b = ctypes.create_unicode_buffer(n + 1)
-        user32.GetWindowTextW(hwnd, b, n + 1)
-        if title.lower() in b.value.lower():
-            res.append(hwnd)
-        return True
-
-    user32.EnumWindows(ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p,
-                                          ctypes.c_long)(cb), 0)
-    return res[0] if res else None
+    """Окно игры. Единая реализация - kc_common.find_window."""
+    return kc_common.find_window(title)
 
 
 def pid_of(hwnd):

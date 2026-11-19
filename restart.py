@@ -18,6 +18,7 @@ import sys
 import time
 
 import gamepath
+import kc_common
 
 # Папка игры НЕ запрашивается на импорте: модуль можно импортировать для
 # переиспользования find_window()/alive(), а --help работает без настроек.
@@ -30,26 +31,11 @@ kernel32 = ctypes.windll.kernel32
 
 WM_CLOSE = 0x0010
 SW_RESTORE = 9
-EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wt.HWND, wt.LPARAM)
 
 
 def find_window(title='Kingdom'):
-    res = []
-
-    def cb(hwnd, lparam):
-        if not user32.IsWindowVisible(hwnd):
-            return True
-        n = user32.GetWindowTextLengthW(hwnd)
-        if n == 0:
-            return True
-        buf = ctypes.create_unicode_buffer(n + 1)
-        user32.GetWindowTextW(hwnd, buf, n + 1)
-        if title.lower() in buf.value.lower():
-            res.append(hwnd)
-        return True
-
-    user32.EnumWindows(EnumWindowsProc(cb), 0)
-    return res[0] if res else None
+    """Единая реализация - kc_common.find_window (проверка процесса)."""
+    return kc_common.find_window(title)
 
 
 def pid_of(hwnd):

@@ -4,6 +4,7 @@ import ctypes
 import ctypes.wintypes as wt
 import sys
 
+import kc_common
 from PIL import ImageGrab
 
 user32 = ctypes.windll.user32
@@ -11,23 +12,12 @@ gdi32 = ctypes.windll.gdi32
 
 
 def find_window(title='Kingdom'):
-    res = []
-    EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wt.HWND, wt.LPARAM)
+    """Единая реализация - kc_common.find_window.
 
-    def cb(hwnd, lparam):
-        if not user32.IsWindowVisible(hwnd):
-            return True
-        n = user32.GetWindowTextLengthW(hwnd)
-        if n == 0:
-            return True
-        buf = ctypes.create_unicode_buffer(n + 1)
-        user32.GetWindowTextW(hwnd, buf, n + 1)
-        if title.lower() in buf.value.lower():
-            res.append((hwnd, buf.value))
-        return True
-
-    user32.EnumWindows(EnumWindowsProc(cb), 0)
-    return res[0][0] if res else None
+    Раньше здесь НЕ проверялся процесс: скриншот мог снять чужое окно
+    с похожим заголовком («Kingdom» в титуле браузера и т.п.).
+    """
+    return kc_common.find_window(title)
 
 
 def main():

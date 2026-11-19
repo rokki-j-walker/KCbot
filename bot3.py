@@ -92,66 +92,15 @@ class Input(object):
         self.dry = bool(dry)
 
     def find_window(self, title='Kingdom'):
-        res = []
-        EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, wt.HWND, wt.LPARAM)
+        """Найти окно игры (единая реализация - kc_common.find_window).
 
-        def cb(hwnd, lparam):
-            # сначала проверяем процесс: окно должно принадлежать Kingdom.exe
-            pid = wt.DWORD()
-            user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
-            is_kingdom = False
-            try:
-                hproc = ctypes.windll.kernel32.OpenProcess(0x0410, False, pid.value)
-                if hproc:
-                    modbuf = ctypes.create_unicode_buffer(260)
-                    ctypes.windll.psapi.GetModuleBaseNameW(hproc, None, modbuf, 260)
-                    ctypes.windll.kernel32.CloseHandle(hproc)
-                    if 'kingdom' in modbuf.value.lower():
-                        is_kingdom = True
-            except Exception:
-                pass
-            if not is_kingdom:
-                return True
-            # процесс Kingdom — проверяем заголовок
-            n = user32.GetWindowTextLengthW(hwnd)
-            if n == 0:
-                return True
-            buf = ctypes.create_unicode_buffer(n + 1)
-            user32.GetWindowTextW(hwnd, buf, n + 1)
-            title_val = buf.value.strip()
-            area = 0
-            visible = user32.IsWindowVisible(hwnd)
-            if visible:
-                r = wt.RECT()
-                user32.GetWindowRect(hwnd, ctypes.byref(r))
-                area = (r.right - r.left) * (r.bottom - r.top)
-            res.append((hwnd, title_val, area, visible))
-            return True
-
-        user32.EnumWindows(EnumWindowsProc(cb), 0)
-        if res:
-            # сортируем: сначала видимые, потом по площади (больше = главное окно)
-            res.sort(key=lambda x: (x[3], x[2]), reverse=True)
-            self.hwnd = res[0][0]
-            return self.hwnd
-        # fallback: ищем по подстроке (старый метод)
-        res2 = []
-        def cb2(hwnd, lparam):
-            if not user32.IsWindowVisible(hwnd):
-                return True
-            n = user32.GetWindowTextLengthW(hwnd)
-            if n == 0:
-                return True
-            buf = ctypes.create_unicode_buffer(n + 1)
-            user32.GetWindowTextW(hwnd, buf, n + 1)
-            if title.lower() in buf.value.lower():
-                res2.append((hwnd, buf.value))
-            return True
-        user32.EnumWindows(EnumWindowsProc(cb2), 0)
-        if res2:
-            self.hwnd = res2[0][0]
-            return self.hwnd
-        return None
+        Здесь сохраняется только контракт Input: запомнить self.hwnd.
+        Логика поиска (проверка процесса + выбор самого крупного видимого
+        окна) вынесена в kc_common - раньше она была продублирована в шести
+        файлах и разошлась.
+        """
+        self.hwnd = kc_common.find_window(title)
+        return self.hwnd
 
     def is_focused(self):
         return bool(self.hwnd) and user32.GetForegroundWindow() == self.hwnd
@@ -786,24 +735,68 @@ def fitness(m):
 
 
 class BotLog(object):
-    def __init__(self, path=None):
+    """Append-логгер бота с ротацией.
+
+    Раньше файл рос неограниченно: запись с flush() на каждую строку, статус
+    меняется каждые 0.2 с -> десятки МБ за сессию (аудит P1). Теперь при
+    превышении MAX_BYTES текущий файл уезжает в bot_log.old.txt, а запись
+    начинается заново.
+    """
+
+    MAX_BYTES = 20 * 1024 * 1024     # 20 МБ на один файл лога
+
+    def __init__(self, path=None, max_bytes=None):
         if path is None:
             path = LOGFILE
         self.path = path
+        self.max_bytes = self.MAX_BYTES if max_bytes is None else max_bytes
         # создать директорию если не существует
         d = os.path.dirname(path)
         if d and not os.path.exists(d):
             os.makedirs(d, exist_ok=True)
         self.f = open(path, 'a', encoding='utf-8')
+        try:
+            self._written = os.path.getsize(path)
+        except OSError:
+            self._written = 0
 
     def __call__(self, *a):
         msg = ' '.join(str(x) for x in a)
+        line = '[%s] %s\n' % (time.strftime('%H:%M:%S'), msg)
         try:
-            self.f.write('[%s] %s\n' % (time.strftime('%H:%M:%S'), msg))
+            self.f.write(line)
             self.f.flush()
+            self._written += len(line.encode('utf-8', 'replace'))
+            if self._written >= self.max_bytes:
+                self._rotate()
         except Exception:
             pass
         print(msg, flush=True)
+
+    def _rotate(self):
+        """Закрыть текущий файл, сложить его в .old и начать новый."""
+        try:
+            self.f.close()
+        except Exception:
+            pass
+        old = self.path + '.old'
+        try:
+            if os.path.exists(old):
+                os.remove(old)
+            os.replace(self.path, old)
+        except OSError:
+            pass
+        try:
+            self.f = open(self.path, 'w', encoding='utf-8')
+        except OSError:
+            self.f = open(os.devnull, 'w', encoding='utf-8')
+        self._written = 0
+
+    def close(self):
+        try:
+            self.f.close()
+        except Exception:
+            pass
 
 
 # ---------------------------------------------------------------------- бот

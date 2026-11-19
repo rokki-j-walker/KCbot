@@ -25,6 +25,7 @@ import sys
 import time
 
 import gamepath
+import kc_common
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Папка игры НЕ запрашивается на импорте (иначе import human_trainer падает
@@ -36,22 +37,8 @@ BASELINE = os.path.join(HERE, 'saves', 'baseline.dat')
 
 
 def find_window(title='Kingdom'):
-    import ctypes, ctypes.wintypes as wt
-    u = ctypes.windll.user32
-    res = []
-    def cb(hwnd, lp):
-        if not u.IsWindowVisible(hwnd):
-            return True
-        n = u.GetWindowTextLengthW(hwnd)
-        if n == 0:
-            return True
-        b = ctypes.create_unicode_buffer(n + 1)
-        u.GetWindowTextW(hwnd, b, n + 1)
-        if title.lower() in b.value.lower():
-            res.append(hwnd)
-        return True
-    u.EnumWindows(ctypes.WINFUNCTYPE(ctypes.c_bool, wt.HWND, wt.LPARAM)(cb), 0)
-    return res[0] if res else None
+    """Единая реализация - kc_common.find_window (проверка процесса)."""
+    return kc_common.find_window(title)
 
 
 def focus_game(hwnd):
