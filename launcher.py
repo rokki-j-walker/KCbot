@@ -118,7 +118,7 @@ def setup_scrollbar_style():
         _style = _ttk.Style()
         cfg = load_config()
         theme_name = cfg.get('theme', 'dark')
-        colors = COLOR_SCHEMES.get(theme_name, COLOR_SCHEMES['dark'])
+        colors = COLOR_SCHEMES[resolve_theme(theme_name)]
         bg = colors.get('entry_bg', '#252525')
         fg = colors.get('fg', '#e0e0e0')
         trough = colors.get('bg', '#1a1a1a')
@@ -155,6 +155,40 @@ DEFAULTS = {
     'console_detached': False,
     'language': 'ru',
 }
+
+def system_base_theme():
+    """'dark'/'light' по системной настройке Windows.
+
+    Реестр HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize
+    -> AppsUseLightTheme (0 = тёмная). Повторяет ThemeService.ResolveSystemBase
+    из старой WPF-версии (решение D29).
+    """
+    try:
+        import winreg
+        with winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize') as k:
+            v = winreg.QueryValueEx(k, 'AppsUseLightTheme')[0]
+            return 'light' if v else 'dark'
+    except Exception:
+        return 'dark'
+
+
+def resolve_theme(name):
+    """Развернуть выбранную тему в конкретную схему цветов.
+
+    'system' не лежит в COLOR_SCHEMES - он разворачивается в 'dark'/'light'
+    по настройке Windows в момент применения.
+    """
+    if name == 'system':
+        return system_base_theme()
+    return name if name in COLOR_SCHEMES else 'dark'
+
+
+def is_light_theme(name):
+    """Светлая ли итоговая схема (для sv_ttk и контрастов)."""
+    return resolve_theme(name) in ('light', 'white', 'light_blue', 'light_green')
+
 
 COLOR_SCHEMES = {
     'dark': {
@@ -193,6 +227,33 @@ COLOR_SCHEMES = {
         'title_bg': '#111111', 'btn_hover': '#222222', 'border': '#222222',
         'panel_bg': '#0a0a0a',
     },
+    # Светлые с акцентами Fluent 2 (D29): нейтрали взяты из ThemeService.cs
+    # старой WPF-версии (paper/card/body/divider/border).
+    'light_blue': {
+        'bg': '#f5f5f5', 'fg': '#1a1a1a', 'entry_bg': '#ffffff',
+        'accent': '#0067C0', 'graph_bg': '#ffffff', 'graph_fg': '#1a1a1a',
+        'title_bg': '#e0e0e0', 'btn_hover': '#e8e8e8', 'border': '#c4c4c4',
+        'panel_bg': '#ffffff',
+    },
+    'light_green': {
+        'bg': '#f5f5f5', 'fg': '#1a1a1a', 'entry_bg': '#ffffff',
+        'accent': '#107C10', 'graph_bg': '#ffffff', 'graph_fg': '#1a1a1a',
+        'title_bg': '#e0e0e0', 'btn_hover': '#e8e8e8', 'border': '#c4c4c4',
+        'panel_bg': '#ffffff',
+    },
+}
+
+# Имя темы -> ключ локали. 'system' разворачивается в dark/light по реестру.
+THEME_KEYS = {
+    'system': 'theme_system',
+    'dark': 'theme_dark',
+    'light': 'theme_light',
+    'light_blue': 'theme_light_blue',
+    'light_green': 'theme_light_green',
+    'blue': 'theme_blue',
+    'green': 'theme_green',
+    'white': 'theme_white',
+    'black': 'theme_black',
 }
 
 
@@ -722,7 +783,7 @@ class App:
         self.config = load_config()
         self._migrate_config()
         load_locale(self.config.get('language', 'ru'))
-        self.colors = COLOR_SCHEMES.get(self.config.get('theme', 'dark'), COLOR_SCHEMES['dark'])
+        self.colors = COLOR_SCHEMES[resolve_theme(self.config.get('theme', 'dark'))]
         self.console_window = None
         self.process_running = False
         self.settings_dialog = None
@@ -1446,8 +1507,9 @@ class App:
         c = self.colors
         menu = tk.Menu(self.root, tearoff=0, bg=c['entry_bg'], fg=c['fg'],
                        activebackground=c['accent'], activeforeground='white')
-        for name in COLOR_SCHEMES:
-            menu.add_command(label=name, command=lambda n=name: self._apply_theme(n))
+        for name in THEME_KEYS:
+            menu.add_command(label=t(THEME_KEYS[name]),
+                             command=lambda n=name: self._apply_theme(n))
         try:
             x = self.theme_btn.winfo_rootx()
             y = self.theme_btn.winfo_rooty() + self.theme_btn.winfo_height()
@@ -1459,10 +1521,10 @@ class App:
         self.config['theme'] = name
         save_config(self.config)
         if HAS_SV_TTK:
-            sv_theme = 'light' if name in ('light', 'white') else 'dark'
+            sv_theme = 'light' if is_light_theme(name) else 'dark'
             sv_ttk.set_theme(sv_theme)
         setup_scrollbar_style()
-        self.colors = COLOR_SCHEMES.get(name, COLOR_SCHEMES['dark'])
+        self.colors = COLOR_SCHEMES[resolve_theme(name)]
         self.root.configure(bg=self.colors['bg'])
         # Перестроить интерфейс с новыми цветами
         self._rebuild_ui()
