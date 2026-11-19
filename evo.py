@@ -296,127 +296,32 @@ def crossover(a, b):
     return out
 
 
-BOUNTIES_FILE = os.path.join(HERE, 'bounties.txt')
+# --- D25: единая формула скоринга --------------------------------------------
+# Раньше здесь была ПОЛНАЯ КОПИЯ bot3.fitness (~75 строк), и копии УЖЕ разошлись:
+#   * regular_buys в evo вычитал только инструменты -> покупка замка получала
+#     'buy' ВТОРОЙ раз поверх buy_castle_base/buy_castle_upgrade;
+#   * отличались дефолты: coin_collect 5.0 vs 2.0, buy 10.0 vs 5.0,
+#     crown_lost -50 vs -40.
+# Итог: очки, которые показывал бот (SC=), не совпадали с оценкой эволюции -
+# отбор шёл не по той метрике, которую видел пользователь.
+#
+# Теперь bot3.fitness - единственная точка правды.
+
+_bot3 = None
 
 
-def load_bounties(path=None):
-    """Прочитать bounties.txt -> dict ключ= float.
-
-    Дубль bot3.load_bounties (см. D25 - объединение в одной фазе рефакторинга).
-    Пока копия: важна идентичность поведения, иначе оценка эволюции разойдётся
-    с очками, которые показывает бот.
-    """
-    path = path or BOUNTIES_FILE
-    result = {}
-    seen = {}
-    errors = []
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            for lineno, raw in enumerate(f, 1):
-                line = raw.split('#', 1)[0].strip()
-                if not line or '=' not in line:
-                    continue
-                key, _, val = line.partition('=')
-                key = key.strip()
-                val = val.strip()
-                try:
-                    num = float(val)
-                except ValueError:
-                    errors.append('%s:%d: %s = %r (не число, пропущено)'
-                                  % (os.path.basename(path), lineno, key, val))
-                    continue
-                if key in seen:
-                    errors.append('%s:%d: ключ %r продублирован '
-                                  '(был в строке %d, перезаписан)'
-                                  % (os.path.basename(path), lineno, key, seen[key]))
-                seen[key] = lineno
-                result[key] = num
-    except OSError as e:
-        errors.append('%s: %s (используются значения по умолчанию из кода)'
-                      % (path, e))
-    for msg in errors:
-        print('!! bounties: %s' % msg)
-    return result
-
-
-BOUNTIES = load_bounties()
+def _bot3_module():
+    """Ленивый импорт bot3: модуль тяжёлый, нужен только для формулы."""
+    global _bot3
+    if _bot3 is None:
+        import bot3
+        _bot3 = bot3
+    return _bot3
 
 
 def score_episode(m):
-    b = BOUNTIES
-    s = 0.0
-    s += b.get('survival', 0.5) * m.get('seconds', 0)
-    s += b.get('coin_collect', 5.0) * m.get('coins_in', 0)
-    s += b.get('coin_spend', 4.0) * m.get('coins_spent', 0)
-    # покупки: базовые + инструменты по отдельности
-    tool_buys = m.get('tool_buys', 0)
-    regular_buys = m.get('buys', 0) - tool_buys
-    s += b.get('buy', 10.0) * regular_buys
-    s += b.get('buy_hammer', 15.0) * m.get('hammer_buys', 0)
-    s += b.get('buy_bow', 15.0) * m.get('bow_buys', 0)
-    s += b.get('buy_scythe', 15.0) * m.get('scythe_buys', 0)
-    s += b.get('buy_castle_base', 60.0) * m.get('castle_base_buys', 0)
-    s += b.get('buy_castle_upgrade', 40.0) * m.get('castle_upgrade_buys', 0)
-    s += b.get('building_start', 2.0) * m.get('buildings_started', 0)
-    s += b.get('building_complete', 10.0) * m.get('buildings_completed', 0)
-    s += b.get('recruit_beggar', 10.0) * m.get('recruited_beggars', 0)
-    s += b.get('first_archer_bonus', 15.0) * m.get('first_archer', 0)
-    s += b.get('first_worker_bonus', 15.0) * m.get('first_worker', 0)
-    s += b.get('movement_walk', 0.5) * m.get('walk_distance', 0)
-    s += b.get('movement_run', 0.7) * m.get('run_distance', 0)
-    s += b.get('horse_exhaustion', -3.0) * m.get('horse_exhaustion', 0)
-    s += b.get('horse_rest', 2.0) * m.get('horse_rest_time', 0) / 5.0
-    s += b.get('crown_lost', -50.0) * m.get('crown_lost', 0)
-    s += b.get('crown_pickup', 5.0) * m.get('crown_picked', 0)
-    s += b.get('death', -1000.0) * m.get('deaths', 0)
-    # штраф за бездействие с прогрессией
-    periods = int(m.get('inactivity_penalty', 0))
-    progression = b.get('inactivity_progression', 1.1)
-    idle_total = 0.0
-    for i in range(periods):
-        idle_total += progression ** i
-    day = max(1, int(m.get('day', 1)))
-    if day >= 5:
-        day_factor = 0.0
-    else:
-        day_factor = 1.0 + b.get('inactivity_day_bonus', 0.1) * (day - 1)
-    s += b.get('idle', -1.0) * idle_total * day_factor
-    # отметка дерева (небольшой бонус)
-    s += b.get('tree_mark', 2.0) * m.get('trees_marked', 0)
-    # срубленное дерево (большой бонус)
-    s += b.get('tree_chop', 5.0) * m.get('trees_chopped', 0)
-    # штраф за попытку рубки без рабочих
-    s += b.get('tree_chop_no_workers', -0.5) * m.get('tree_chops_without_workers', 0)
-    # штраф за неудачные попытки (коэффициент из bounties.txt)
-    ratio = b.get('failure_penalty_ratio', 0.25)
-    s -= b.get('coin_collect', 5.0) * ratio * m.get('failed_coin', 0)
-    s -= b.get('buy', 10.0) * ratio * m.get('failed_buy', 0)
-    s -= b.get('recruit_beggar', 10.0) * ratio * m.get('failed_recruit', 0)
-    s -= b.get('tree_chop', 5.0) * ratio * m.get('failed_tree', 0)
-    # потеря монет от врага (только реальные потери, не найм)
-    s += b.get('coin_lost_enemy', -10.0) * m.get('coins_lost', 0)
-    # не подобранные монеты (градиент)
-    n_unpicked = m.get('unpicked_coins', 0)
-    if n_unpicked > 0:
-        max_pen = b.get('unpicked_coin_max', 5.0)
-        min_pen = b.get('unpicked_coin_min', 1.0)
-        threshold = b.get('unpicked_coin_threshold', 30.0)
-        if n_unpicked >= threshold:
-            per_coin = min_pen
-        else:
-            per_coin = max_pen - (max_pen - min_pen) * (n_unpicked - 1) / (threshold - 1)
-        per_coin = max(min_pen, per_coin)
-        s += b.get('unpicked_coin', -1.0) * per_coin * n_unpicked
-    gen = m.get('generation', 1)
-    threshold = 10.0 * gen
-    if m.get('coins_in', 0) == 0 and m.get('buys', 0) == 0 and m.get('buildings', 0) == 0:
-        if m.get('seconds', 0) > threshold:
-            s += b.get('no_interaction', -10.0) * (m.get('seconds', 0) / threshold)
-    if m.get('final_purse', 0) == 0 and m.get('coins_spent', 0) > 0:
-        if m.get('coins_in', 0) < m.get('coins_spent', 0):
-            s += b.get('full_spend_penalty', -5.0)
-    return s
-
+    """Очки эпизода для отбора. Делегирует в bot3.fitness (решение D25)."""
+    return _bot3_module().fitness(m)
 
 
 def _f12_pressed():
