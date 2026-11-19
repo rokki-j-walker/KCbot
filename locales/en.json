@@ -18,7 +18,7 @@
   "desc_rounds": "Generations to train. More = better result.",
   "desc_episode": "Duration of one episode in seconds (at 1x).",
   "desc_episode_increment": "How many seconds the episode grows each round.",
-  "desc_speed": "Game speed (1x-4x). 8x breaks the game.",
+  "desc_speed": "Game speed (1x-3x). 4x and above breaks the game.",
   "desc_top_percent": "Share of best bots carried to next generation (0.1 = 10%).",
 
   "btn_default": "Default",
@@ -44,5 +44,18 @@
   "idle_penalty": "Idle penalty",
 
   "console_title": "Console",
-  "detail_title": "Details"
+  "detail_title": "Details",
+
+  "console_filter_all": "All",
+  "console_filter_warn": "Warnings",
+  "console_filter_error": "Errors",
+  "console_search": "Search...",
+  "console_find": "Find",
+  "console_clear": "Clear",
+  "console_copy": "Copy",
+  "console_export": "Save...",
+  "console_autoscroll": "Follow",
+  "console_status": "Lines: {n}",
+  "console_export_done": "Saved: {path}",
+  "console_export_fail": "Could not save: {err}"
 }

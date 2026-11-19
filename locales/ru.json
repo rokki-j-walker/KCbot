@@ -18,7 +18,7 @@
   "desc_rounds": "Сколько поколений обучать. Больше = лучше результат.",
   "desc_episode": "Длительность одного эпизода в секундах (при 1x).",
   "desc_episode_increment": "На сколько секунд растёт эпизод каждый раунд.",
-  "desc_speed": "Скорость игры (1x-4x). 8x ломает игру.",
+  "desc_speed": "Скорость игры (1x-3x). На 4x и выше игра ломается.",
   "desc_top_percent": "Доля лучших ботов, переходящих в следующее поколение (0.1 = 10%).",
 
   "btn_default": "По умолчанию",
@@ -44,5 +44,18 @@
   "idle_penalty": "Штраф за бездействие",
 
   "console_title": "Консоль",
-  "detail_title": "Детали"
+  "detail_title": "Детали",
+
+  "console_filter_all": "Все",
+  "console_filter_warn": "Предупр.",
+  "console_filter_error": "Ошибки",
+  "console_search": "Поиск...",
+  "console_find": "Найти",
+  "console_clear": "Очистить",
+  "console_copy": "Копировать",
+  "console_export": "Сохранить...",
+  "console_autoscroll": "Прокручивать",
+  "console_status": "Строк: {n}",
+  "console_export_done": "Сохранено: {path}",
+  "console_export_fail": "Не удалось сохранить: {err}"
 }

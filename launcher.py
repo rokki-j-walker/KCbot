@@ -5,6 +5,7 @@ launcher.py - лаунчер обучения KingdomBot.
 Запуск:
     py launcher.py
 """
+import collections
 import ctypes
 import json
 import os
@@ -22,14 +23,8 @@ try:
 except ImportError:
     HAS_SV_TTK = False
 
-try:
-    import matplotlib
-    matplotlib.use('TkAgg')
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    from matplotlib.figure import Figure
-    HAS_MPL = True
-except ImportError:
-    HAS_MPL = False
+# matplotlib больше не используется: график эволюции убран (решение D3),
+# прогресс показывается числом в статусбаре.
 
 if getattr(sys, 'frozen', False):
     HERE = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
@@ -71,9 +66,6 @@ HISTORY_FILE = os.path.join(HERE, 'data', 'evo_history.json')
 RESTART_OVERHEAD = 30.0
 
 # Минимальная популяция для нормального обучения (генетический алгоритм)
-MIN_POP = 50
-
-
 def apply_taskbar_style(win):
     """Показать окно (включая overrideredirect) в панели задач Windows."""
     try:
@@ -110,25 +102,6 @@ def apply_taskbar_style(win):
             pass
     except Exception:
         pass
-
-
-class GUID(ctypes.Structure):
-    _fields_ = [
-        ('Data1', ctypes.c_ulong),
-        ('Data2', ctypes.c_ushort),
-        ('Data3', ctypes.c_ushort),
-        ('Data4', ctypes.c_ubyte * 8),
-    ]
-
-    def __init__(self, guid_str):
-        import uuid
-        u = uuid.UUID(guid_str)
-        b = u.bytes
-        self.Data1 = int.from_bytes(b[0:4], 'little')
-        self.Data2 = int.from_bytes(b[4:6], 'little')
-        self.Data3 = int.from_bytes(b[6:8], 'little')
-        for i in range(8):
-            self.Data4[i] = b[8 + i]
 
 
 def setup_scrollbar_style():
@@ -279,21 +252,6 @@ def calc_time(params):
     return total_seconds, hours, minutes, details
 
 
-def load_history_scores():
-    try:
-        with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
-            history = json.load(f)
-        from collections import defaultdict
-        by_round = defaultdict(list)
-        for r in history:
-            by_round[r.get('round', 0)].append(r.get('score', 0))
-        rounds = sorted(by_round.keys())
-        avgs = [sum(by_round[r]) / len(by_round[r]) for r in rounds]
-        return rounds, avgs
-    except Exception:
-        return [], []
-
-
 def create_themed_toplevel(parent, title, colors, width=800, height=600, attach_callback=None, geometry_key=None):
     """Создаёт Toplevel окно с кастомным заголовком и тёмной темой."""
     win = tk.Toplevel(parent)
@@ -424,547 +382,329 @@ def create_themed_toplevel(parent, title, colors, width=800, height=600, attach_
 
 
 class ConsoleWindow:
-    """Окно консоли с выводом и графиком."""
+    """Консоль вывода: кольцевой буфер, батчинг, фильтры, поиск, экспорт.
 
-    def __init__(self, parent, colors, detached=False, content='both', on_attach=None, on_finish=None):
+    Требования (решение D28):
+      * кольцевой буфер - в памяти и в Text держим только MAX_LINES строк,
+        иначе при тысячах строк/с виджет упирается в память и тормозит;
+      * батчинг - строки накапливаются и вставляются одним вызовом раз в
+        FLUSH_MS мс, а не по одной (иначе Tk встаёт на каждом insert);
+      * авто-скролл сам отключается, когда пользователь отмотал назад;
+      * фильтр по уровню, поиск, очистка, копирование, экспорт в файл.
+    График удалён (решение D3) - прогресс показывается числом в статусбаре.
+
+    Потоки: строки приходят из reader-потока через queue.Queue и читаются
+    только в главном потоке (Tk нельзя трогать из потока - раньше именно
+    это зависало кнопку «Старт»).
+    """
+
+    MAX_LINES = 5000        # сколько строк храним/показываем
+    FLUSH_MS = 80           # как часто сбрасываем накопленное в виджет
+
+    def __init__(self, parent, colors, detached=False, content='both',
+                 on_attach=None, on_finish=None):
+        # content/on_attach/on_finish оставлены для совместимости со старыми
+        # вызовами; график больше не строится.
         self.parent = parent
         self.colors = colors
         self.detached = detached
-        self.content = content
-        self.on_attach = None  # attach button removed
         self.on_finish = on_finish
-        self.process = None
+
+        # потокобезопасная очередь: пишет reader-поток, читает главный
+        self._queue = queue.Queue()
+        self._pending = []              # накоплено до батч-сброса
+        # кольцевой буфер: (уровень, строка); память ограничена жёстко
+        self._buffer = collections.deque(maxlen=self.MAX_LINES)
+        self._follow = True             # автоскролл включён
+        self._after_id = None
+        self._find_pos = None
+
+        self.process = None             # совместимость: раньше был процесс
         self.reader_thread = None
         self.running = False
         self._stopped_by_user = False
-        self._finished_posted = False
-        self._output_queue = queue.Queue()
-        self.graph_detail_window = None
 
         if detached:
-            self.window, self._content = create_themed_toplevel(parent, 'Консоль обучения', colors, 800, 600, on_attach)
+            self.window, self._content = create_themed_toplevel(
+                parent, t('console_title'), colors, 900, 620, on_attach)
         else:
             self.window = tk.Frame(parent, bg=colors['bg'])
             self._content = self.window
 
         self._build_ui()
+        self._tick()
 
+    # ------------------------------------------------------------- построение
     def _build_ui(self):
         c = self.colors
-        content = self.content
 
-        paned = tk.PanedWindow(self._content, orient=tk.VERTICAL, bg=c['bg'],
-                               sashwidth=4, sashrelief=tk.FLAT)
-        paned.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        # --- панель инструментов ---
+        bar = tk.Frame(self._content, bg=c['bg'])
+        bar.pack(fill=tk.X, padx=5, pady=(5, 2))
 
-        if content in ('console', 'both'):
-            self.console_frame = tk.Frame(paned, bg=c['bg'])
-            paned.add(self.console_frame, minsize=60, stretch='always')
+        tk.Label(bar, text=t('console_filter_all'), bg=c['bg'], fg=c['fg'],
+                 anchor='w').pack(side=tk.LEFT)
 
-            console_scroll = ttk.Scrollbar(self.console_frame, orient=tk.VERTICAL)
-            self.console_text = tk.Text(self.console_frame, font=('Consolas', 10),
-                                        bg=c['entry_bg'], fg=c['fg'],
-                                        insertbackground=c['fg'],
-                                        selectbackground='#264f78',
-                                        relief=tk.FLAT, borderwidth=1,
-                                        yscrollcommand=console_scroll.set,
-                                        wrap=tk.WORD)
-            console_scroll.config(command=self.console_text.yview)
-            self.console_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            console_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        else:
-            self.console_text = None
-            self.console_frame = None
+        self._filter_labels = [t('console_filter_all'),
+                               t('console_filter_warn'),
+                               t('console_filter_error')]
+        # None = показывать всё; иначе - только эти уровни и выше по важности
+        self._filter_levels = [None, ('warn', 'error'), ('error',)]
+        self.filter_var = tk.StringVar(value=self._filter_labels[0])
+        flt = ttk.Combobox(bar, textvariable=self.filter_var,
+                           values=self._filter_labels, state='readonly',
+                           width=12)
+        flt.pack(side=tk.LEFT, padx=(0, 8))
+        flt.bind('<<ComboboxSelected>>', lambda e: self._rebuild())
 
-        if HAS_MPL and content in ('graph', 'both'):
-            self.graph_frame = tk.Frame(paned, bg=c['graph_bg'])
-            paned.add(self.graph_frame, minsize=60, stretch='always')
+        self.search_var = tk.StringVar()
+        ent = tk.Entry(bar, textvariable=self.search_var, width=24,
+                       bg=c['entry_bg'], fg=c['fg'], insertbackground=c['fg'],
+                       relief=tk.FLAT, borderwidth=1)
+        ent.pack(side=tk.LEFT, padx=(0, 2))
+        ent.bind('<Return>', lambda e: self._find_next())
 
-            self.fig = Figure(figsize=(8, 3), dpi=80, facecolor=c['graph_bg'])
-            self.ax = self.fig.add_subplot(111)
-            self.ax.set_facecolor(c['graph_bg'])
-            self.ax.tick_params(colors=c['graph_fg'])
-            for spine in self.ax.spines.values():
-                spine.set_color(c['graph_fg'])
+        self._mkbtn(bar, t('console_find'), self._find_next)
+        self._mkbtn(bar, t('console_clear'), self.clear)
+        self._mkbtn(bar, t('console_copy'), self.copy_all)
+        self._mkbtn(bar, t('console_export'), self.export)
 
-            self.canvas = FigureCanvasTkAgg(self.fig, master=self.graph_frame)
-            self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-            self.canvas.get_tk_widget().bind('<Double-Button-1>', self.open_graph_detail)
-            self.canvas.get_tk_widget().bind('<MouseWheel>', self._on_mousewheel_zoom)
-            self.canvas.get_tk_widget().bind('<Button-4>', self._on_mousewheel_zoom)
-            self.canvas.get_tk_widget().bind('<Button-5>', self._on_mousewheel_zoom)
+        self.follow_var = tk.BooleanVar(value=True)
+        tk.Checkbutton(bar, text=t('console_autoscroll'),
+                       variable=self.follow_var,
+                       command=self._follow_toggled,
+                       bg=c['bg'], fg=c['fg'], activebackground=c['bg'],
+                       activeforeground=c['fg'], highlightthickness=0
+                       ).pack(side=tk.RIGHT, padx=(8, 0))
+        self.status_var = tk.StringVar(value=t('console_status', n=0))
+        tk.Label(bar, textvariable=self.status_var, bg=c['bg'], fg=c['fg'],
+                 anchor='e').pack(side=tk.RIGHT, padx=(0, 8))
 
-            self._update_graph()
-        else:
-            self.canvas = None
-            self.graph_frame = None
+        # --- текст ---
+        body = tk.Frame(self._content, bg=c['bg'])
+        body.pack(fill=tk.BOTH, expand=True, padx=5, pady=(0, 5))
 
-    def open_graph_detail(self, event=None):
-        if self.graph_detail_window is not None and self.graph_detail_window.winfo_exists():
-            self.graph_detail_window.lift()
+        scroll = ttk.Scrollbar(body, orient=tk.VERTICAL)
+        self.console_text = tk.Text(body, font=('Consolas', 10),
+                                    bg=c['entry_bg'], fg=c['fg'],
+                                    insertbackground=c['fg'],
+                                    selectbackground='#264f78',
+                                    relief=tk.FLAT, borderwidth=1,
+                                    wrap=tk.WORD,
+                                    yscrollcommand=self._on_yscroll)
+        scroll.config(command=self._scrollbar_cmd)
+        self.console_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        self._scrollbar = scroll
+
+        self.console_text.tag_config('found', background='#7a5c00',
+                                     foreground='#ffffff')
+        # пользователь сам крутит - гасим автоскролл
+        self.console_text.bind('<MouseWheel>', self._on_user_scroll, add='+')
+        scroll.bind('<ButtonRelease-1>', self._on_user_scroll, add='+')
+        scroll.bind('<B1-Motion>', self._on_user_scroll, add='+')
+
+    def _mkbtn(self, parent, label, cmd):
+        return tk.Button(parent, text=label, command=cmd,
+                         bg=self.colors['entry_bg'], fg=self.colors['fg'],
+                         activebackground=self.colors['accent'],
+                         activeforeground='#ffffff', relief=tk.FLAT,
+                         borderwidth=1, padx=7, pady=1).pack(side=tk.LEFT,
+                                                             padx=2)
+
+    # ------------------------------------------------------------ потокобезопасность
+    def append(self, text):
+        """Добавить текст. Можно вызывать из ЛЮБОГО потока."""
+        if not text:
             return
-        if not HAS_MPL:
-            return
-        c = self.colors
-        self.graph_detail_window, gd_content = create_themed_toplevel(
-            self.parent if not self.detached else self.window, 'График скоров (подробно)',
-            self.colors, 1000, 700)
+        self._queue.put(text)
 
-        # Панель инструментов
-        toolbar_frame = tk.Frame(gd_content, bg=c['bg'])
-        toolbar_frame.pack(fill=tk.X, padx=5, pady=3)
-        tk.Button(toolbar_frame, text='Растянуть X', command=lambda: self._zoom_detail(1.3),
-                  bg=c['entry_bg'], fg=c['fg']).pack(side=tk.LEFT, padx=2)
-        tk.Button(toolbar_frame, text='Сжать X', command=lambda: self._zoom_detail(0.7),
-                  bg=c['entry_bg'], fg=c['fg']).pack(side=tk.LEFT, padx=2)
-        tk.Button(toolbar_frame, text='Сброс', command=self._reset_detail_zoom,
-                  bg=c['entry_bg'], fg=c['fg']).pack(side=tk.LEFT, padx=2)
-
-        # Поле информации о точке
-        self.graph_info_label = tk.Label(gd_content, text='Наведите мышь на точку графика',
-                                        bg=c['entry_bg'], fg=c['fg'],
-                                        font=('Consolas', 10), anchor='w', padx=10)
-        self.graph_info_label.pack(fill=tk.X, padx=5, pady=3)
-
-        # График
-        self.detail_fig = Figure(figsize=(10, 6), dpi=100, facecolor=c['graph_bg'])
-        self.detail_ax = self.detail_fig.add_subplot(111)
-        self.detail_ax.set_facecolor(c['graph_bg'])
-        self.detail_ax.tick_params(colors=c['graph_fg'])
-        for spine in self.detail_ax.spines.values():
-            spine.set_color(c['graph_fg'])
-
-        self.detail_canvas = FigureCanvasTkAgg(self.detail_fig, master=gd_content)
-        self.detail_canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-        from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
-        nav_frame = tk.Frame(gd_content, bg=c['bg'])
-        nav_frame.pack(fill=tk.X)
-        nav = NavigationToolbar2Tk(self.detail_canvas, nav_frame)
-        nav.update()
-
-        # Привязки
-        self.detail_canvas.get_tk_widget().bind('<MouseWheel>', self._on_detail_mousewheel)
-        self.detail_canvas.get_tk_widget().bind('<Button-4>', self._on_detail_mousewheel)
-        self.detail_canvas.get_tk_widget().bind('<Button-5>', self._on_detail_mousewheel)
-        self.detail_canvas.get_tk_widget().bind('<Motion>', self._on_detail_hover)
-        self.detail_canvas.get_tk_widget().bind('<ButtonPress-1>', self._start_pan_detail)
-        self.detail_canvas.get_tk_widget().bind('<B1-Motion>', self._do_pan_detail)
-        self.detail_canvas.get_tk_widget().bind('<ButtonRelease-1>', self._end_pan_detail)
-
-        self._panning_detail = False
-        self._pan_start_detail = None
-        self._original_xlim = None
-        self._original_ylim = None
-
-        self._draw_detail_graph()
-
-    def _draw_detail_graph(self):
-        if not HAS_MPL:
-            return
-        rounds, avgs = load_history_scores()
-        self.detail_ax.clear()
-        self.detail_ax.set_facecolor(self.colors['graph_bg'])
-        self.detail_ax.tick_params(colors=self.colors['graph_fg'])
-        for spine in self.detail_ax.spines.values():
-            spine.set_color(self.colors['graph_fg'])
-        if rounds:
-            self.detail_ax.plot(rounds, avgs, 'o-', color=self.colors['accent'],
-                                linewidth=2, markersize=8, picker=5)
-            self.detail_ax.fill_between(rounds, avgs, alpha=0.2, color=self.colors['accent'])
-            for r, a in zip(rounds, avgs):
-                self.detail_ax.annotate('%.0f' % a, (r, a), textcoords='offset points',
-                                        xytext=(0, 10), ha='center', fontsize=8,
-                                        color=self.colors['graph_fg'])
-        self.detail_ax.set_xlabel('Раунд', color=self.colors['graph_fg'])
-        self.detail_ax.set_ylabel('Средний скор', color=self.colors['graph_fg'])
-        self.detail_ax.set_title('Средний скор по раундам', color=self.colors['graph_fg'])
-        self.detail_ax.grid(True, alpha=0.3)
-        if self._original_xlim is None:
-            self._original_xlim = self.detail_ax.get_xlim()
-            self._original_ylim = self.detail_ax.get_ylim()
-        self.detail_canvas.draw()
-
-    def _zoom_detail(self, factor):
-        if not hasattr(self, 'detail_ax'):
-            return
-        xlim = self.detail_ax.get_xlim()
-        x_center = (xlim[0] + xlim[1]) / 2
-        x_range = (xlim[1] - xlim[0]) / factor
-        new_xlim = (x_center - x_range / 2, x_center + x_range / 2)
-        self.detail_ax.set_xlim(new_xlim)
-        # Автоматически подгоняем Y по видимым данным
-        rounds, avgs = load_history_scores()
-        if rounds:
-            visible = [(r, a) for r, a in zip(rounds, avgs) if new_xlim[0] <= r <= new_xlim[1]]
-            if visible:
-                ys = [a for _, a in visible]
-                y_min, y_max = min(ys), max(ys)
-                margin = (y_max - y_min) * 0.15 if y_max != y_min else 10
-                self.detail_ax.set_ylim(y_min - margin, y_max + margin)
-        self.detail_canvas.draw()
-
-    def _reset_detail_zoom(self):
-        if not hasattr(self, 'detail_ax'):
-            return
-        if self._original_xlim is not None:
-            self.detail_ax.set_xlim(self._original_xlim)
-            self.detail_ax.set_ylim(self._original_ylim)
-        self.detail_canvas.draw()
-
-    def _start_pan_detail(self, event):
+    def _tick(self):
+        """Главный цикл консоли: раз в FLUSH_MS мс сбрасываем накопленное."""
         try:
-            xdata, ydata = self.detail_ax.transData.inverted().transform((event.x, event.y))
-            self._pan_start_detail = (xdata, ydata)
-        except Exception:
-            self._pan_start_detail = None
-        except Exception:
-            self._pan_start_detail = None
-
-    def _do_pan_detail(self, event):
-        if self._pan_start_detail is None:
+            if not (hasattr(self, 'window') and self.window.winfo_exists()):
+                return
+        except tk.TclError:
             return
+        self._drain()
+        self._after_id = self.window.after(self.FLUSH_MS, self._tick)
+
+    def _drain(self):
+        got = False
+        while True:
+            try:
+                item = self._queue.get_nowait()
+            except queue.Empty:
+                break
+            got = True
+            self._pending.append((self._level_of(item), item))
+        if got:
+            self._flush()
+
+    @staticmethod
+    def _level_of(line):
+        """Определить уровень по тексту: вывод движка идёт обычным текстом."""
+        s = line.lstrip()
+        if s.startswith('!!') or 'Traceback' in s or 'Error:' in s \
+                or 'ERROR' in s or 'SystemExit' in s:
+            return 'error'
+        if s.startswith('!') or 'WARN' in s:
+            return 'warn'
+        return 'info'
+
+    def _active_levels(self):
         try:
-            xdata, ydata = self.detail_ax.transData.inverted().transform((event.x, event.y))
-        except Exception:
-            return
-        if xdata is None:
-            return
-        dx = self._pan_start_detail[0] - xdata
-        xlim = self.detail_ax.get_xlim()
-        self.detail_ax.set_xlim(xlim[0] + dx, xlim[1] + dx)
-        self.detail_canvas.draw()
-        self._pan_start_detail = (xdata, self._pan_start_detail[1])
-    def _end_pan_detail(self, event):
-        self._pan_start_detail = None
+            idx = self._filter_labels.index(self.filter_var.get())
+        except ValueError:
+            idx = 0
+        return self._filter_levels[idx]
 
-    def _on_detail_mousewheel(self, event):
-        if hasattr(event, 'delta'):
-            factor = 1.1 if event.delta > 0 else 0.9
-        elif event.num == 4:
-            factor = 1.1
-        elif event.num == 5:
-            factor = 0.9
-        else:
-            return
-        self._zoom_detail(factor)
+    def _passes(self, level):
+        levels = self._active_levels()
+        return levels is None or level in levels
 
-    def _on_detail_hover(self, event):
-        if not hasattr(self, 'graph_info_label'):
+    def _flush(self):
+        if self.console_text is None:
+            self._pending = []
             return
-        # Конвертируем координаты tkinter в координаты данных
+        chunk = [txt for lvl, txt in self._pending if self._passes(lvl)]
+        self._buffer.extend(self._pending)
+        self._pending = []
+        if chunk:
+            # один insert на весь батч - а не по одному на строку
+            self.console_text.insert(tk.END, ''.join(chunk))
+            self._trim()
+            if self._follow:
+                self.console_text.see(tk.END)
+        self._update_status()
+
+    def _trim(self):
+        """Держим в виджете не больше MAX_LINES строк."""
         try:
-            xdata, ydata = self.detail_ax.transData.inverted().transform((event.x, event.y))
-        except Exception:
-            xdata, ydata = None, None
-        if xdata is None or ydata is None:
-            self.graph_info_label.config(text='Наведите мышь на точку графика')
+            total = int(self.console_text.index('end-1c').split('.')[0])
+        except (tk.TclError, ValueError):
             return
-        rounds, avgs = load_history_scores()
-        if not rounds:
-            return
-        dists = [abs(r - xdata) for r in rounds]
-        idx = dists.index(min(dists))
-        r = rounds[idx]
-        a = avgs[idx]
-        self.graph_info_label.config(text='Раунд %d: средний скор = %.1f  (всего раундов: %d)' % (r, a, len(rounds)))
-    def _on_mousewheel_zoom(self, event):
-        if not HAS_MPL or not hasattr(self, 'canvas') or self.canvas is None:
-            return
-        if hasattr(event, 'delta'):
-            factor = 1.1 if event.delta > 0 else 0.9
-        elif event.num == 4:
-            factor = 1.1
-        elif event.num == 5:
-            factor = 0.9
-        else:
-            return
-        xlim = self.ax.get_xlim()
-        x_center = (xlim[0] + xlim[1]) / 2
-        x_range = (xlim[1] - xlim[0]) / factor
-        new_xlim = (x_center - x_range / 2, x_center + x_range / 2)
-        self.ax.set_xlim(new_xlim)
-        # Автоматически подгоняем Y
-        rounds, avgs = load_history_scores()
-        if rounds:
-            visible = [(r, a) for r, a in zip(rounds, avgs) if new_xlim[0] <= r <= new_xlim[1]]
-            if visible:
-                ys = [a for _, a in visible]
-                y_min, y_max = min(ys), max(ys)
-                margin = (y_max - y_min) * 0.15 if y_max != y_min else 10
-                self.ax.set_ylim(y_min - margin, y_max + margin)
-        self.canvas.draw()
+        if total > self.MAX_LINES:
+            self.console_text.delete('1.0', '%d.0' % (total - self.MAX_LINES + 1))
 
+    def _update_status(self):
+        self.status_var.set(t('console_status', n=len(self._buffer)))
 
-    def _update_graph(self):
-        if not HAS_MPL or not hasattr(self, 'canvas') or self.canvas is None:
+    # ------------------------------------------------------------- скроллинг
+    def _on_yscroll(self, first, last):
+        # _scrollbar создаётся ПОСЛЕ Text, а Tk может вызвать колбэк сразу
+        sb = getattr(self, '_scrollbar', None)
+        if sb is not None:
+            sb.set(first, last)
+
+    def _scrollbar_cmd(self, *args):
+        self.console_text.yview(*args)
+        self._sync_follow()
+
+    def _on_user_scroll(self, event=None):
+        self._sync_follow()
+
+    def _sync_follow(self):
+        try:
+            at_end = self.console_text.yview()[1] >= 0.999
+        except (tk.TclError, AttributeError):
             return
-        rounds, avgs = load_history_scores()
-        self.ax.clear()
-        self.ax.set_facecolor(self.colors['graph_bg'])
-        self.ax.tick_params(colors=self.colors['graph_fg'])
-        for spine in self.ax.spines.values():
-            spine.set_color(self.colors['graph_fg'])
-        if rounds:
-            self.ax.plot(rounds, avgs, 'o-', color=self.colors['accent'], linewidth=2, markersize=4)
-            self.ax.fill_between(rounds, avgs, alpha=0.2, color=self.colors['accent'])
-        self.ax.set_xlabel('Раунд', color=self.colors['graph_fg'], fontsize=9)
-        self.ax.set_ylabel('Скор', color=self.colors['graph_fg'], fontsize=9)
-        self.ax.set_title('Средний скор по раундам', color=self.colors['graph_fg'], fontsize=10)
-        self.ax.grid(True, alpha=0.3)
-        self.canvas.draw()
+        self._follow = at_end
+        try:
+            self.follow_var.set(at_end)
+        except tk.TclError:
+            pass
 
-    def append_text(self, text):
-        if self.console_text is not None:
-            self.console_text.insert(tk.END, text)
+    def _follow_toggled(self):
+        self._follow = bool(self.follow_var.get())
+        if self._follow and self.console_text is not None:
             self.console_text.see(tk.END)
 
-    def start_process(self, cmd):
+    # ------------------------------------------------------------- операции
+    def reset(self):
+        """Очистить всё перед новым запуском."""
+        self._pending = []
+        self._buffer.clear()
+        self._find_pos = None
         if self.console_text is not None:
             self.console_text.delete('1.0', tk.END)
-        self.running = True
-        self._stopped_by_user = False
-        self._finished_posted = False
-        try:
-            while True:
-                self._output_queue.get_nowait()
-        except queue.Empty:
-            pass
-        self.process = subprocess.Popen(cmd, shell=True, cwd=HERE,
-                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                       text=True, bufsize=1)
-        self.reader_thread = threading.Thread(target=self._read_output, daemon=True)
-        self.reader_thread.start()
-        self._schedule_graph_update()
-        self._schedule_poll()
+            self.console_text.tag_remove('found', '1.0', tk.END)
+        self._update_status()
 
-    def _read_output(self):
-        if self.process is None:
+    def clear(self):
+        self.reset()
+
+    def _rebuild(self):
+        """Перестроить виджет после смены фильтра (буфер не трогаем)."""
+        if self.console_text is None:
+            return
+        self.console_text.delete('1.0', tk.END)
+        visible = [txt for lvl, txt in self._buffer if self._passes(lvl)]
+        if visible:
+            self.console_text.insert(tk.END, ''.join(visible))
+        self._update_status()
+        if self._follow:
+            self.console_text.see(tk.END)
+
+    def copy_all(self):
+        if self.console_text is None:
             return
         try:
-            for line in self.process.stdout:
-                if not self.running:
-                    break
-                self._output_queue.put(line)
-            self.process.wait()
-        except Exception:
+            self.clipboard_clear()
+            self.clipboard_append(self.console_text.get('1.0', 'end-1c'))
+            self.update()
+        except tk.TclError:
             pass
-        finally:
-            if not self._finished_posted:
-                self._finished_posted = True
-                self._output_queue.put(None)
 
-    def _schedule_poll(self):
-        if hasattr(self, 'window') and self.window.winfo_exists():
-            self.window.after(100, self._poll_output)
-
-    def _poll_output(self):
-        if not hasattr(self, 'window') or not self.window.winfo_exists():
+    def export(self):
+        from tkinter import filedialog
+        path = filedialog.asksaveasfilename(
+            defaultextension='.txt',
+            filetypes=[('Text', '*.txt'), ('All files', '*.*')])
+        if not path:
             return
         try:
-            while True:
-                item = self._output_queue.get_nowait()
-                if item is None:
-                    self.running = False
-                    if self.console_text is not None and not self._stopped_by_user:
-                        self.append_text('\n=== Обучение завершено ===\n')
-                    self._update_graph()
-                    if self.on_finish is not None:
-                        try:
-                            self.on_finish()
-                        except Exception:
-                            pass
-                    return
-                if self.console_text is not None:
-                    self.append_text(item)
-        except queue.Empty:
-            pass
-        if self.running or not self._output_queue.empty():
-            self.window.after(100, self._poll_output)
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write(''.join(txt for _lvl, txt in self._buffer))
+            self.append('\n' + t('console_export_done', path=path) + '\n')
+        except OSError as e:
+            self.append('\n' + t('console_export_fail', err=e) + '\n')
 
-    def _schedule_graph_update(self):
-        if self.running:
-            self._update_graph()
-            if hasattr(self, 'window') and self.window.winfo_exists():
-                self.window.after(10000, self._schedule_graph_update)
-        else:
-            self._update_graph()
+    def _find_next(self):
+        if self.console_text is None:
+            return
+        q = self.search_var.get()
+        if not q:
+            return
+        self.console_text.tag_remove('found', '1.0', tk.END)
+        start = self._find_pos or '1.0'
+        pos = self.console_text.search(q, start, stopindex=tk.END, nocase=True)
+        if not pos:                     # дошли до конца - начинаем заново
+            pos = self.console_text.search(q, '1.0', stopindex=tk.END,
+                                           nocase=True)
+        if not pos:
+            self._find_pos = None
+            return
+        end = '%s+%dc' % (pos, len(q))
+        self.console_text.tag_add('found', pos, end)
+        self.console_text.see(pos)
+        self._find_pos = end
 
+    # ------------------------------------------------------------- жизненный цикл
     def stop(self):
         self._stopped_by_user = True
-        was_running = self.running
         self.running = False
-        if self.process and self.process.poll() is None:
-            self.process.terminate()
-            try:
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-            if self.console_text is not None:
-                self.append_text('\n=== Остановлено пользователем ===\n')
-        elif was_running and self.console_text is not None:
-            self.append_text('\n=== Остановлено пользователем ===\n')
 
     def destroy(self):
         self.stop()
+        if self._after_id is not None:
+            try:
+                self.window.after_cancel(self._after_id)
+            except (tk.TclError, AttributeError):
+                pass
+            self._after_id = None
         if hasattr(self, 'window') and self.window.winfo_exists():
             self.window.destroy()
-
-
-class SidePanel:
-    """Боковая панель с кнопкой открепления/прикрепления."""
-
-    def __init__(self, parent, title, colors, content_builder, detached=False, width=300):
-        self.parent = parent
-        self.colors = colors
-        self.detached = detached
-        self.title = title
-        self.content_builder = content_builder
-        self.width = width
-        self.detached_window = None
-
-        if detached:
-            self.window, self._content = create_themed_toplevel(parent, title, colors, width, 600)
-            self._build_detached()
-        else:
-            self.window = tk.Frame(parent, bg=colors['bg'], width=width)
-            self.window.pack_propagate(False)
-            self._build_attached()
-
-    def _build_attached(self):
-        c = self.colors
-        header = tk.Frame(self.window, bg=c['title_bg'], height=26)
-        header.pack(fill=tk.X)
-        header.pack_propagate(False)
-
-        tk.Label(header, text=self.title, bg=c['title_bg'], fg=c['fg'],
-                 font=('Segoe UI', 10, 'bold')).pack(side=tk.LEFT, padx=8)
-
-        detach_btn = tk.Button(header, text='\u2197', font=('Segoe UI', 11),
-                               bg=c['title_bg'], fg=c['fg'], relief=tk.FLAT,
-                               borderwidth=0, cursor='hand2',
-                               command=self.detach)
-        detach_btn.pack(side=tk.RIGHT, padx=4)
-
-        content_frame = tk.Frame(self.window, bg=c['bg'])
-        content_frame.pack(fill=tk.BOTH, expand=True)
-        self.content_builder(content_frame, c)
-
-    def _build_detached(self):
-        c = self.colors
-        # Кнопка прикрепления в заголовке (уже есть заголовок от create_themed_toplevel)
-        header = self.window.winfo_children()[0]
-        attach_btn = tk.Button(header, text='\u2199', font=('Segoe UI', 12),
-                               bg=c['title_bg'], fg=c['fg'], relief=tk.FLAT,
-                               borderwidth=0, cursor='hand2',
-                               command=self.attach)
-        attach_btn.pack(side=tk.RIGHT, padx=4)
-
-        content_frame = tk.Frame(self._content, bg=c['bg'])
-        content_frame.pack(fill=tk.BOTH, expand=True)
-        self.content_builder(content_frame, c)
-
-    def detach(self):
-        self.detached = True
-        for w in self.window.winfo_children():
-            w.destroy()
-        self.window.pack_forget()
-        self.window, self._content = create_themed_toplevel(self.parent, self.title, self.colors, self.width, 600)
-        self._build_detached()
-        self.window.geometry('+%d+%d' % (self.parent.winfo_x() + 100, self.parent.winfo_y() + 100))
-
-    def attach(self):
-        self.detached = False
-        self.window.destroy()
-        self.window = tk.Frame(self.parent, bg=self.colors['bg'], width=self.width)
-        self.window.pack_propagate(False)
-        self._build_attached()
-
-    def destroy(self):
-        if hasattr(self, 'window') and self.window.winfo_exists():
-            self.window.destroy()
-
-
-class SettingsDialog:
-    """Окно настроек (Toplevel)."""
-
-    def __init__(self, parent, config, on_apply, colors):
-        self.parent = parent
-        self.config = dict(config)
-        self.on_apply = on_apply
-        self.colors = colors
-
-        self.win, self._content = create_themed_toplevel(parent, 'Настройки', colors, 640, 520)
-        self.win.grab_set()
-
-        c = colors
-        self.win.configure(bg=c['bg'])
-
-        main_frame = tk.Frame(self._content, bg=c['bg'])
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
-
-        left_col = tk.Frame(main_frame, bg=c['bg'])
-        left_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
-
-        right_col = tk.Frame(main_frame, bg=c['bg'])
-        right_col.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-
-        # === Левая колонка: Внешний вид ===
-        tk.Label(left_col, text='Внешний вид', bg=c['bg'], fg=c['fg'],
-                 font=('Segoe UI', 12, 'bold')).pack(pady=(0, 5), anchor='w')
-
-        tk.Label(left_col, text='Цветовая схема:', bg=c['bg'], fg=c['fg'],
-                 font=('Segoe UI', 10)).pack(anchor='w')
-        self.theme_var = tk.StringVar(value=self.config.get('theme', 'dark'))
-        for name in COLOR_SCHEMES:
-            tk.Radiobutton(left_col, text=name, variable=self.theme_var, value=name,
-                           bg=c['bg'], fg=c['fg'], selectcolor=c['entry_bg'],
-                           activebackground=c['bg'], activeforeground=c['fg']).pack(anchor='w', padx=10)
-
-        # === Правая колонка: Панели ===
-        tk.Label(right_col, text='Панели', bg=c['bg'], fg=c['fg'],
-                 font=('Segoe UI', 12, 'bold')).pack(pady=(0, 5), anchor='w')
-
-        tk.Label(right_col, text='Содержимое консоли:', bg=c['bg'], fg=c['fg'],
-                 font=('Segoe UI', 10)).pack(anchor='w')
-        self.content_var = tk.StringVar(value=self.config.get('console_content', 'both'))
-        for val, label in [('console', 'Только вывод'), ('graph', 'Только график'),
-                           ('both', 'Вывод + график')]:
-            tk.Radiobutton(right_col, text=label, variable=self.content_var, value=val,
-                           bg=c['bg'], fg=c['fg'], selectcolor=c['entry_bg'],
-                           activebackground=c['bg'], activeforeground=c['fg']).pack(anchor='w', padx=10)
-
-        # Показывать/скрывать панели управляется кнопками в заголовке
-
-        # Кнопки
-        btn_frame = tk.Frame(self._content, bg=c['bg'])
-        btn_frame.pack(pady=15)
-        tk.Button(btn_frame, text='По умолчанию', command=self.set_defaults, bg=c['entry_bg'], fg=c['fg']).pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text='Применить', command=self.apply, bg=c['accent'], fg='white').pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text='Закрыть', command=self.win.destroy, bg=c['entry_bg'], fg=c['fg']).pack(side=tk.LEFT, padx=5)
-
-    def set_defaults(self):
-        # Рекомендованные настройки
-        self.theme_var.set('dark')
-        if hasattr(self, 'content_var'):
-            self.content_var.set('both')
-        if hasattr(self, 'show_console_var'):
-            self.show_console_var.set(True)
-        if hasattr(self, 'show_params_var'):
-            self.show_params_var.set(True)
-
-    def apply(self):
-        self.config['theme'] = self.theme_var.get()
-        self.config['console_panel'] = self.panel_var.get() if hasattr(self, 'panel_var') else self.config.get('console_panel', 'right')
-        self.config['console_content'] = self.content_var.get()
-        self.config['show_console'] = self.show_console_var.get()
-        self.config['show_params'] = self.show_params_var.get()
-        save_config(self.config)
-        if HAS_SV_TTK:
-            sv_theme = 'light' if self.config.get('theme', 'dark') in ('light', 'white') else 'dark'
-            sv_ttk.set_theme(sv_theme)
-            setup_scrollbar_style()
-        self.on_apply(self.config)
 
 
 class App:
@@ -994,9 +734,6 @@ class App:
         self._schedule_detail_update()
         # Применить стиль панели задач после отображения окна
         pass  # _apply_taskbar_style отключён (скрывал окно)
-
-    def _apply_taskbar_style(self):
-        apply_taskbar_style(self.root)
 
     def _build_title_bar(self):
         c = self.colors
@@ -1427,28 +1164,6 @@ class App:
                                            content=self.config.get('console_content', 'both'),
                                            on_attach=self._attach_console)
 
-    def _move_detail(self):
-        if self.config.get('detail_side', 'left') == 'left':
-            self.config['detail_side'] = 'right'
-        else:
-            self.config['detail_side'] = 'left'
-        save_config(self.config)
-        self._rebuild_panels()
-
-    def _move_console(self):
-        if self.config.get('console_side', 'right') == 'right':
-            self.config['console_side'] = 'left'
-        else:
-            self.config['console_side'] = 'right'
-        save_config(self.config)
-        self._rebuild_panels()
-
-    def _toggle_detail_panel(self):
-        if self.config.get('detail_detached', False):
-            self._attach_detail()
-        else:
-            self._detach_detail()
-
     def _toggle_console_panel(self):
         if self.console_window is not None and self.console_window.window.winfo_exists():
             self.console_window.destroy()
@@ -1456,53 +1171,6 @@ class App:
         else:
             self.console_window = ConsoleWindow(self.root, self.colors, detached=True,
                                                content=self.config.get('console_content', 'both'))
-    def toggle_settings(self):
-        settings_win, settings_content = create_themed_toplevel(self.root, 'Настройки', self.colors, 560, 520)
-        settings_win.grab_set()
-        settings_win.transient(self.root)
-
-        c = self.colors
-        settings_win.configure(bg=c['bg'])
-
-        main_frame = tk.Frame(settings_content, bg=c['bg'])
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
-
-        left_col = tk.Frame(main_frame, bg=c['bg'])
-        left_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
-
-        right_col = tk.Frame(main_frame, bg=c['bg'])
-        right_col.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-
-        # === Левая колонка: Внешний вид ===
-        tk.Label(left_col, text='Внешний вид', bg=c['bg'], fg=c['fg'],
-                 font=('Segoe UI', 12, 'bold')).pack(pady=(0, 5), anchor='w')
-
-        tk.Label(left_col, text='Цветовая схема:', bg=c['bg'], fg=c['fg'],
-                 font=('Segoe UI', 10)).pack(anchor='w')
-        theme_var = tk.StringVar(value=self.config.get('theme', 'dark'))
-        for name in COLOR_SCHEMES:
-            tk.Radiobutton(left_col, text=name, variable=theme_var, value=name,
-                           bg=c['bg'], fg=c['fg'], selectcolor=c['entry_bg'],
-                           activebackground=c['bg'], activeforeground=c['fg']).pack(anchor='w', padx=10)
-
-        # === Правая колонка: Отображение ===
-        tk.Label(right_col, text='Отображение', bg=c['bg'], fg=c['fg'],
-                 font=('Segoe UI', 12, 'bold')).pack(pady=(0, 5), anchor='w')
-
-        tk.Label(right_col, text='Содержимое консоли:', bg=c['bg'], fg=c['fg'],
-                 font=('Segoe UI', 10)).pack(anchor='w')
-        content_var = tk.StringVar(value=self.config.get('console_content', 'both'))
-        for val, label in [('console', 'Только вывод'), ('graph', 'Только график'),
-                           ('both', 'Вывод + график')]:
-            tk.Radiobutton(right_col, text=label, variable=content_var, value=val,
-                           bg=c['bg'], fg=c['fg'], selectcolor=c['entry_bg'],
-                           activebackground=c['bg'], activeforeground=c['fg']).pack(anchor='w', padx=10)
-
-        # (опции отображения панелей убраны из настроек — управляются кнопками в заголовке)
-
-        # Кнопки
-        btn_frame = tk.Frame(settings_content, bg=c['bg'])
-        btn_frame.pack(pady=15)
     def apply_and_close():
         self.config['theme'] = theme_var.get()
         self.config['console_content'] = content_var.get()
@@ -1931,45 +1599,64 @@ class App:
             self.console_window = ConsoleWindow(self.root, self.colors, detached=True,
                                                content='both')
 
-        # Очистить консоль
-        if self.console_window.console_text is not None:
-            self.console_window.console_text.config(state=tk.NORMAL)
-            self.console_window.console_text.delete('1.0', tk.END)
-            self.console_window.console_text.config(state=tk.DISABLED)
+        # Очистить консоль (потокобезопасно, через сам объект консоли)
+        if self.console_window is not None:
+            self.console_window.reset()
 
-        # Запуск процесса
+        # Запуск процесса. PYTHONUTF8=1 + encoding='utf-8' - иначе чтение
+        # вывода падает по UnicodeDecodeError при cp1251/UTF-8 и поток чтения
+        # умирает молча: кнопка «Старт» не восстанавливается (аудит).
+        env = os.environ.copy()
+        env['PYTHONUTF8'] = '1'
         if getattr(sys, 'frozen', False):
             args_part = cmd
             if args_part.startswith('py evo.py '):
                 args_part = args_part[len('py evo.py '):]
-            env = os.environ.copy()
             env['KC_EVO_ARGS'] = args_part
             env['KC_RUN_MODULE'] = 'evo'
             self.process = subprocess.Popen([sys.executable], shell=False, cwd=HERE,
                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                           text=True, bufsize=1, env=env)
+                                           text=True, bufsize=1, env=env,
+                                           encoding='utf-8', errors='replace')
         else:
             self.process = subprocess.Popen(cmd, shell=True, cwd=HERE,
                                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                           text=True, bufsize=1)
+                                           text=True, bufsize=1, env=env,
+                                           encoding='utf-8', errors='replace')
         self.process_running = True
         self.reader_thread = threading.Thread(target=self._read_output, daemon=True)
         self.reader_thread.start()
 
     def _read_output(self):
+        """Читает вывод процесса. Выполняется в ОТДЕЛЬНОМ потоке.
+
+        В Tk-виджеты отсюда не лезем - только queue (потокобезопасно).
+        Раньше здесь был .after() на виджете и не было try/except: любая
+        ошибка чтения убивала поток молча и «Старт» зависал навсегда.
+        """
         if self.process is None:
             return
-        for line in self.process.stdout:
-            if not self.process_running:
-                break
-            if self.console_window is not None and self.console_window.console_text is not None:
-                self.console_window.console_text.after(0, self._append_text, self.console_window.console_text, line)
-        self.process.wait()
-        self.process_running = False
-        if self.console_window is not None and self.console_window.console_text is not None:
-            self.console_window.console_text.after(0, self._append_text, self.console_window.console_text, '\n=== Обучение завершено ===\n')
-        self.start_btn.after(0, lambda: self.start_btn.pack(side=tk.LEFT, padx=4))
-        self.stop_btn.after(0, lambda: self.stop_btn.pack_forget())
+        console = self.console_window
+        try:
+            for line in self.process.stdout:
+                if not self.process_running:
+                    break
+                if console is not None:
+                    console.append(line)
+            self.process.wait()
+        except Exception as e:
+            if console is not None:
+                console.append('\n!! ошибка чтения вывода: %r\n' % (e,))
+        finally:
+            self.process_running = False
+            if console is not None:
+                console.append('\n=== Обучение завершено ===\n')
+            # кнопки - только через главный поток
+            try:
+                self.start_btn.after(0, lambda: self.start_btn.pack(side=tk.LEFT, padx=4))
+                self.stop_btn.after(0, lambda: self.stop_btn.pack_forget())
+            except tk.TclError:
+                pass
 
     def stop_training(self):
         self.process_running = False
@@ -1990,8 +1677,8 @@ class App:
                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except Exception:
             pass
-        if self.console_window is not None and self.console_window.console_text is not None:
-            self._append_text(self.console_window.console_text, '\n=== Остановлено пользователем ===\n')
+        if self.console_window is not None:
+            self.console_window.append('\n=== Остановлено пользователем ===\n')
         self.stop_btn.pack_forget()
         self.start_btn.pack(side=tk.LEFT, padx=4)
 
@@ -2012,60 +1699,6 @@ class App:
         except Exception:
             pass
         self.root.destroy()
-
-    def _append_text(self, widget, text):
-        try:
-            if not widget.winfo_exists():
-                return
-            widget.config(state=tk.NORMAL)
-            widget.insert(tk.END, text)
-            widget.see(tk.END)
-            widget.config(state=tk.DISABLED)
-        except tk.TclError:
-            pass
-
-    def _update_graph(self):
-        if not HAS_MPL or not hasattr(self, 'canvas') or self.canvas is None:
-            return
-        rounds, avgs = load_history_scores()
-        self.ax.clear()
-        c = self.colors
-        self.ax.set_facecolor(c['graph_bg'])
-        self.ax.tick_params(colors=c['graph_fg'], labelsize=8)
-        for spine in self.ax.spines.values():
-            spine.set_color(c['graph_fg'])
-        if rounds:
-            self.ax.plot(rounds, avgs, 'o-', color=c['accent'], linewidth=2, markersize=4)
-            self.ax.fill_between(rounds, avgs, alpha=0.2, color=c['accent'])
-        self.ax.set_xlabel('Раунд', color=c['graph_fg'], fontsize=9)
-        self.ax.set_ylabel('Скор', color=c['graph_fg'], fontsize=9)
-        self.ax.set_title('Средний скор по раундам', color=c['graph_fg'], fontsize=10)
-        self.ax.grid(True, alpha=0.3)
-        self.canvas.draw()
-
-    def open_graph_detail(self, event=None):
-        if not HAS_MPL:
-            return
-        win = tk.Toplevel(self.root)
-        win.title('График скоров (подробно)')
-        win.geometry('900x600')
-        from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
-        fig = Figure(figsize=(9, 6), dpi=100)
-        ax = fig.add_subplot(111)
-        rounds, avgs = load_history_scores()
-        if rounds:
-            ax.plot(rounds, avgs, 'o-', color=self.colors['accent'], linewidth=2, markersize=6)
-            ax.fill_between(rounds, avgs, alpha=0.2, color=self.colors['accent'])
-        ax.set_xlabel('Раунд')
-        ax.set_ylabel('Средний скор')
-        ax.set_title('Средний скор по раундам')
-        ax.grid(True, alpha=0.3)
-        canvas = FigureCanvasTkAgg(fig, master=win)
-        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-        toolbar_frame = tk.Frame(win)
-        toolbar_frame.pack(fill=tk.X)
-        toolbar = NavigationToolbar2Tk(canvas, toolbar_frame)
-        toolbar.update()
 
     def _get_panel_order(self):
         """Возвращает список видимых панелей в порядке слева направо."""
