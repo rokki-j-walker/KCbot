@@ -1849,22 +1849,40 @@ class Bot(object):
         return abs(a.x - b.x) < 0.6
 
     def do_pay(self, st, p):
-        now = self.now()
+        """Оплата Payable: конечный автомат из фаз (рефакторинг D27).
 
-        # --- фаза: держим S
+        Фазы по порядку: удержание S -> смена цели -> подход -> остановка
+        и кружки -> выбор объекта -> сканирование точек/отказ. Фаза,
+        вернувшая True, останавливает кадр (как прежние ранние return).
+        """
+        now = self.now()
         if self.pay_phase == 'hold':
-            ps = st.pay_state
-            if ps == 'None':
-                # транзакция завершилась (или откатилась)
-                if now - self.pay_started > 0.6:
-                    self.finish_pay(st, p)
-                return
-            if now - self.pay_started > self.pay_timeout(p.price):
-                self.note('pay_timeout', '%s %d' % (p.base, p.price))
+            self._pay_hold(st, p, now)
+            return
+        self._pay_switch_target(st, p, now)
+        if self._pay_walk(st, p, now):
+            return
+        if self._pay_wait_circles(st, p, now):
+            return
+        if self._pay_select(st, p, now):
+            return
+        self._pay_scan(st, p, now)
+
+    def _pay_hold(self, st, p, now):
+        """Фаза 'hold': держим S, ждём конца транзакции или таймаута."""
+        ps = st.pay_state
+        if ps == 'None':
+            # транзакция завершилась (или откатилась)
+            if now - self.pay_started > 0.6:
                 self.finish_pay(st, p)
             return
+        if now - self.pay_started > self.pay_timeout(p.price):
+            self.note('pay_timeout', '%s %d' % (p.base, p.price))
+            self.finish_pay(st, p)
+        return
 
-        # --- цель сменилась - поиск точки сначала
+    def _pay_switch_target(self, st, p, now):
+        """Цель сменилась - сброс и поиск точки сначала (кадр не останавливает)."""
         if self.pay_target is not None and not self.same_payable(self.pay_target, p):
             self.finish_pay(st, self.pay_target)
         self.pay_target = p
@@ -1874,7 +1892,8 @@ class Bot(object):
             self.scan_t = 0.0
             self.pay_since = now
 
-        # --- идём к точке оплаты
+    def _pay_walk(self, st, p, now):
+        """Идём к точке оплаты. True - ушли ходить, кадр завершён."""
         target = self.scan_x
         dx = target - st.px
         if abs(dx) > CFG['pay_tol']:
@@ -1882,37 +1901,46 @@ class Bot(object):
             self.note('task', 'PAY %s(%d) -> %.2f (px=%.2f)' %
                       (p.base, p.price, target, st.px))
             self.walk_to(st, target, sprint=False, tol=CFG['pay_tol'])
-            return
+            return True
+        return False
 
-        # --- полностью остановиться: кружки оплаты появляются только в покое
+    def _pay_wait_circles(self, st, p, now):
+        """Полная остановка и ожидание кружков оплаты. True - ждём."""
+        # полностью остановиться: кружки оплаты появляются только в покое
         self.stop_move()
         if self._pay_last_px is None or abs(st.px - self._pay_last_px) >= 0.05:
             # король ещё движется (инерция) - ждём
             self._pay_last_px = st.px
             self._pay_still_since = now
-            return
+            return True
         if self._pay_still_since == 0.0:
             self._pay_still_since = now
         if now - self._pay_still_since < 0.5 / self.speed:
             self.note('task', 'PAY stop, ждём кружки %s' % p.base)
-            return
+            return True
         # стоим неподвижно 0.5с - даём игре показать кружки
         if self.pay_since > 0 and now - self.pay_since < 1.2 / self.speed:
-            return
+            return True
+        return False
 
-        if st.sel is not None and self.same_payable(st.sel, p):
-            if st.purse <= 0:
-                return
-            if st.pay_state != 'None':
-                return
-            self.pay_phase = 'hold'
-            self.pay_started = now
-            self.pay_purse0 = st.purse
-            self.note('task', 'PAY %s price=%d purse=%d' % (p.base, p.price, st.purse))
-            if not self.dry:
-                self.inp.down(SC_S)
-            return
+    def _pay_select(self, st, p, now):
+        """Объект выбран - держим S. True - кадр завершён."""
+        if st.sel is None or not self.same_payable(st.sel, p):
+            return False
+        if st.purse <= 0:
+            return True
+        if st.pay_state != 'None':
+            return True
+        self.pay_phase = 'hold'
+        self.pay_started = now
+        self.pay_purse0 = st.purse
+        self.note('task', 'PAY %s price=%d purse=%d' % (p.base, p.price, st.purse))
+        if not self.dry:
+            self.inp.down(SC_S)
+        return True
 
+    def _pay_scan(self, st, p, now):
+        """Объект не выбирается: ищем точку рядом, либо сдаёмся (giveup)."""
         # --- объект не выбирается: ищем точку рядом
         self.scan_t += 0.2
         if self.scan_t >= 0.45:
