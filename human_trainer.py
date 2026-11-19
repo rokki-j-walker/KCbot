@@ -29,8 +29,7 @@ import gamepath
 HERE = os.path.dirname(os.path.abspath(__file__))
 GAME_DIR = gamepath.require_game_dir()
 GAME_EXE = os.path.join(GAME_DIR, 'Kingdom.exe')
-SAVE = os.path.join(os.environ['USERPROFILE'], 'AppData', 'LocalLow',
-                    'noio', 'Kingdom', 'storage_v26_AUTO.dat')
+SAVE = gamepath.save_file()
 BASELINE = os.path.join(HERE, 'saves', 'baseline.dat')
 
 

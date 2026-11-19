@@ -20,8 +20,31 @@ def game_dir():
             data = json.load(f)
     except (OSError, ValueError):
         return ''
+    # settings.json может оказаться не объектом (массив/строка/null)
+    if not isinstance(data, dict):
+        return ''
     value = data.get('game_dir')
     return value.strip() if isinstance(value, str) else ''
+
+
+def save_file():
+    """Путь к текущему сейву игры (storage_*_AUTO.dat).
+
+    Единственная точка правды: раньше путь был захардкожен в трёх файлах
+    (restart.py, human_trainer.py, evo.py) с жёсткой версией storage_v26.
+    Имя версии определяется динамически — при выходе новой версии игры
+    править ничего не придётся.
+    """
+    import glob as _glob
+    base = os.path.join(
+        os.environ.get('USERPROFILE', ''),
+        'AppData', 'LocalLow', 'noio', 'Kingdom',
+    )
+    found = sorted(_glob.glob(os.path.join(base, 'storage_*_AUTO.dat')))
+    if found:
+        return found[-1]
+    # файла ещё нет — возвращаем ожидаемый путь по умолчанию
+    return os.path.join(base, 'storage_v26_AUTO.dat')
 
 
 def require_game_dir():

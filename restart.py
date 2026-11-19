@@ -20,7 +20,7 @@ import gamepath
 
 GAME_DIR = gamepath.require_game_dir()
 GAME_EXE = os.path.join(GAME_DIR, 'Kingdom.exe')
-SAVE = os.path.join(os.environ['USERPROFILE'], r'AppData\LocalLow\noio\Kingdom\storage_v26_AUTO.dat')
+SAVE = gamepath.save_file()
 
 user32 = ctypes.windll.user32
 kernel32 = ctypes.windll.kernel32

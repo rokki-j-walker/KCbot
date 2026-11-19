@@ -1,0 +1,11 @@
+# KCbot — зависимости Python
+# Python 3.10+ (Windows)
+
+# Темы оформления для tkinter-лаунчера (светлая/тёмная)
+sv-ttk>=2.1
+
+# Скриншоты окна игры (shot.py) и иконка окна с fallback на PIL (launcher.py)
+Pillow>=10.0
+
+# --- Разработка ---
+# pytest>=8.0

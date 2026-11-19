@@ -33,8 +33,9 @@ else:
     HERE = os.path.dirname(os.path.abspath(__file__))
 # Папка игры задаётся лаунчером через --game-dir (сохраняется в настройках приложения).
 GAME_DIR = ''
-SAVE = os.path.join(os.environ['USERPROFILE'], 'AppData', 'LocalLow',
-                    'noio', 'Kingdom', 'storage_v26_AUTO.dat')
+# Единая точка правды — gamepath.save_file() (раньше путь был захардкожен здесь,
+# в restart.py и human_trainer.py с жёсткой версией storage_v26).
+SAVE = gamepath.save_file()
 SAVES_DIR = os.path.join(HERE, 'saves')
 BASELINE = os.path.join(SAVES_DIR, 'baseline.dat')
 BEST_GENOME = os.path.join(HERE, 'data', 'best_genome.json')
