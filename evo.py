@@ -237,24 +237,42 @@ BOUNTIES_FILE = os.path.join(HERE, 'bounties.txt')
 
 
 def load_bounties(path=None):
+    """Прочитать bounties.txt -> dict ключ= float.
+
+    Дубль bot3.load_bounties (см. D25 - объединение в одной фазе рефакторинга).
+    Пока копия: важна идентичность поведения, иначе оценка эволюции разойдётся
+    с очками, которые показывает бот.
+    """
     path = path or BOUNTIES_FILE
     result = {}
+    seen = {}
+    errors = []
     try:
         with open(path, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith('#'):
+            for lineno, raw in enumerate(f, 1):
+                line = raw.split('#', 1)[0].strip()
+                if not line or '=' not in line:
                     continue
-                if '=' in line:
-                    key, _, val = line.partition('=')
-                    key = key.strip()
-                    val = val.strip()
-                    try:
-                        result[key] = float(val)
-                    except ValueError:
-                        pass
-    except Exception:
-        pass
+                key, _, val = line.partition('=')
+                key = key.strip()
+                val = val.strip()
+                try:
+                    num = float(val)
+                except ValueError:
+                    errors.append('%s:%d: %s = %r (не число, пропущено)'
+                                  % (os.path.basename(path), lineno, key, val))
+                    continue
+                if key in seen:
+                    errors.append('%s:%d: ключ %r продублирован '
+                                  '(был в строке %d, перезаписан)'
+                                  % (os.path.basename(path), lineno, key, seen[key]))
+                seen[key] = lineno
+                result[key] = num
+    except OSError as e:
+        errors.append('%s: %s (используются значения по умолчанию из кода)'
+                      % (path, e))
+    for msg in errors:
+        print('!! bounties: %s' % msg)
     return result
 
 

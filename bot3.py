@@ -78,11 +78,17 @@ def _send(sc, up=False):
 
 
 class Input(object):
-    """Клавиатура: удержание/отпускание + окно игры."""
+    """Клавиатура: удержание/отпускание + окно игры.
 
-    def __init__(self):
+    dry=True - ничего не отправлять и не хватать фокус: бот считает решения,
+    но ни одно нажатие не уходит ни в одно окно (раньше --dry шлёт A/D/Shift
+    и проверку фокуса в dry пропускали - клавиши уходили в редактор/чат).
+    """
+
+    def __init__(self, dry=False):
         self.held = set()
         self.hwnd = None
+        self.dry = bool(dry)
 
     def find_window(self, title='Kingdom'):
         res = []
@@ -150,6 +156,8 @@ class Input(object):
         return bool(self.hwnd) and user32.GetForegroundWindow() == self.hwnd
 
     def force_focus(self):
+        if self.dry:
+            return False
         if not self.hwnd:
             return False
         if self.is_focused():
@@ -172,11 +180,15 @@ class Input(object):
         return self.is_focused()
 
     def down(self, sc):
+        if self.dry:
+            return
         if sc not in self.held:
             _send(sc, False)
             self.held.add(sc)
 
     def up(self, sc):
+        if self.dry:
+            return
         if sc in self.held:
             _send(sc, True)
             self.held.discard(sc)
@@ -484,7 +496,12 @@ def parse_line(line):
 
 
 KCDBG_MAX = 256 * 1024 * 1024   # 256 МБ
-_last_cleanup = 0.0
+# Логгер KCLog5 пишет каждые 0.25 с. Если файл молчит дольше этого лимита -
+# патч слётся, игра зависла или закрыта. Раньше бот брал последнюю СТАРУЮ строку
+# и бесконечно действовал по несуществующему состоянию (шёл к мёртвой цели).
+KCDBG_STALE = 5.0
+_last_stale_warn = 0.0
+_last_size = 0
 
 
 def _cleanup_kcdbg(path):
@@ -504,15 +521,26 @@ def _cleanup_kcdbg(path):
 
 
 def read_state(path=KCDBG):
-    """Последняя строка KC| из лога."""
+    """Последняя строка KC| из лога, либо None если данных нет/они устарели."""
+    global _last_stale_warn, _last_size
     _cleanup_kcdbg(path)
     try:
         size = os.path.getsize(path)
+        age = time.time() - os.path.getmtime(path)
         with open(path, 'rb') as f:
             f.seek(max(0, size - 262144))
             data = f.read().decode('utf-8', 'replace')
     except OSError:
         return None
+    # логгер молчит - не выдаём старое состояние за актуальное
+    if size > 0 and age > KCDBG_STALE:
+        if size != _last_size or time.time() - _last_stale_warn > 30.0:
+            _last_stale_warn = time.time()
+            _last_size = size
+            print('!! kcdbg.txt не обновлялся %.1f с - патч слётся или игра '
+                  'зависла; бот остановлен до появления данных' % age)
+        return None
+    _last_size = size
     last = None
     for line in data.splitlines():
         if line.startswith('KC|'):
@@ -627,24 +655,43 @@ BOUNTIES_FILE = os.path.join(HERE, 'bounties.txt')
 
 
 def load_bounties(path=None):
+    """Прочитать bounties.txt -> dict ключ= float.
+
+    Ошибки не молчат: битые строки и дубли ключей печатаются один раз,
+    иначе правка в файле незаметно не применялась (аудит: 'coin_collect = 5,0'
+    тихо терялся, дубли ключей перебивали первое вхождение).
+    """
     path = path or BOUNTIES_FILE
     result = {}
+    seen = {}
+    errors = []
     try:
         with open(path, 'r', encoding='utf-8') as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith('#'):
+            for lineno, raw in enumerate(f, 1):
+                # отрезаем хвостовой комментарий: 'key = 1.0 # пояснение'
+                line = raw.split('#', 1)[0].strip()
+                if not line or '=' not in line:
                     continue
-                if '=' in line:
-                    key, _, val = line.partition('=')
-                    key = key.strip()
-                    val = val.strip()
-                    try:
-                        result[key] = float(val)
-                    except ValueError:
-                        pass
-    except Exception:
-        pass
+                key, _, val = line.partition('=')
+                key = key.strip()
+                val = val.strip()
+                try:
+                    num = float(val)
+                except ValueError:
+                    errors.append('%s:%d: %s = %r (не число, пропущено)'
+                                  % (os.path.basename(path), lineno, key, val))
+                    continue
+                if key in seen:
+                    errors.append('%s:%d: ключ %r продублирован '
+                                  '(был в строке %d, перезаписан)'
+                                  % (os.path.basename(path), lineno, key, seen[key]))
+                seen[key] = lineno
+                result[key] = num
+    except OSError as e:
+        errors.append('%s: %s (используются значения по умолчанию из кода)'
+                      % (path, e))
+    for msg in errors:
+        print('!! bounties: %s' % msg)
     return result
 
 
@@ -759,7 +806,7 @@ class Bot(object):
     def __init__(self, dry=False, inp=None, log=None, own_focus=False,
                  skip_tutorial=False, generation=1, speed=1.0):
         self.dry = dry
-        self.inp = inp or Input()
+        self.inp = inp or Input(dry=dry)
         self.log = log or BotLog()
         self.own_focus = own_focus
         self.skip_tutorial = skip_tutorial
@@ -1834,6 +1881,9 @@ class Bot(object):
     def step(self):
         st = read_state()
         if st is None:
+            # Клавиши обязательно отпускаем: иначе зажатые A/D/Shift продолжают
+            # уходить в окно, пока логгер молчит (патч слётся / игра висит).
+            self.stop_all()
             self.note('no_data', 1)
             return
         if not st.playing:
@@ -1945,15 +1995,16 @@ def main():
         return
     if genome:
         load_genome(genome)
-    inp = Input()
+    inp = Input(dry=dry)
     log = BotLog(log_file) if log_file else BotLog()
-    # записываем скорость в файл для игры
-    try:
-        with open(SPEED_FILE, 'w') as f:
-            f.write(str(speed))
-        log('скорость игры: %.1fx (записано в %s)' % (speed, SPEED_FILE))
-    except Exception as e:
-        log('не смог записать скорость: %r' % (e,))
+    # записываем скорость в файл для игры (в dry-режиме не трогаем игру)
+    if not dry:
+        try:
+            with open(SPEED_FILE, 'w') as f:
+                f.write(str(speed))
+            log('скорость игры: %.1fx (записано в %s)' % (speed, SPEED_FILE))
+        except Exception as e:
+            log('не смог записать скорость: %r' % (e,))
     hwnd = inp.find_window('Kingdom')
     log('окно игры: %s  режим: %s  эпизод: %s  own_focus: %s' %
         (hwnd, 'DRY' if dry else 'LIVE', episode, own_focus))
