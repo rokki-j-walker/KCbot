@@ -61,8 +61,8 @@ KCbot/
 
 Напрямую:
 ```
-py bot3.py --own-focus --speed 4
-py evo.py --pop 12 --rounds 10 --episode 30 --episode-increment 10 --speed 8 --restart
+py bot3.py --own-focus --speed 3
+py evo.py --pop 50 --rounds 15 --episode 20 --episode-increment 5 --speed 3 --restart
 py human_trainer.py --sessions 4 --duration 120
 py evo.py --resetAll --game-dir "C:\...\Kingdom"
 ```

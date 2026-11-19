@@ -159,7 +159,7 @@ DEFAULTS = {
     'rounds': 15,
     'episode': 20.0,
     'episode_increment': 5.0,
-    'speed': 4.0,
+    'speed': 3.0,           # D7: потолок 3x, на 4x+ игра ломается
     'top_percent': 0.1,
     'restart': True,
     'launch_after': False,
@@ -1182,7 +1182,7 @@ class App:
         # Кнопка сброса параметров к рекомендованным
         def _reset_defaults():
             rec = {'pop': 50, 'rounds': 15, 'episode': 20.0, 'episode_increment': 5.0,
-                   'speed': 4.0, 'top_percent': 0.1}
+                   'speed': 3.0, 'top_percent': 0.1}
             for key, (e, typ) in self.entries.items():
                 if key in rec:
                     e.delete(0, tk.END)
@@ -1692,15 +1692,15 @@ class App:
         body.append('=' * 60)
         body.append('')
         body.append('Запуск обучения вручную:')
-        body.append('  py evo.py --pop 50 --rounds 15 --episode 20 --episode-increment 5 --speed 4 --top-percent 0.1')
+        body.append('  py evo.py --pop 50 --rounds 15 --episode 20 --episode-increment 5 --speed 3 --top-percent 0.1')
         body.append('')
         body.append('Все аргументы:')
         body.append('  --pop N               Популяция (умолч. 12)')
         body.append('  --rounds N            Раунды (умолч. 10)')
         body.append('  --episode F           Длина эпизода, сек (умолч. 30.0)')
         body.append('  --episode-increment F Прирост длины (умолч. 10.0)')
-        body.append('  --speed F             Скорость игры 1-4 (умолч. 4.0)')
-        body.append('  --top-percent F       Доля элиты 0-1 (умолч. 0.25)')
+        body.append('  --speed F             Скорость игры 1-3 (умолч. 3.0, 4x+ ломает игру)')
+        body.append('  --top-percent F       Доля элиты 0-1 (умолч. 0.1)')
         body.append('  --elite-window N      Окно сглаживания (умолч. 3)')
         body.append('  --crossover-rate F    Скрещивание (умолч. 0.5)')
         body.append('  --mut-strength F      Сила мутации (умолч. 0.15)')
@@ -1832,7 +1832,7 @@ class App:
         'rounds': (1, 50, 'Мин. 1, макс. 50'),
         'episode': (10, 300, 'Мин. 10 сек, макс. 300 сек'),
         'episode_increment': (0, 60, 'Мин. 0, макс. 60 сек'),
-        'speed': (1, 4, 'Мин. 1x, макс. 4x (8x ломает игру)'),
+        'speed': (1, 3, 'Мин. 1x, макс. 3x (на 4x и выше игра ломается)'),
         'top_percent': (0.01, 1.0, 'От 0.01 до 1.0'),
     }
 

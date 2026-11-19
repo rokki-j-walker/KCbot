@@ -1965,6 +1965,13 @@ def main():
                 speed = float(sys.argv[i + 1])
             except ValueError:
                 speed = 1.0
+    # D7: потолок 3x. Раньше значение писалось в speed.txt как есть -
+    # можно было сломать игру таймингами.
+    if speed > 3.0:
+        print('!! --speed ограничен 3x (на 4x+ игра ломается), было %s' % speed)
+        speed = 3.0
+    if speed < 1.0:
+        speed = 1.0
     for i, a in enumerate(sys.argv):
         if a == '--generation' and i + 1 < len(sys.argv):
             try:

@@ -424,7 +424,7 @@ def _f12_pressed():
     return bool(u.GetAsyncKeyState(0x7B) & 0x01)  # F12 toggle bit
 
 
-def run_episode(genome, episode, restart, generation=1, speed=4.0, log_file=None):
+def run_episode(genome, episode, restart, generation=1, speed=3.0, log_file=None):
     gpath = os.path.join(HERE, '_tmp_genome.json')
     rpath = os.path.join(HERE, '_tmp_result.json')
     save_genome(gpath, genome)
@@ -531,11 +531,15 @@ def mutation_strength(rnd, args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--pop', type=int, default=12)
-    ap.add_argument('--rounds', type=int, default=10)
-    ap.add_argument('--episode', type=float, default=30.0)
-    ap.add_argument('--top-percent', type=float, default=0.25,
-                    help='процент лучших ботов для отбора (по умолчанию 0.25 = 25%%)')
+    # D19: дефолты как в C#-версии (50/15/20/5) - она давала более полную
+    # выборку за раунд; лаунчер передаёт значения явно, поэтому расхождение
+    # проявлялось только при прямом запуске.
+    ap.add_argument('--pop', type=int, default=50)
+    ap.add_argument('--rounds', type=int, default=15)
+    ap.add_argument('--episode', type=float, default=20.0)
+    # D8: дефолт лаунчера (0.1), а не 0.25 из старого evo.py
+    ap.add_argument('--top-percent', type=float, default=0.1,
+                    help='доля элиты для отбора (по умолчанию 0.1 = 10%%)')
     ap.add_argument('--elite-window', type=int, default=3,
                     help='сколько последних эпизодов элиты усредняется (сглаживание шума)')
     ap.add_argument('--crossover-rate', type=float, default=0.5,
@@ -546,9 +550,10 @@ def main():
                     help='множитель силы мутации за каждый раунд (0.9 = -10%% за раунд)')
     ap.add_argument('--mut-min', type=float, default=0.03,
                     help='минимальная сила мутации')
-    ap.add_argument('--speed', type=float, default=4.0,
-                    help='скорость игры (1x, 2x, 4x, 8x)')
-    ap.add_argument('--episode-increment', type=float, default=10.0,
+    # D7: потолок 3x - на 4x и выше тайминги игры ломаются
+    ap.add_argument('--speed', type=float, default=3.0,
+                    help='скорость игры, максимум 3x (4x и выше ломает игру)')
+    ap.add_argument('--episode-increment', type=float, default=5.0,
                     help='на сколько секунд увеличивается жизнь бота с каждым поколением')
     ap.add_argument('--restart', action='store_true', default=True)
     ap.add_argument('--no-restart', dest='restart', action='store_false')
@@ -561,6 +566,15 @@ def main():
     ap.add_argument('--game-dir', type=str, default=None,
                     help='папка с установленной игрой Kingdom: Classic')
     args = ap.parse_args()
+
+    # D7: жёсткий потолок скорости. Раньше --speed вообще не валидировался -
+    # можно было передать хоть 50, и игра ломалась по таймингам.
+    if not (1.0 <= args.speed <= 3.0):
+        raise SystemExit('!! --speed должен быть от 1 до 3 (на 4x+ игра '
+                         'ломается), получено: %s' % args.speed)
+    if not (0.0 < args.top_percent <= 1.0):
+        raise SystemExit('!! --top-percent должен быть в (0, 1], получено: %s'
+                         % args.top_percent)
 
     global GAME_DIR
     GAME_DIR = (args.game_dir or '').strip().strip('"') \

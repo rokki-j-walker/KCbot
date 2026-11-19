@@ -153,6 +153,9 @@ def main():
             duration = float(sys.argv[i + 1])
         if a == '--speed' and i + 1 < len(sys.argv):
             speed = float(sys.argv[i + 1])
+    # D7: потолок 3x - на 4x и выше тайминги игры ломаются
+    if not (1.0 <= speed <= 3.0):
+        raise SystemExit('!! --speed должен быть от 1 до 3, получено: %s' % speed)
 
     print('=== Обучение на игре человека: %d сессий по %.0f сек (скорость %.1fx) ===' % (sessions, duration, speed))
     os.makedirs(os.path.join(HERE, 'data'), exist_ok=True)
