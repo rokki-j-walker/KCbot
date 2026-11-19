@@ -98,11 +98,21 @@ def restart_game():
     if not focus_game(hwnd):
         print('  !! не удалось забрать фокус у окна игры', flush=True)
     time.sleep(5)
-    # скип обучения: удержание S (только при захваченном фокусе)
+    # Скип обучения: подсказка на экране просит «нажать вниз», а «вниз» = S.
+    # Достаточно 2-3 секунд (проверено вживую) - но на всякий случай
+    # повторяем, пока игра не перейдёт в playing=True.
     from hold import send as _send
-    _send(0x1F, False)
-    time.sleep(5)
-    _send(0x1F, True)
+    import bot3
+    for _attempt in range(3):
+        _send(0x1F, False)
+        time.sleep(3.0)
+        _send(0x1F, True)
+        time.sleep(1.5)
+        st = bot3.read_state()
+        if st is not None and st.playing:
+            print('  обучение пропущено (попытка %d)' % (_attempt + 1), flush=True)
+            break
+        print('  игра ещё не началась, повторяю скип', flush=True)
     time.sleep(2)
 
 

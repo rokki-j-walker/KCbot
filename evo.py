@@ -174,9 +174,15 @@ def restart_game():
     time.sleep(8)
     focus_window(hwnd)
     time.sleep(2)
-    # ждём пока интро пройдёт и playing станет True (до 90 с)
+    # ждём пока интро пройдёт и playing станет True (до 90 с).
+    # Если игра встала на экран новой игры/интро (подсказка «нажать вниз»,
+    # а «вниз» = S) - зажимаем S сами. Достаточно 2-3 с, но зажимаем только
+    # после 8 с непрерывного playing=False, чтобы не нажимать во время
+    # обычной загрузки (там playing=False бывает пару секунд).
     kcdbg = os.path.join(GAME_DIR, 'Kingdom_Data', 'kcdbg.txt')
     t0 = time.time()
+    not_playing_since = None
+    last_hold = 0.0
     while time.time() - t0 < 90:
         try:
             size = os.path.getsize(kcdbg)
@@ -189,9 +195,22 @@ def restart_game():
                     last = line
             if last and 'playing=True' in last:
                 return hwnd
+            if last and 'playing=False' in last:
+                now = time.time()
+                if not_playing_since is None:
+                    not_playing_since = now
+                if (now - not_playing_since >= 8.0
+                        and now - last_hold >= 6.0):
+                    focus_window(hwnd)
+                    hold_s(3.0)
+                    last_hold = time.time()
+                    print('  интро: зажал S для скипа', flush=True)
+            else:
+                not_playing_since = None
         except Exception:
             pass
         time.sleep(1)
+    print('  !! playing=True не дождался за 90 с', flush=True)
     return hwnd
 
 
