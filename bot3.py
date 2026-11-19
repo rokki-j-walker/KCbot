@@ -257,7 +257,251 @@ def _f(s):
         return 0.0
 
 
+
+# --- обработчики секций KC| ----------------------------------------
+# Тело каждой ветки перенесено из parse_line без изменений (сдвиг
+# отступа на 8) - дифф-тест на реальных строк kcdbg подтверждает
+# эквивалентность. Пороговый порядок задаёт _SECTION_PARSERS ниже.
+
+def _sec_sel(st, val):
+    if val and val != '-':
+        mm = re.match(r'([A-Za-z0-9_]+),(-?\d+)@(-?[\d.]+)(?:~([^,]*))?', val)
+        if mm:
+            st.sel = Payable(mm.group(1), int(mm.group(2)),
+                             float(mm.group(3)), (mm.group(4) or '').strip())
+
+
+def _sec_ps(st, val):
+    st.pay_state = val.strip()
+
+
+def _sec_as(st, val):
+    st.action = val.strip()
+
+
+def _sec_crown(st, val):
+    if val and val != '-':
+        st.crown_x = _f(val.split(',')[0])
+
+
+def _sec_gc(st, val):
+    st.ground_coins = [_f(v) for v in val.split(',') if v.strip()]
+
+
+def _sec_camps(st, val):
+    st.camps = [_f(v) for v in val.split(',') if v.strip()]
+
+
+def _sec_ports(st, val):
+    for p in val.split(','):
+        if ':' in p:
+            a = p.split(':')
+            st.portals.append((_f(a[0]), int(_f(a[1])),
+                               int(_f(a[2])) if len(a) > 2 else 0))
+
+
+def _sec_stat(st, val):
+    for p in val.split(','):
+        if '@' in p:
+            a, _, b = p.partition('@')
+            parts = b.split(':')
+            st.statues.append((a.strip(), _f(parts[0]),
+                               _f(parts[1]) if len(parts) > 1 else 0.0))
+
+
+def _sec_tow(st, val):
+    # слоты башен (x:free) + граждане (TAG@x:coins / TAG@x)
+    for p in val.split(','):
+        p = p.strip()
+        if not p:
+            continue
+        if '@' in p:
+            tag, _, rest = p.partition('@')
+            tag = tag.strip()
+            if ':' in rest:
+                xx, _, cc = rest.partition(':')
+                st.citizens.append((tag, _f(xx), int(_f(cc))))
+            else:
+                st.citizens.append((tag, _f(rest), 0))
+        elif ':' in p:
+            a = p.split(':')
+            st.slots.append((_f(a[0]), int(_f(a[1]))))
+
+
+def _sec_cit(st, val):
+    for p in val.split(','):
+        if '@' in p:
+            a, _, b = p.partition('@')
+            parts = b.split(':')
+            st.citizens.append((a.strip(), _f(parts[0]),
+                                int(_f(parts[1])) if len(parts) > 1 else 0))
+
+
+def _sec_kng(st, val):
+    for p in val.split(','):
+        if ':' in p:
+            a = p.split(':')
+            st.knights.append((_f(a[0]), a[1] if len(a) > 1 else '?',
+                                a[2] if len(a) > 2 else '?'))
+
+
+def _sec_tool(st, val):
+    for p in val.split(','):
+        if '@' in p:
+            a, _, b = p.partition('@')
+            st.tools.append((a.strip(), _f(b)))
+
+
+def _sec_walls(st, val):
+    for p in val.split(','):
+        if ':' in p:
+            a = p.split(':')
+            st.walls.append((_f(a[0]), int(_f(a[1])),
+                             int(_f(a[2])) if len(a) > 2 else -1))
+
+
+def _sec_farms(st, val):
+    for p in val.split(','):
+        if ':' in p:
+            a = p.split(':')
+            st.farms.append((_f(a[0]), a[1].strip() == 'True'))
+
+
+def _sec_shops(st, val):
+    for p in val.split(','):
+        if '@' in p:
+            a, _, b = p.partition('@')
+            st.shops.append((a.strip(), _f(b)))
+
+
+def _sec_pay(st, val):
+    for m in re.finditer(r'([A-Za-z0-9_]+),(-?\d+)@(-?[\d.]+)(?:~([^,]*))?', val):
+        raw_name = (m.group(4) or '').strip()
+        enabled = True
+        if '~' in raw_name:
+            parts = raw_name.rsplit('~', 1)
+            if parts[-1] in ('0', '1'):
+                enabled = (parts[-1] == '1')
+                raw_name = parts[0].strip()
+        st.payables.append(Payable(m.group(1), int(m.group(2)),
+                                    float(m.group(3)), raw_name, enabled))
+
+
+def _sec_enm(st, val):
+    for p in val.split(','):
+        if '@' in p:
+            a, _, b = p.partition('@')
+            parts = b.split(':')
+            st.enemy_list.append((a.strip(), _f(parts[0]),
+                                  parts[1] == '1' if len(parts) > 1 else False))
+
+
+def _kv_main(st, part):
+    for kv in part.split(','):
+        if '=' not in kv:
+            continue
+        k, _, v = kv.partition('=')
+        k = k.strip()
+        v = v.strip()
+        if k == 'px':
+            st.px = _f(v)
+        elif k == 'py':
+            st.py = _f(v)
+        elif k == 'st':
+            st.stamina = _f(v)
+        elif k == 'purse':
+            st.purse = int(_f(v))
+        elif k == 'hc':
+            st.hc = int(_f(v))
+        elif k == 'day':
+            st.day = int(_f(v))
+        elif k == 'time':
+            st.time = _f(v)
+        elif k == 'playing':
+            st.playing = (v == 'True')
+        elif k == 'next':
+            st.next = v
+        elif k == 'dayT':
+            st.daytime = (v == 'True')
+        elif k == 'safe':
+            st.safe = (v == 'True')
+        elif k == 'cf':
+            st.cf = _f(v)
+        elif k == 'arc':
+            st.arc = int(_f(v))
+        elif k == 'wrk':
+            st.wrk = int(_f(v))
+        elif k == 'frm':
+            st.frm = int(_f(v))
+        elif k == 'knt':
+            st.knt = int(_f(v))
+        elif k == 'wall':
+            st.wall = int(_f(v))
+        elif k == 'shop':
+            st.shop = int(_f(v))
+        elif k == 'farm':
+            st.farm = int(_f(v))
+        elif k == 'portal':
+            st.portal = int(_f(v))
+        elif k == 'camp':
+            st.camp = int(_f(v))
+        elif k == 'work':
+            st.work = int(_f(v))
+        elif k == 'atk':
+            st.attacking = (v == 'True')
+        elif k == 'en':
+            st.enemies = int(_f(v))
+        elif k == 'troll':
+            st.troll = int(_f(v))
+        elif k == 'ogre':
+            st.ogre = int(_f(v))
+        elif k == 'squid':
+            st.squid = int(_f(v))
+
+
+def _kv_fallback(st, part):
+    # неизвестная именованная секция - разбираем как key=value
+    for kv in part.split(','):
+        if '=' not in kv:
+            continue
+        k, _, v = kv.partition('=')
+        k = k.strip()
+        if k == 'hp':
+            pass
+        elif k == 'purse':
+            st.purse = int(_f(v))
+        elif k == 'hc':
+            st.hc = int(_f(v))
+
+
+_SECTION_PARSERS = {
+    'sel': _sec_sel,
+    'ps': _sec_ps,
+    'as': _sec_as,
+    'crown': _sec_crown,
+    'gc': _sec_gc,
+    'camps': _sec_camps,
+    'ports': _sec_ports,
+    'stat': _sec_stat,
+    'tow': _sec_tow,
+    'cit': _sec_cit,
+    'kng': _sec_kng,
+    'tool': _sec_tool,
+    'walls': _sec_walls,
+    'farms': _sec_farms,
+    'shops': _sec_shops,
+    'pay': _sec_pay,
+    'enm': _sec_enm,
+}
+
+
 def parse_line(line):
+    """Разобрать строку KC|... -> State или None.
+
+    Диспетчер: именованные секции уходят в _SECTION_PARSERS,
+    блок key=value без имени и неизвестные секции - в _kv_main /
+    _kv_fallback. Логика веток не менялась (D27).
+    """
     st = State()
     st.raw = line
     if not line.startswith('KC|'):
@@ -267,180 +511,13 @@ def parse_line(line):
         name = val = None
         if m:
             name, val = m.group(1), m.group(2)
-
-        if name == 'sel':
-            if val and val != '-':
-                mm = re.match(r'([A-Za-z0-9_]+),(-?\d+)@(-?[\d.]+)(?:~([^,]*))?', val)
-                if mm:
-                    st.sel = Payable(mm.group(1), int(mm.group(2)),
-                                     float(mm.group(3)), (mm.group(4) or '').strip())
-        elif name == 'ps':
-            st.pay_state = val.strip()
-        elif name == 'as':
-            st.action = val.strip()
-        elif name == 'crown':
-            if val and val != '-':
-                st.crown_x = _f(val.split(',')[0])
-        elif name == 'gc':
-            st.ground_coins = [_f(v) for v in val.split(',') if v.strip()]
-        elif name == 'camps':
-            st.camps = [_f(v) for v in val.split(',') if v.strip()]
-        elif name == 'ports':
-            for p in val.split(','):
-                if ':' in p:
-                    a = p.split(':')
-                    st.portals.append((_f(a[0]), int(_f(a[1])),
-                                       int(_f(a[2])) if len(a) > 2 else 0))
-        elif name == 'stat':
-            for p in val.split(','):
-                if '@' in p:
-                    a, _, b = p.partition('@')
-                    parts = b.split(':')
-                    st.statues.append((a.strip(), _f(parts[0]),
-                                       _f(parts[1]) if len(parts) > 1 else 0.0))
-        elif name == 'tow':
-            # слоты башен (x:free) + граждане (TAG@x:coins / TAG@x)
-            for p in val.split(','):
-                p = p.strip()
-                if not p:
-                    continue
-                if '@' in p:
-                    tag, _, rest = p.partition('@')
-                    tag = tag.strip()
-                    if ':' in rest:
-                        xx, _, cc = rest.partition(':')
-                        st.citizens.append((tag, _f(xx), int(_f(cc))))
-                    else:
-                        st.citizens.append((tag, _f(rest), 0))
-                elif ':' in p:
-                    a = p.split(':')
-                    st.slots.append((_f(a[0]), int(_f(a[1]))))
-        elif name == 'cit':
-            for p in val.split(','):
-                if '@' in p:
-                    a, _, b = p.partition('@')
-                    parts = b.split(':')
-                    st.citizens.append((a.strip(), _f(parts[0]),
-                                        int(_f(parts[1])) if len(parts) > 1 else 0))
-        elif name == 'kng':
-            for p in val.split(','):
-                if ':' in p:
-                    a = p.split(':')
-                    st.knights.append((_f(a[0]), a[1] if len(a) > 1 else '?',
-                                        a[2] if len(a) > 2 else '?'))
-        elif name == 'tool':
-            for p in val.split(','):
-                if '@' in p:
-                    a, _, b = p.partition('@')
-                    st.tools.append((a.strip(), _f(b)))
-        elif name == 'walls':
-            for p in val.split(','):
-                if ':' in p:
-                    a = p.split(':')
-                    st.walls.append((_f(a[0]), int(_f(a[1])),
-                                     int(_f(a[2])) if len(a) > 2 else -1))
-        elif name == 'farms':
-            for p in val.split(','):
-                if ':' in p:
-                    a = p.split(':')
-                    st.farms.append((_f(a[0]), a[1].strip() == 'True'))
-        elif name == 'shops':
-            for p in val.split(','):
-                if '@' in p:
-                    a, _, b = p.partition('@')
-                    st.shops.append((a.strip(), _f(b)))
-        elif name == 'pay':
-            for m in re.finditer(r'([A-Za-z0-9_]+),(-?\d+)@(-?[\d.]+)(?:~([^,]*))?', val):
-                raw_name = (m.group(4) or '').strip()
-                enabled = True
-                if '~' in raw_name:
-                    parts = raw_name.rsplit('~', 1)
-                    if parts[-1] in ('0', '1'):
-                        enabled = (parts[-1] == '1')
-                        raw_name = parts[0].strip()
-                st.payables.append(Payable(m.group(1), int(m.group(2)),
-                                            float(m.group(3)), raw_name, enabled))
-        elif name == 'enm':
-            for p in val.split(','):
-                if '@' in p:
-                    a, _, b = p.partition('@')
-                    parts = b.split(':')
-                    st.enemy_list.append((a.strip(), _f(parts[0]),
-                                          parts[1] == '1' if len(parts) > 1 else False))
+        fn = _SECTION_PARSERS.get(name)
+        if fn is not None:
+            fn(st, val)
         elif name is None or name in ('KC',):
-            for kv in part.split(','):
-                if '=' not in kv:
-                    continue
-                k, _, v = kv.partition('=')
-                k = k.strip()
-                v = v.strip()
-                if k == 'px':
-                    st.px = _f(v)
-                elif k == 'py':
-                    st.py = _f(v)
-                elif k == 'st':
-                    st.stamina = _f(v)
-                elif k == 'purse':
-                    st.purse = int(_f(v))
-                elif k == 'hc':
-                    st.hc = int(_f(v))
-                elif k == 'day':
-                    st.day = int(_f(v))
-                elif k == 'time':
-                    st.time = _f(v)
-                elif k == 'playing':
-                    st.playing = (v == 'True')
-                elif k == 'next':
-                    st.next = v
-                elif k == 'dayT':
-                    st.daytime = (v == 'True')
-                elif k == 'safe':
-                    st.safe = (v == 'True')
-                elif k == 'cf':
-                    st.cf = _f(v)
-                elif k == 'arc':
-                    st.arc = int(_f(v))
-                elif k == 'wrk':
-                    st.wrk = int(_f(v))
-                elif k == 'frm':
-                    st.frm = int(_f(v))
-                elif k == 'knt':
-                    st.knt = int(_f(v))
-                elif k == 'wall':
-                    st.wall = int(_f(v))
-                elif k == 'shop':
-                    st.shop = int(_f(v))
-                elif k == 'farm':
-                    st.farm = int(_f(v))
-                elif k == 'portal':
-                    st.portal = int(_f(v))
-                elif k == 'camp':
-                    st.camp = int(_f(v))
-                elif k == 'work':
-                    st.work = int(_f(v))
-                elif k == 'atk':
-                    st.attacking = (v == 'True')
-                elif k == 'en':
-                    st.enemies = int(_f(v))
-                elif k == 'troll':
-                    st.troll = int(_f(v))
-                elif k == 'ogre':
-                    st.ogre = int(_f(v))
-                elif k == 'squid':
-                    st.squid = int(_f(v))
+            _kv_main(st, part)
         else:
-            # неизвестная именованная секция - разбираем как key=value
-            for kv in part.split(','):
-                if '=' not in kv:
-                    continue
-                k, _, v = kv.partition('=')
-                k = k.strip()
-                if k == 'hp':
-                    pass
-                elif k == 'purse':
-                    st.purse = int(_f(v))
-                elif k == 'hc':
-                    st.hc = int(_f(v))
+            _kv_fallback(st, part)
     return st
 
 
