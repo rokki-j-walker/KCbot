@@ -16,6 +16,8 @@
     py bot3.py --once     # одно решение и выход
     py bot3.py            # реальное управление
 """
+from __future__ import annotations
+
 import ctypes
 import ctypes.wintypes as wt
 import gamepath
@@ -27,7 +29,7 @@ import re
 import sys
 import time
 
-def _argv_value(name):
+def _argv_value(name: str) -> str | None:
     """Значение аргумента командной строки вида `--name value`."""
     try:
         i = sys.argv.index(name)
@@ -73,7 +75,7 @@ class INPUT(ctypes.Structure):
     _fields_ = [('type', wt.DWORD), ('u', _INPUTUNION)]
 
 
-def _send(sc, up=False):
+def _send(sc: int, up: bool = False) -> None:
     flags = KEYEVENTF_SCANCODE | (KEYEVENTF_KEYUP if up else 0)
     inp = INPUT(type=INPUT_KEYBOARD)
     inp.ki = KEYBDINPUT(0, sc, flags, 0, None)
@@ -88,12 +90,12 @@ class Input(object):
     и проверку фокуса в dry пропускали - клавиши уходили в редактор/чат).
     """
 
-    def __init__(self, dry=False):
+    def __init__(self, dry: bool = False) -> None:
         self.held = set()
         self.hwnd = None
         self.dry = bool(dry)
 
-    def find_window(self, title='Kingdom'):
+    def find_window(self, title: str = 'Kingdom'):
         """Найти окно игры (единая реализация - kc_common.find_window).
 
         Здесь сохраняется только контракт Input: запомнить self.hwnd.
@@ -104,10 +106,10 @@ class Input(object):
         self.hwnd = kc_common.find_window(title)
         return self.hwnd
 
-    def is_focused(self):
+    def is_focused(self) -> bool:
         return bool(self.hwnd) and user32.GetForegroundWindow() == self.hwnd
 
-    def force_focus(self):
+    def force_focus(self) -> bool:
         if self.dry:
             return False
         if not self.hwnd:
@@ -131,21 +133,21 @@ class Input(object):
                 user32.AttachThreadInput(cur, tid, False)
         return self.is_focused()
 
-    def down(self, sc):
+    def down(self, sc: int) -> None:
         if self.dry:
             return
         if sc not in self.held:
             _send(sc, False)
             self.held.add(sc)
 
-    def up(self, sc):
+    def up(self, sc: int) -> None:
         if self.dry:
             return
         if sc in self.held:
             _send(sc, True)
             self.held.discard(sc)
 
-    def release(self):
+    def release(self) -> None:
         for sc in list(self.held):
             self.up(sc)
 
@@ -157,7 +159,8 @@ NUM = r'-?\d+(?:\.\d+)?'
 class Payable(object):
     __slots__ = ('type', 'price', 'x', 'name', 'enabled')
 
-    def __init__(self, type_, price, x, name='', enabled=True):
+    def __init__(self, type_: str, price: int, x: float,
+                 name: str = '', enabled: bool = True) -> None:
         self.type = type_
         self.price = price
         self.x = x
@@ -165,17 +168,17 @@ class Payable(object):
         self.enabled = bool(enabled)
 
     @property
-    def base(self):
+    def base(self) -> str:
         """Имя GameObject без '(Clone)' и хвостов: 'Castle5(Clone)' -> 'Castle5'."""
         n = self.name.split('(')[0].strip()
         return n
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Payable(%s,%d,%.1f,%s)' % (self.type, self.price, self.x, self.name)
 
 
 class State(object):
-    def __init__(self):
+    def __init__(self) -> None:
         self.raw = ''
         self.px = 0.0
         self.py = 0.0
@@ -213,16 +216,16 @@ class State(object):
         self.payables = []
         self.enemy_list = []
 
-    def cit(self, tag):
+    def cit(self, tag: str) -> list:
         return [(x, c) for (t, x, c) in self.citizens if t == tag]
 
-    def statue(self, deity):
+    def statue(self, deity) -> tuple | None:
         for d, x, ch in self.statues:
             if d == deity:
                 return (x, ch)
         return None
 
-    def nearest_enemy(self, x):
+    def nearest_enemy(self, x: float):
         best = None
         bd = 1e9
         for (n, ex, atk) in self.enemy_list:
@@ -232,7 +235,7 @@ class State(object):
                 best = (n, ex, atk, d)
         return best
 
-    def pay_by_name(self, needle):
+    def pay_by_name(self, needle: str) -> Payable | None:
         for p in self.payables:
             if needle.lower() in p.base.lower():
                 return p
@@ -253,7 +256,7 @@ class State(object):
         return best
 
 
-def _f(s):
+def _f(s: str) -> float:
     try:
         return float(s)
     except ValueError:
@@ -266,7 +269,7 @@ def _f(s):
 # отступа на 8) - дифф-тест на реальных строк kcdbg подтверждает
 # эквивалентность. Пороговый порядок задаёт _SECTION_PARSERS ниже.
 
-def _sec_sel(st, val):
+def _sec_sel(st: State, val: str) -> None:
     if val and val != '-':
         mm = re.match(r'([A-Za-z0-9_]+),(-?\d+)@(-?[\d.]+)(?:~([^,]*))?', val)
         if mm:
@@ -274,28 +277,28 @@ def _sec_sel(st, val):
                              float(mm.group(3)), (mm.group(4) or '').strip())
 
 
-def _sec_ps(st, val):
+def _sec_ps(st: State, val: str) -> None:
     st.pay_state = val.strip()
 
 
-def _sec_as(st, val):
+def _sec_as(st: State, val: str) -> None:
     st.action = val.strip()
 
 
-def _sec_crown(st, val):
+def _sec_crown(st: State, val: str) -> None:
     if val and val != '-':
         st.crown_x = _f(val.split(',')[0])
 
 
-def _sec_gc(st, val):
+def _sec_gc(st: State, val: str) -> None:
     st.ground_coins = [_f(v) for v in val.split(',') if v.strip()]
 
 
-def _sec_camps(st, val):
+def _sec_camps(st: State, val: str) -> None:
     st.camps = [_f(v) for v in val.split(',') if v.strip()]
 
 
-def _sec_ports(st, val):
+def _sec_ports(st: State, val: str) -> None:
     for p in val.split(','):
         if ':' in p:
             a = p.split(':')
@@ -303,7 +306,7 @@ def _sec_ports(st, val):
                                int(_f(a[2])) if len(a) > 2 else 0))
 
 
-def _sec_stat(st, val):
+def _sec_stat(st: State, val: str) -> None:
     for p in val.split(','):
         if '@' in p:
             a, _, b = p.partition('@')
@@ -312,7 +315,7 @@ def _sec_stat(st, val):
                                _f(parts[1]) if len(parts) > 1 else 0.0))
 
 
-def _sec_tow(st, val):
+def _sec_tow(st: State, val: str) -> None:
     # слоты башен (x:free) + граждане (TAG@x:coins / TAG@x)
     for p in val.split(','):
         p = p.strip()
@@ -331,7 +334,7 @@ def _sec_tow(st, val):
             st.slots.append((_f(a[0]), int(_f(a[1]))))
 
 
-def _sec_cit(st, val):
+def _sec_cit(st: State, val: str) -> None:
     for p in val.split(','):
         if '@' in p:
             a, _, b = p.partition('@')
@@ -340,7 +343,7 @@ def _sec_cit(st, val):
                                 int(_f(parts[1])) if len(parts) > 1 else 0))
 
 
-def _sec_kng(st, val):
+def _sec_kng(st: State, val: str) -> None:
     for p in val.split(','):
         if ':' in p:
             a = p.split(':')
@@ -348,14 +351,14 @@ def _sec_kng(st, val):
                                 a[2] if len(a) > 2 else '?'))
 
 
-def _sec_tool(st, val):
+def _sec_tool(st: State, val: str) -> None:
     for p in val.split(','):
         if '@' in p:
             a, _, b = p.partition('@')
             st.tools.append((a.strip(), _f(b)))
 
 
-def _sec_walls(st, val):
+def _sec_walls(st: State, val: str) -> None:
     for p in val.split(','):
         if ':' in p:
             a = p.split(':')
@@ -363,21 +366,21 @@ def _sec_walls(st, val):
                              int(_f(a[2])) if len(a) > 2 else -1))
 
 
-def _sec_farms(st, val):
+def _sec_farms(st: State, val: str) -> None:
     for p in val.split(','):
         if ':' in p:
             a = p.split(':')
             st.farms.append((_f(a[0]), a[1].strip() == 'True'))
 
 
-def _sec_shops(st, val):
+def _sec_shops(st: State, val: str) -> None:
     for p in val.split(','):
         if '@' in p:
             a, _, b = p.partition('@')
             st.shops.append((a.strip(), _f(b)))
 
 
-def _sec_pay(st, val):
+def _sec_pay(st: State, val: str) -> None:
     for m in re.finditer(r'([A-Za-z0-9_]+),(-?\d+)@(-?[\d.]+)(?:~([^,]*))?', val):
         raw_name = (m.group(4) or '').strip()
         enabled = True
@@ -390,7 +393,7 @@ def _sec_pay(st, val):
                                     float(m.group(3)), raw_name, enabled))
 
 
-def _sec_enm(st, val):
+def _sec_enm(st: State, val: str) -> None:
     for p in val.split(','):
         if '@' in p:
             a, _, b = p.partition('@')
@@ -399,7 +402,7 @@ def _sec_enm(st, val):
                                   parts[1] == '1' if len(parts) > 1 else False))
 
 
-def _kv_main(st, part):
+def _kv_main(st: State, part: str) -> None:
     for kv in part.split(','):
         if '=' not in kv:
             continue
@@ -462,7 +465,7 @@ def _kv_main(st, part):
             st.squid = int(_f(v))
 
 
-def _kv_fallback(st, part):
+def _kv_fallback(st: State, part: str) -> None:
     # неизвестная именованная секция - разбираем как key=value
     for kv in part.split(','):
         if '=' not in kv:
@@ -498,7 +501,7 @@ _SECTION_PARSERS = {
 }
 
 
-def parse_line(line):
+def parse_line(line: str) -> State | None:
     """Разобрать строку KC|... -> State или None.
 
     Диспетчер: именованные секции уходят в _SECTION_PARSERS,
@@ -534,7 +537,7 @@ _last_stale_warn = 0.0
 _last_size = 0
 
 
-def _cleanup_kcdbg(path):
+def _cleanup_kcdbg(path: str) -> None:
     """Периодически чистим разросшийся kcdbg.txt (игра пишет в него бесконечно)."""
     global _last_cleanup
     now = time.time()
@@ -550,7 +553,7 @@ def _cleanup_kcdbg(path):
         pass
 
 
-def read_state(path=KCDBG):
+def read_state(path: str = KCDBG) -> State | None:
     """Последняя строка KC| из лога, либо None если данных нет/они устарели."""
     global _last_stale_warn, _last_size
     _cleanup_kcdbg(path)
@@ -654,12 +657,12 @@ INT_GENOME = ('keep_coins', 'tax_min_coins', 'target_archers', 'target_workers',
               'target_farmers', 'target_knights', 'tree_prio')
 
 
-def save_genome(path, g):
+def save_genome(path: str, g: dict) -> None:
     """Атомарная запись генома (см. kc_common.atomic_json_dump)."""
     kc_common.atomic_json_dump(path, g)
 
 
-def load_genome(path=None):
+def load_genome(path: str | None = None) -> dict:
     """Читает геном (JSON) и вливает его в настройки бота."""
     g = dict(DEFAULT_GENOME)
     path = path or os.path.join(DATA, 'genome.json')
@@ -685,7 +688,7 @@ def load_genome(path=None):
 BOUNTIES_FILE = os.path.join(HERE, 'bounties.txt')
 
 
-def load_bounties(path=None):
+def load_bounties(path: str | None = None) -> dict:
     """Прочитать bounties.txt -> dict ключ= float.
 
     Ошибки не молчат: битые строки и дубли ключей печатаются один раз,
@@ -729,7 +732,7 @@ def load_bounties(path=None):
 BOUNTIES = load_bounties()
 
 
-def fitness(m):
+def fitness(m: dict) -> float:
     """Очки стратегии за эпизод. Значения из bounties.txt."""
     b = BOUNTIES
     s = 0.0
@@ -822,7 +825,8 @@ class BotLog(object):
 
     MAX_BYTES = 20 * 1024 * 1024     # 20 МБ на один файл лога
 
-    def __init__(self, path=None, max_bytes=None):
+    def __init__(self, path: str | None = None,
+                 max_bytes: int | None = None) -> None:
         if path is None:
             path = LOGFILE
         self.path = path
@@ -837,7 +841,7 @@ class BotLog(object):
         except OSError:
             self._written = 0
 
-    def __call__(self, *a):
+    def __call__(self, *a) -> None:
         msg = ' '.join(str(x) for x in a)
         line = '[%s] %s\n' % (time.strftime('%H:%M:%S'), msg)
         try:
@@ -850,7 +854,7 @@ class BotLog(object):
             pass
         print(msg, flush=True)
 
-    def _rotate(self):
+    def _rotate(self) -> None:
         """Закрыть текущий файл, сложить его в .old и начать новый."""
         try:
             self.f.close()
@@ -869,7 +873,7 @@ class BotLog(object):
             self.f = open(os.devnull, 'w', encoding='utf-8')
         self._written = 0
 
-    def close(self):
+    def close(self) -> None:
         try:
             self.f.close()
         except Exception:
@@ -878,8 +882,9 @@ class BotLog(object):
 
 # ---------------------------------------------------------------------- бот
 class Bot(object):
-    def __init__(self, dry=False, inp=None, log=None, own_focus=False,
-                 skip_tutorial=False, generation=1, speed=1.0):
+    def __init__(self, dry: bool = False, inp: Input | None = None, log=None,
+                 own_focus: bool = False, skip_tutorial: bool = False,
+                 generation: int = 1, speed: float = 1.0) -> None:
         self.dry = dry
         self.inp = inp or Input(dry=dry)
         self.log = log or BotLog()
@@ -949,13 +954,13 @@ class Bot(object):
                         start=time.time(), base=None)
 
     # ------------------------------------------------------------- утилиты
-    def now(self):
+    def now(self) -> float:
         return time.time()
 
-    def say(self, *a):
+    def say(self, *a) -> None:
         self.log(*a)
 
-    def note(self, key, val):
+    def note(self, key: str, val) -> None:
         if self.stat.get(key) != val:
             self.stat[key] = val
             score = getattr(self, '_last_score', None)
@@ -1005,7 +1010,7 @@ class Bot(object):
         self._track_crown_death(st)
 
     # ------------------------------------------------------- секции track()
-    def _track_init(self, st):
+    def _track_init(self, st: State) -> None:
         """Первый кадр: базовые значения, по которым считаем все дельты."""
         f = self.fit
         f['base'] = dict(purse=st.purse, wall=st.wall, shop=st.shop,
@@ -1018,7 +1023,7 @@ class Bot(object):
         f['max_buildings'] = st.wall + st.shop + st.farm
         f['min_trees'] = len([p for p in st.payables if p.type == 'PayableTree'])
 
-    def _track_game_over(self, st):
+    def _track_game_over(self, st: State) -> bool:
         """Экран проигрыша (The Crown Lost): фиксируем смерть, метрики не трогаем.
 
         True - эпизод завершён, track() должен остановиться.
@@ -1035,7 +1040,7 @@ class Bot(object):
             return True
         return False
 
-    def _track_coins(self, st):
+    def _track_coins(self, st: State) -> int:
         """День: смена суток, приток/траты/потери монет, монеты на земле.
 
         Возвращает d - изменение purse за кадр (его же ждёт _track_world
@@ -1065,7 +1070,7 @@ class Bot(object):
             f['unpicked_coins'] = len(st.ground_coins)
         return d
 
-    def _track_firsts(self, st):
+    def _track_firsts(self, st: State) -> None:
         """Первый лучник и первый рабочий (оба фиксируются как успех)."""
         f = self.fit
         b = f['base']
@@ -1079,7 +1084,7 @@ class Bot(object):
             f['first_worker'] = 1
             f['last_interaction'] = self.now()
 
-    def _track_built(self, st):
+    def _track_built(self, st: State) -> None:
         """Завершённое строительство: рост wall+shop+farm (max не считает перестройки)."""
         f = self.fit
         cur_buildings = st.wall + st.shop + st.farm
@@ -1093,7 +1098,7 @@ class Bot(object):
         elif max_buildings == 0:
             f['max_buildings'] = cur_buildings
 
-    def _track_trees(self, st):
+    def _track_trees(self, st: State) -> None:
         """Срубленные деревья: дерево исчезло из payables (min не считает новые)."""
         f = self.fit
         cur_trees = len([p for p in st.payables if p.type == 'PayableTree'])
@@ -1106,7 +1111,7 @@ class Bot(object):
         elif min_trees == 9999:
             f['min_trees'] = cur_trees
 
-    def _track_distance(self, st):
+    def _track_distance(self, st: State) -> None:
         """Пройденная дистанция: ходьба vs бег."""
         f = self.fit
         if f['last_px'] is not None:
@@ -1118,7 +1123,7 @@ class Bot(object):
                 f['walk_distance'] = f.get('walk_distance', 0.0) + dist
         f['last_px'] = st.px
 
-    def _track_horse(self, st):
+    def _track_horse(self, st: State) -> None:
         """Лошадь: переутомление (стамина <= 0) и накопленное время отдыха."""
         f = self.fit
         if st.stamina <= 0.01 and f.get('last_stamina', 1.0) > 0.01:
@@ -1135,7 +1140,7 @@ class Bot(object):
         else:
             f['last_track_time'] = self.now()
 
-    def _track_world(self, st, d):
+    def _track_world(self, st: State, d: int) -> None:
         """События мира: смена дня, враги, порталы, корона, налоги."""
         f = self.fit
         # смена дня
@@ -1172,7 +1177,7 @@ class Bot(object):
             if d > 1:
                 self.note('world', 'налог собран: +%d монет (purse=%d)' % (d, st.purse))
 
-    def _track_recruit(self, st):
+    def _track_recruit(self, st: State) -> None:
         """Проверка найма: бросали монету, но Peasant не появился."""
         if getattr(self, '_recruit_check_time', 0) > 0 and self.now() > self._recruit_check_time:
             if len(st.cit('P')) > getattr(self, '_recruit_check_p_count', 0):
@@ -1186,7 +1191,7 @@ class Bot(object):
                     self.fit['failed_recruit'] = self.fit.get('failed_recruit', 0) + 1
             self._recruit_check_time = 0.0
 
-    def _track_idle_penalty(self):
+    def _track_idle_penalty(self) -> None:
         """Штраф за бездействие: каждые 5 сек без взаимодействия."""
         f = self.fit
         idle_time = self.now() - f['last_interaction']
@@ -1194,7 +1199,7 @@ class Bot(object):
         if expected_penalty > f['inactivity_penalty']:
             f['inactivity_penalty'] = expected_penalty
 
-    def _track_buildings(self, st):
+    def _track_buildings(self, st: State) -> None:
         """Дельта зданий (с рабочими/без них) и численность граждан."""
         f = self.fit
         b = f['base']
@@ -1217,7 +1222,7 @@ class Bot(object):
                          + (st.frm - b['frm']) + (st.knt - b['knt'])
                          + (p_count - b['p0']))
 
-    def _track_crown_death(self, st):
+    def _track_crown_death(self, st: State) -> None:
         """Корона (потеря/подбор), фронт атаки врага и засчёт смерти."""
         f = self.fit
         prev_hc = f.get('prev_hc', 1)
@@ -1242,7 +1247,7 @@ class Bot(object):
                 f['deaths'] = f.get('deaths', 0) + 1
                 f['death_latch'] = True
 
-    def metrics(self):
+    def metrics(self) -> dict:
         f = self.fit
         m = dict(coins_in=f['coins_in'], coins_spent=f['coins_spent'],
                  buys=f['buys'], buildings=f['buildings'],
@@ -1289,15 +1294,15 @@ class Bot(object):
         return m
 
     # -------------------------------------------------------------- ввод
-    def stop_move(self):
+    def stop_move(self) -> None:
         self.inp.up(SC_A)
         self.inp.up(SC_D)
         self.inp.up(SC_LSHIFT)
 
-    def release_s(self):
+    def release_s(self) -> None:
         self.inp.up(SC_S)
 
-    def press_for(self, key, dur):
+    def press_for(self, key: int, dur: float) -> None:
         """Нажать клавишу на dur секунд, НЕ блокируя цикл (B14).
 
         Раньше здесь был time.sleep(dur): цикл замирал целиком - F9 не
@@ -1309,7 +1314,7 @@ class Bot(object):
         self.inp.down(key)
         self._press_until[key] = self.now() + dur
 
-    def _release_due(self):
+    def _release_due(self) -> None:
         """Отпустить клавиши, у которых вышло время (B14)."""
         if not self._press_until:
             return
@@ -1318,11 +1323,11 @@ class Bot(object):
             del self._press_until[key]
             self.inp.up(key)
 
-    def stop_all(self):
+    def stop_all(self) -> None:
         self.stop_move()
         self.release_s()
 
-    def set_sprint(self, want, st):
+    def set_sprint(self, want: bool, st: State | None) -> None:
         """Галоп. В игре спринт стартует по GetButtonDown(Shift),
         поэтому при каждом старте надо отпустить и снова нажать Shift."""
         if not want:
@@ -1336,7 +1341,8 @@ class Bot(object):
         else:
             self.inp.down(SC_LSHIFT)
 
-    def move_to(self, dx, sprint=False, st=None):
+    def move_to(self, dx: float, sprint: bool = False,
+                st: State | None = None) -> None:
         if dx < 0:
             self.inp.up(SC_D)
             self.inp.down(SC_A)
@@ -1347,7 +1353,8 @@ class Bot(object):
             self._last_move_dir = 1
         self.set_sprint(sprint, st)
 
-    def walk_to(self, st, x, sprint=False, tol=0.5):
+    def walk_to(self, st: State, x: float, sprint: bool = False,
+                tol: float = 0.5) -> bool:
         """Идти к x. True - дошли."""
         dx = x - st.px
         if abs(dx) <= tol:
@@ -1358,13 +1365,13 @@ class Bot(object):
         self.move_to(dx, want_sprint, st)
         return False
 
-    def safe_sprint(self, st):
+    def safe_sprint(self, st: State) -> bool:
         """Галоп - только если рядом нет врага."""
         n = st.nearest_enemy(st.px)
         return n is None or n[3] > 26.0
 
     # --------------------------------------------------------- приоритеты
-    def buy_priority(self, st, p):
+    def buy_priority(self, st: State, p: Payable) -> float | None:
         if not getattr(p, 'enabled', True):
             return None
         base = p.base
@@ -1458,7 +1465,7 @@ class Bot(object):
             prio = prio + nearest_other * 0.01
         return prio
 
-    def tool_priority(self, st, p):
+    def tool_priority(self, st: State, p: Payable) -> float | None:
         free_citizens = st.cit('P')
         if not free_citizens:
             return None
@@ -1501,7 +1508,7 @@ class Bot(object):
         return prio
 
 
-    def best_buy(self, st, affordable_only=True):
+    def best_buy(self, st: State, affordable_only: bool = True) -> tuple | None:
         """Лучшая покупка: (приоритет, Payable). При affordable_only берём
         только то, на что хватает монет."""
         best = None
@@ -1522,16 +1529,16 @@ class Bot(object):
                 best = (key, p)
         return (best[0][0], best[1]) if best else None
 
-    def can_afford(self, st, p):
+    def can_afford(self, st: State, p: Payable) -> bool:
         return st.purse >= p.price + (0 if p.type == 'PayableTree' else CFG['keep_coins'])
 
     # ============================================================ решение
-    def blocked(self, p):
+    def blocked(self, p: Payable) -> bool:
         """Объект в чёрном списке (не оплачивается - например, дерево в глубине леса)."""
         key = '%s@%.0f' % (p.base, p.x)
         return self.pay_black.get(key, 0) > self.now()
 
-    def decide(self, st):
+    def decide(self, st: State) -> tuple:
         # 0. корона упала - подобрать немедленно
         if st.hc == 0 and st.crown_x is not None:
             return ('crown', st.crown_x)
@@ -1609,7 +1616,7 @@ class Bot(object):
         # 7. ждём у костра
         return ('idle', None)
 
-    def coin_task(self, st):
+    def coin_task(self, st: State) -> tuple | None:
         """Монета на земле. Держимся одной цели, пока она не исчезнет."""
         now = self.now()
         # если цель ещё на земле - не переключаемся (иначе король дёргается между монетами)
@@ -1645,7 +1652,7 @@ class Bot(object):
         self.coin_purse = st.purse
         return ('coin', c)
 
-    def recruit_task(self, st):
+    def recruit_task(self, st: State) -> tuple | None:
         """Нанять бомжа: бросить монету рядом с B (он подберёт и станет Peasant).
         Нужно чтобы sel был None (иначе S пойдёт на оплату)."""
         if st.purse < 1:
@@ -1681,7 +1688,7 @@ class Bot(object):
         nearest = min(base_near, key=lambda b: abs(b[0]))  # ближайший к базе
         return ('recruit_drop', nearest[0])
 
-    def tax_task(self, st):
+    def tax_task(self, st: State) -> tuple | None:
         """Кто отдаёт налог: F/A/W с монетами > 1. Нужно стоять рядом (не бежать)."""
         targets = [(x, c) for (t, x, c) in st.citizens
                    if t in ('F', 'A', 'W') and c > CFG['tax_min_coins']]
@@ -1695,7 +1702,7 @@ class Bot(object):
             return None
         return ('tax', pick[0])
 
-    def tree_task(self, st, goal):
+    def tree_task(self, st: State, goal) -> tuple | None:
         """Если на цель не хватает монет - рубим ближайшее дерево."""
         need = 0
         if goal is not None:
@@ -1726,7 +1733,7 @@ class Bot(object):
         return ('pay', t)
 
     # =========================================================== исполнение
-    def execute(self, st):
+    def execute(self, st: State) -> None:
         """Выполнить текущий task: диспетчер по его типу.
 
         Рефакторинг D27: ветки вынесены в _exec_*. Порядок и поведение
@@ -1756,7 +1763,7 @@ class Bot(object):
         elif kind == 'pay':
             self._exec_pay(st, payload)
 
-    def _exec_idle(self, st):
+    def _exec_idle(self, st: State) -> None:
         """Нет задач: к бомжу / к костру / к базе, иначе статус в консоль."""
         self.stop_all()
         # если есть монеты и нет рабочих - идём к ближайшему бомжу
@@ -1786,14 +1793,14 @@ class Bot(object):
                    (_score, st.day, st.time, st.purse, st.arc, st.wrk, st.frm, st.knt,
                     st.wall, st.portal, st.enemies))
 
-    def _exec_recruit_walk(self, st, payload):
+    def _exec_recruit_walk(self, st: State, payload) -> None:
         """Найм: подойти к бомжу перед броском монеты."""
         x = payload
         self.note('task', 'RECRUIT walk -> %.1f' % x)
         self.release_s()
         self.walk_to(st, x, sprint=False, tol=1.0)
 
-    def _exec_recruit_drop(self, st):
+    def _exec_recruit_drop(self, st: State) -> None:
         """Найм: бросить монету и отойти, чтобы бомж её подобрал."""
         self.note('task', 'RECRUIT drop coin @%.1f' % st.px)
         # нажатие без блокировки цикла (B14): отпускание планируется,
@@ -1812,13 +1819,13 @@ class Bot(object):
         self._retreat_x = st.px + forward * 4.0
         self._retreat_until = self.now() + 1.2
 
-    def _exec_crown(self, st, payload):
+    def _exec_crown(self, st: State, payload) -> None:
         """Поднять корону."""
         self.note('task', 'CROWN @%.1f' % payload)
         self.release_s()
         self.walk_to(st, payload, sprint=self.safe_sprint(st), tol=1.0)
 
-    def _exec_flee(self, st, payload):
+    def _exec_flee(self, st: State, payload) -> None:
         """Убежать от врага (дальше от него, через CFG['flee_dist'])."""
         name, ex, atk, d = payload
         away = 1 if st.px >= ex else -1
@@ -1827,13 +1834,13 @@ class Bot(object):
         self.release_s()
         self.walk_to(st, target, sprint=True, tol=2.0)
 
-    def _exec_coin(self, st, payload):
+    def _exec_coin(self, st: State, payload) -> None:
         """Подобрать монету на земле."""
         self.note('task', 'COIN @%.1f' % payload)
         self.release_s()
         self.walk_to(st, payload, sprint=self.safe_sprint(st), tol=0.6)
 
-    def _exec_tax(self, st, payload):
+    def _exec_tax(self, st: State, payload) -> None:
         """Собрать налог с подданного (ждём CFG['tax_wait'], если он рядом)."""
         x = payload
         near = None
@@ -1856,7 +1863,7 @@ class Bot(object):
         # налог снимается только когда король НЕ бежит
         self.walk_to(st, x, sprint=False, tol=0.6)
 
-    def _exec_pay(self, st, payload):
+    def _exec_pay(self, st: State, payload) -> None:
         """Оплатить Payable (здания/деревья/налоги) - см. do_pay()."""
         p = payload
         if p is None:
@@ -1864,7 +1871,7 @@ class Bot(object):
         self.do_pay(st, p)
 
     # -------------------------------------------------------- оплата
-    def same_payable(self, a, b):
+    def same_payable(self, a: Payable | None, b: Payable | None) -> bool:
         if a is None or b is None:
             return False
         if a.type != b.type:
@@ -1873,7 +1880,7 @@ class Bot(object):
             return a.name == b.name
         return abs(a.x - b.x) < 0.6
 
-    def do_pay(self, st, p):
+    def do_pay(self, st: State, p: Payable) -> None:
         """Оплата Payable: конечный автомат из фаз (рефакторинг D27).
 
         Фазы по порядку: удержание S -> смена цели -> подход -> остановка
@@ -1893,7 +1900,7 @@ class Bot(object):
             return
         self._pay_scan(st, p, now)
 
-    def _pay_hold(self, st, p, now):
+    def _pay_hold(self, st: State, p: Payable, now: float) -> None:
         """Фаза 'hold': держим S, ждём конца транзакции или таймаута."""
         ps = st.pay_state
         if ps == 'None':
@@ -1906,7 +1913,7 @@ class Bot(object):
             self.finish_pay(st, p)
         return
 
-    def _pay_switch_target(self, st, p, now):
+    def _pay_switch_target(self, st: State, p: Payable, now: float) -> None:
         """Цель сменилась - сброс и поиск точки сначала (кадр не останавливает)."""
         if self.pay_target is not None and not self.same_payable(self.pay_target, p):
             self.finish_pay(st, self.pay_target)
@@ -1917,7 +1924,7 @@ class Bot(object):
             self.scan_t = 0.0
             self.pay_since = now
 
-    def _pay_walk(self, st, p, now):
+    def _pay_walk(self, st: State, p: Payable, now: float) -> bool:
         """Идём к точке оплаты. True - ушли ходить, кадр завершён."""
         target = self.scan_x
         dx = target - st.px
@@ -1929,7 +1936,7 @@ class Bot(object):
             return True
         return False
 
-    def _pay_wait_circles(self, st, p, now):
+    def _pay_wait_circles(self, st: State, p: Payable, now: float) -> bool:
         """Полная остановка и ожидание кружков оплаты. True - ждём."""
         # полностью остановиться: кружки оплаты появляются только в покое
         self.stop_move()
@@ -1948,7 +1955,7 @@ class Bot(object):
             return True
         return False
 
-    def _pay_select(self, st, p, now):
+    def _pay_select(self, st: State, p: Payable, now: float) -> bool:
         """Объект выбран - держим S. True - кадр завершён."""
         if st.sel is None or not self.same_payable(st.sel, p):
             return False
@@ -1964,7 +1971,7 @@ class Bot(object):
             self.inp.down(SC_S)
         return True
 
-    def _pay_scan(self, st, p, now):
+    def _pay_scan(self, st: State, p: Payable, now: float) -> None:
         """Объект не выбирается: ищем точку рядом, либо сдаёмся (giveup)."""
         # --- объект не выбирается: ищем точку рядом
         self.scan_t += 0.2
@@ -1986,10 +1993,10 @@ class Bot(object):
             self.finish_pay(st, p)
         return
 
-    def pay_timeout(self, price):
+    def pay_timeout(self, price: int) -> float:
         return 0.5 + 0.35 * max(1, price) + 1.2
 
-    def finish_pay(self, st, p):
+    def finish_pay(self, st: State, p: Payable) -> None:
         self.release_s()
         spent = self.pay_purse0 - st.purse
         # если монеты не списались — объект недоступен (условия не выполнены): бан на 60 с
@@ -2047,7 +2054,7 @@ class Bot(object):
             self.fit['last_interaction'] = self.now()
 
     # ============================================================== главный
-    def ensure_focus(self):
+    def ensure_focus(self) -> bool:
         """Бот НЕ перехватывает фокус: если игрок переключился в другое окно,
         бот ждёт, пока пользователь сам вернётся в игру (иначе он не сможет
         управлять королём - игра получает клавиши только в фокусе).
@@ -2067,7 +2074,7 @@ class Bot(object):
         self.note('focus', 'жду фокус игры')
         return False
 
-    def hotkey(self):
+    def hotkey(self) -> str | None:
         """F8 - пауза, F9 - стоп бота. F12 обрабатывается evo.py."""
         if user32.GetAsyncKeyState(0x78) & 1:     # F9
             return 'quit'
@@ -2075,7 +2082,7 @@ class Bot(object):
             return 'pause'
         return None
 
-    def step(self):
+    def step(self) -> None:
         self._release_due()       # отпустить клавиши с вышедшим сроком (B14)
         st = read_state()
         if st is None:
@@ -2157,7 +2164,7 @@ class Bot(object):
         self.execute(st)
 
 
-def main():
+def main() -> None:
     dry = '--dry' in sys.argv
     once = '--once' in sys.argv
     own_focus = '--own-focus' in sys.argv
