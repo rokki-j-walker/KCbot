@@ -1925,8 +1925,10 @@ class Bot(object):
                         self.note('skip_tutorial', 'начал')
                         if not self.dry:
                             self.inp.down(SC_S)
-            # скип обучения: удерживаем S 3 секунды
-            if not self.dry and st.day == 0 and self.now() - getattr(self, '_intro_skip_time', 0.0) > 4.0:
+            # Скип обучения/интро: подсказка на экране просит «нажать вниз»,
+            # а «вниз» в этой игре = клавиша S. Достаточно 2-3 секунд
+            # (проверено вживую; 5 с работает, но избыточно).
+            if not self.dry and st.day == 0 and self.now() - getattr(self, '_intro_skip_time', 0.0) > 5.0:
                 self._intro_skip_time = self.now()
                 self.inp.force_focus()
                 self.inp.down(SC_S); time.sleep(3.0); self.inp.up(SC_S)

@@ -312,7 +312,9 @@ def create_new_game_save(game_dir, log=_default_log):
             log('  попытка %d: фокус=%s' % (attempt + 1, 'да' if focused else 'нет'))
             tap(SC_ENTER, 0.12)
             time.sleep(0.6)
-            hold_key(SC_S, 4.0)
+            # Скип обучения: подсказка просит «нажать вниз» = клавиша S,
+            # держать 2-3 секунды (проверено вживую; 5 с избыточно).
+            hold_key(SC_S, 3.0)
             time.sleep(1.0)
             st = read_state(game_dir)
             if st is not None:
