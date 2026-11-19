@@ -27,8 +27,10 @@ import time
 import gamepath
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-GAME_DIR = gamepath.require_game_dir()
-GAME_EXE = os.path.join(GAME_DIR, 'Kingdom.exe')
+# Папка игры НЕ запрашивается на импорте (иначе import human_trainer падает
+# и --help невозможен) - резолвится в main().
+GAME_DIR = ''
+GAME_EXE = ''
 SAVE = gamepath.save_file()
 BASELINE = os.path.join(HERE, 'saves', 'baseline.dat')
 
@@ -52,7 +54,30 @@ def find_window(title='Kingdom'):
     return res[0] if res else None
 
 
+def focus_game(hwnd):
+    """Вернуть фокус на окно игры: S должен уйти именно в неё.
+
+    Без этого SendInput уходит в окно, активное на момент запуска
+    (терминал/редактор/лаунчер) - скип обучения не срабатывал, а 5-секундное
+    зажатие S портило текст в чужом окне.
+    """
+    import ctypes
+    u = ctypes.windll.user32
+    # трюк с Alt: Windows разрешает SetForegroundWindow, если предварительно
+    # снять ограничение через нажатие Alt
+    u.keybd_event(0x12, 0, 0, 0)          # Alt down
+    u.keybd_event(0x12, 0, 2, 0)          # Alt up
+    u.SetForegroundWindow(hwnd)
+    u.SwitchToThisWindow(hwnd, True)
+    for _ in range(20):
+        if u.GetForegroundWindow() == hwnd:
+            return True
+        time.sleep(0.1)
+    return u.GetForegroundWindow() == hwnd
+
+
 def restart_game():
+    global GAME_DIR, GAME_EXE
     subprocess.run(['taskkill', '/F', '/IM', 'Kingdom.exe'],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(2)
@@ -61,13 +86,19 @@ def restart_game():
         shutil.copyfile(BASELINE, SAVE)
     subprocess.Popen([GAME_EXE], cwd=GAME_DIR,
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    # ждём окно
+    # ждём окно; если оно не появилось - прекращаем сессию, а не пишем пустоту
+    hwnd = None
     for _ in range(60):
         time.sleep(1)
-        if find_window():
+        hwnd = find_window()
+        if hwnd:
             break
+    if not hwnd:
+        raise RuntimeError('окно игры не появилось за 60 с - сессия прервана')
+    if not focus_game(hwnd):
+        print('  !! не удалось забрать фокус у окна игры', flush=True)
     time.sleep(5)
-    # скип обучения
+    # скип обучения: удержание S (только при захваченном фокусе)
     from hold import send as _send
     _send(0x1F, False)
     time.sleep(5)
@@ -78,6 +109,7 @@ def restart_game():
 def record_session(duration, output):
     import bot3
     print('  Запись %d сек...' % duration, flush=True)
+    os.makedirs(os.path.dirname(output) or '.', exist_ok=True)
     recording = []
     t0 = time.time()
     last_state = None
@@ -105,6 +137,12 @@ def record_session(duration, output):
 
 
 def main():
+    global GAME_DIR, GAME_EXE
+    GAME_DIR = gamepath.require_game_dir()
+    GAME_EXE = os.path.join(GAME_DIR, 'Kingdom.exe')
+    if not os.path.isfile(GAME_EXE):
+        raise SystemExit('!! не найден файл игры: %s' % GAME_EXE)
+
     sessions = 4
     duration = 120.0
     speed = 1.0
@@ -117,6 +155,7 @@ def main():
             speed = float(sys.argv[i + 1])
 
     print('=== Обучение на игре человека: %d сессий по %.0f сек (скорость %.1fx) ===' % (sessions, duration, speed))
+    os.makedirs(os.path.join(HERE, 'data'), exist_ok=True)
     # записать скорость в файл для игры
     speed_file = os.path.join(GAME_DIR, 'Kingdom_Data', 'speed.txt')
     try:
@@ -140,19 +179,39 @@ def main():
 
     print()
     print('=== Конвертация записей в геномы ===')
-    # старые геномы удаляем, чтобы в эволюцию не попали записи прошлых запусков
+    # Сначала конвертируем и проверяем результат, и только потом чистим старое:
+    # иначе при ошибке конвертера прошлые геномы уже удалены, а новые не созданы.
     import glob as _glob
-    for old in _glob.glob(os.path.join(HERE, 'data', 'human_genome_*.json')):
-        try:
-            os.remove(old)
-        except OSError:
-            pass
+    created = []
+    failed = []
     for s in range(1, sessions + 1):
         inp = os.path.join(HERE, 'data', 'human_%d.json' % s)
         out = os.path.join(HERE, 'data', 'human_genome_%d.json' % s)
-        subprocess.run([sys.executable, os.path.join(HERE, 'converter.py'),
-                        '--input', inp, '--output', out], cwd=HERE)
-        print('  human_genome_%d.json создан' % s)
+        rc = subprocess.run([sys.executable, os.path.join(HERE, 'converter.py'),
+                             '--input', inp, '--output', out],
+                            cwd=HERE).returncode
+        if rc == 0 and os.path.exists(out):
+            created.append(out)
+            print('  human_genome_%d.json создан' % s)
+        else:
+            failed.append(s)
+            print('  !! human_genome_%d.json НЕ создан (converter.py rc=%s)'
+                  % (s, rc))
+
+    if failed:
+        raise SystemExit(
+            '!! конвертация не удалась для сессий %s - старые геномы НЕ тронуты, '
+            'проверьте записи data/human_*.json' % failed)
+
+    # чистим только лишние геномы прошлых запусков (с другим числом сессий)
+    keep = set(os.path.basename(p) for p in created)
+    for old in _glob.glob(os.path.join(HERE, 'data', 'human_genome_*.json')):
+        if os.path.basename(old) not in keep:
+            try:
+                os.remove(old)
+                print('  удалён устаревший %s' % os.path.basename(old))
+            except OSError:
+                pass
 
     print()
     print('=== Готово! ===')

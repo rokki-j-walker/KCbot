@@ -4,10 +4,11 @@ restart.py - мягко перезапустить игру Kingdom:
   1) закрыть окно (WM_CLOSE) -> игра успевает сохранить партию
   2) дождаться выхода процесса
   3) запустить Kingdom.exe заново
-  4) поставить окно в 0,0 1280x720
+  4) показать геометрию окна (размер и позицию не меняем)
 
 py restart.py            # закрыть + запустить
 py restart.py --close    # только закрыть
+py restart.py --kill     # если игра не закрылась за 30 с - убить принудительно
 """
 import ctypes
 import ctypes.wintypes as wt
@@ -18,8 +19,10 @@ import time
 
 import gamepath
 
-GAME_DIR = gamepath.require_game_dir()
-GAME_EXE = os.path.join(GAME_DIR, 'Kingdom.exe')
+# Папка игры НЕ запрашивается на импорте: модуль можно импортировать для
+# переиспользования find_window()/alive(), а --help работает без настроек.
+GAME_DIR = ''
+GAME_EXE = ''
 SAVE = gamepath.save_file()
 
 user32 = ctypes.windll.user32
@@ -74,6 +77,7 @@ def save_info():
 
 
 def main():
+    global GAME_DIR, GAME_EXE
     only_close = '--close' in sys.argv
     print('сохранение до: %s' % save_info())
     hwnd = find_window()
@@ -89,8 +93,13 @@ def main():
         else:
             print('!! процесс не завершился за 30 с')
             if '--kill' in sys.argv:
-                kernel32.TerminateProcess(kernel32.OpenProcess(1, False, pid), 1)
-                print('принудительно убит')
+                h = kernel32.OpenProcess(1, False, pid)
+                if h:
+                    kernel32.TerminateProcess(h, 1)
+                    kernel32.CloseHandle(h)
+                    print('принудительно убит')
+                else:
+                    print('!! не удалось открыть процесс (права или он уже вышел)')
     else:
         print('окно не найдено (игра не запущена?)')
 
@@ -98,6 +107,11 @@ def main():
     print('сохранение после выхода: %s' % save_info())
     if only_close:
         return
+
+    GAME_DIR = gamepath.require_game_dir()
+    GAME_EXE = os.path.join(GAME_DIR, 'Kingdom.exe')
+    if not os.path.isfile(GAME_EXE):
+        raise SystemExit('!! не найден файл игры: %s' % GAME_EXE)
 
     print('запускаю %s' % GAME_EXE)
     subprocess.Popen([GAME_EXE], cwd=os.path.dirname(GAME_EXE))
