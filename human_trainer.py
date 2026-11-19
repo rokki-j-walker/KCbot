@@ -28,12 +28,13 @@ import gamepath
 import kc_common
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+DATA = kc_common.data_dir()
 # Папка игры НЕ запрашивается на импорте (иначе import human_trainer падает
 # и --help невозможен) - резолвится в main().
 GAME_DIR = ''
 GAME_EXE = ''
 SAVE = gamepath.save_file()
-BASELINE = os.path.join(HERE, 'saves', 'baseline.dat')
+BASELINE = os.path.join(DATA, 'saves', 'baseline.dat')
 
 
 def find_window(title='Kingdom'):
@@ -155,7 +156,7 @@ def main():
         raise SystemExit('!! --speed должен быть от 1 до 3, получено: %s' % speed)
 
     print('=== Обучение на игре человека: %d сессий по %.0f сек (скорость %.1fx) ===' % (sessions, duration, speed))
-    os.makedirs(os.path.join(HERE, 'data'), exist_ok=True)
+    os.makedirs(os.path.join(DATA, 'data'), exist_ok=True)
     # записать скорость в файл для игры
     speed_file = os.path.join(GAME_DIR, 'Kingdom_Data', 'speed.txt')
     try:
@@ -171,7 +172,7 @@ def main():
         print('  Запускаю игру...')
         restart_game()
         print('  Игра запущена. Играйте %d секунд!' % duration)
-        out = os.path.join(HERE, 'data', 'human_%d.json' % s)
+        out = os.path.join(DATA, 'data', 'human_%d.json' % s)
         record_session(duration, out)
         if s < sessions:
             print('  Перезапуск игры для следующей сессии...')
@@ -185,8 +186,8 @@ def main():
     created = []
     failed = []
     for s in range(1, sessions + 1):
-        inp = os.path.join(HERE, 'data', 'human_%d.json' % s)
-        out = os.path.join(HERE, 'data', 'human_genome_%d.json' % s)
+        inp = os.path.join(DATA, 'data', 'human_%d.json' % s)
+        out = os.path.join(DATA, 'data', 'human_genome_%d.json' % s)
         rc = subprocess.run([sys.executable, os.path.join(HERE, 'converter.py'),
                              '--input', inp, '--output', out],
                             cwd=HERE).returncode
@@ -205,7 +206,7 @@ def main():
 
     # чистим только лишние геномы прошлых запусков (с другим числом сессий)
     keep = set(os.path.basename(p) for p in created)
-    for old in _glob.glob(os.path.join(HERE, 'data', 'human_genome_*.json')):
+    for old in _glob.glob(os.path.join(DATA, 'data', 'human_genome_*.json')):
         if os.path.basename(old) not in keep:
             try:
                 os.remove(old)

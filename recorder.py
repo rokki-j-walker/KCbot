@@ -14,8 +14,10 @@ import sys
 import time
 
 import gamepath
+import kc_common
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+DATA = kc_common.data_dir()
 # Папка игры НЕ запрашивается на импорте (иначе import recorder падает).
 # Проверка - в main(), там же берётся путь к kcdbg у bot3.
 sys.path.insert(0, HERE)
@@ -46,7 +48,7 @@ def main():
             'Не найдена папка игры. Укажите её в лаунчере KC Bot '
             '(кнопка «Папка игры») или задайте KCBOT_GAME_DIR.')
 
-    out_path = os.path.join(HERE, output)
+    out_path = os.path.join(DATA, output)
     os.makedirs(os.path.dirname(out_path) or '.', exist_ok=True)
     if os.path.exists(out_path):
         print('!! файл %s будет перезаписан' % out_path)

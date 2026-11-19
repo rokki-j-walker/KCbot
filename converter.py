@@ -14,6 +14,9 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import bot3
+import kc_common
+
+DATA = kc_common.data_dir()
 
 
 def analyze(recording):
@@ -175,7 +178,7 @@ def main():
         print('  %s: %s' % (k, v))
 
     genome = genome_from_analysis(analysis)
-    out_path = os.path.join(HERE, out)
+    out_path = os.path.join(DATA, out)
     bot3.save_genome(out_path, genome)
     print()
     print('Геном сохранён: %s' % out_path)

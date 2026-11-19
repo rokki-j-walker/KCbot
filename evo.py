@@ -40,11 +40,15 @@ _TRAINING = False
 # Единая точка правды — gamepath.save_file() (раньше путь был захардкожен здесь,
 # в restart.py и human_trainer.py с жёсткой версией storage_v26).
 SAVE = gamepath.save_file()
-SAVES_DIR = os.path.join(HERE, 'saves')
+# Данные (геномы, история, baseline, логи) - в writable-каталог: в frozen-сборке
+# HERE = _MEIPASS, который стирается при пересборке и неписьменен в
+# Program Files (аудит S2). В разработке DATA == HERE, поведение прежнее.
+DATA = kc_common.data_dir()
+SAVES_DIR = os.path.join(DATA, 'saves')
 BASELINE = os.path.join(SAVES_DIR, 'baseline.dat')
-BEST_GENOME = os.path.join(HERE, 'data', 'best_genome.json')
-HISTORY = os.path.join(HERE, 'data', 'evo_history.json')
-BOT = os.path.join(HERE, 'bot3.py')
+BEST_GENOME = os.path.join(DATA, 'data', 'best_genome.json')
+HISTORY = os.path.join(DATA, 'data', 'evo_history.json')
+BOT = os.path.join(HERE, 'bot3.py')       # ресурс, только чтение
 PYTHON = sys.executable
 
 
@@ -295,8 +299,8 @@ def _f12_pressed():
 
 
 def run_episode(genome, episode, restart, generation=1, speed=3.0, log_file=None):
-    gpath = os.path.join(HERE, '_tmp_genome.json')
-    rpath = os.path.join(HERE, '_tmp_result.json')
+    gpath = os.path.join(DATA, '_tmp_genome.json')
+    rpath = os.path.join(DATA, '_tmp_result.json')
     save_genome(gpath, genome)
     for p in (rpath,):
         try:
@@ -312,7 +316,7 @@ def run_episode(genome, episode, restart, generation=1, speed=3.0, log_file=None
     if hwnd:
         focus_window(hwnd)
     time.sleep(2)
-    lpath = os.path.join(HERE, '_tmp_live.json')
+    lpath = os.path.join(DATA, '_tmp_live.json')
     try:
         os.remove(lpath)
     except OSError:
@@ -459,7 +463,7 @@ def main():
             if not path:
                 continue
             if not os.path.isabs(path):
-                path = os.path.join(HERE, path)
+                path = os.path.join(DATA, path)
             if os.path.exists(path):
                 try:
                     human_genomes.append(load_genome(path))
@@ -474,7 +478,7 @@ def main():
     os.makedirs(SAVES_DIR, exist_ok=True)
     # папка для логов
     log_session = time.strftime('%Y-%m-%d_%H-%M-%S')
-    LOGS_DIR = os.path.join(HERE, 'logs', log_session)
+    LOGS_DIR = os.path.join(DATA, 'logs', log_session)
     os.makedirs(LOGS_DIR, exist_ok=True)
 
     if args.resetAll:
@@ -487,14 +491,14 @@ def main():
                 print('  не найден:', f)
         # записи и геномы ручного обучения
         import glob as _glob
-        for f in sorted(_glob.glob(os.path.join(HERE, 'data', 'human_*.json'))):
+        for f in sorted(_glob.glob(os.path.join(DATA, 'data', 'human_*.json'))):
             try:
                 os.remove(f)
                 print('  удалён:', f)
             except OSError:
                 pass
         # очистка папки логов
-        logs_dir = os.path.join(HERE, 'logs')
+        logs_dir = os.path.join(DATA, 'logs')
         if os.path.exists(logs_dir):
             shutil.rmtree(logs_dir)
             print('  очищена папка:', logs_dir)
@@ -698,7 +702,7 @@ def main():
         _appdata = os.environ.get('APPDATA', os.path.expanduser('~'))
         _cfg_path = os.path.join(_appdata, 'KCbot', 'launcher_config.json')
         if not os.path.exists(_cfg_path):
-            _cfg_path = os.path.join(HERE, 'data', '.launcher_config.json')
+            _cfg_path = os.path.join(DATA, 'data', '.launcher_config.json')
         if os.path.exists(_cfg_path):
             with open(_cfg_path, 'r', encoding='utf-8') as _f:
                 _cfg = _json.load(_f)

@@ -9,7 +9,35 @@
 """
 import json
 import os
+import sys
 import tempfile
+
+
+def data_dir():
+    """Куда писать ДАННЫЕ приложения (геномы, история, логи, baseline).
+
+    Ресурсы (bot3.py, bounties.txt, locales/, assets/) лежат в HERE и в
+    frozen-сборке оказываются в _MEIPASS - это нормально, они только читаются.
+
+    А данные писать туда нельзя (аудит S2):
+      * _MEIPASS стирается при каждой пересборке/обновлении;
+      * при установке в Program Files каталог вообще неписьменен без прав
+        администратора - сохранение генома упало бы с AccessDenied.
+
+    Поэтому в frozen-режиме данные живут в %APPDATA%/KCbot/ (там же, где
+    settings.json и launcher_config.json). В разработке - папка проекта,
+    как и раньше.
+    """
+    if getattr(sys, 'frozen', False):
+        d = os.path.join(os.environ.get('APPDATA',
+                                        os.path.expanduser('~')), 'KCbot')
+    else:
+        d = os.path.dirname(os.path.abspath(__file__))
+    try:
+        os.makedirs(d, exist_ok=True)
+    except OSError:
+        pass
+    return d
 
 
 def atomic_json_dump(path, obj, indent=2):

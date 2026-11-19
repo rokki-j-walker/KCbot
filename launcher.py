@@ -9,6 +9,7 @@ import collections
 import ctypes
 import gamepath
 import json
+import kc_common
 import os
 import patcher
 import queue
@@ -69,7 +70,7 @@ def t_raw(key):
 load_locale('ru')
 APPDATA_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'KCbot')
 CONFIG_FILE = os.path.join(APPDATA_DIR, 'launcher_config.json')
-HISTORY_FILE = os.path.join(HERE, 'data', 'evo_history.json')
+HISTORY_FILE = os.path.join(kc_common.data_dir(), 'data', 'evo_history.json')
 
 RESTART_OVERHEAD = 30.0
 
@@ -258,7 +259,7 @@ THEME_KEYS = {
 
 
 def load_config():
-    old_config = os.path.join(HERE, 'data', '.launcher_config.json')
+    old_config = os.path.join(kc_common.data_dir(), 'data', '.launcher_config.json')
     if not os.path.exists(CONFIG_FILE) and os.path.exists(old_config):
         try:
             import shutil

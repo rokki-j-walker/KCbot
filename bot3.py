@@ -41,7 +41,10 @@ GAME_DIR = _argv_value('--game-dir') or os.environ.get('KCBOT_GAME_DIR', '') or 
 KCDBG = os.path.join(GAME_DIR, 'Kingdom_Data', 'kcdbg.txt') if GAME_DIR else ''
 SPEED_FILE = os.path.join(GAME_DIR, 'Kingdom_Data', 'speed.txt') if GAME_DIR else ''
 HERE = os.path.dirname(os.path.abspath(__file__))
-LOGFILE = os.path.join(HERE, 'bot_log.txt')
+# Данные - в writable-каталог (см. kc_common.data_dir, аудит S2);
+# bounties.txt остаётся ресурсом рядом со скриптом.
+DATA = kc_common.data_dir()
+LOGFILE = os.path.join(DATA, 'bot_log.txt')
 
 # ---------------------------------------------------------------- Win32 ввод
 user32 = ctypes.windll.user32
@@ -659,7 +662,7 @@ def save_genome(path, g):
 def load_genome(path=None):
     """Читает геном (JSON) и вливает его в настройки бота."""
     g = dict(DEFAULT_GENOME)
-    path = path or os.path.join(HERE, 'genome.json')
+    path = path or os.path.join(DATA, 'genome.json')
     try:
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)

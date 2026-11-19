@@ -31,7 +31,8 @@ import gamepath
 import kc_common
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SAVES_DIR = os.path.join(HERE, 'saves')
+DATA = kc_common.data_dir()
+SAVES_DIR = os.path.join(DATA, 'saves')
 BASELINE = os.path.join(SAVES_DIR, 'baseline.dat')
 
 SC_ENTER = 0x1C
