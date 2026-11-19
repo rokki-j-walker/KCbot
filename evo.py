@@ -16,6 +16,7 @@
   - повторяем ROUNDS раз
 """
 import argparse
+import baseline
 import ctypes
 import ctypes.wintypes as wt
 import gamepath
@@ -615,26 +616,28 @@ def main():
             print('  очищена папка:', logs_dir)
         os.makedirs(logs_dir, exist_ok=True)
         # автоматически делаем baseline из текущей сохранёнки
-        if os.path.exists(SAVE):
-            shutil.copyfile(SAVE, BASELINE)
-            print('  baseline создан из:', SAVE)
+        # (если сейва нет - baseline.py сам запустит игру и создаст его, D32)
+        if baseline.ensure(GAME_DIR, log=print, force=True):
+            print('  baseline пересоздан')
         else:
-            print('  !! сохранёнка не найдена:', SAVE)
+            print('  !! не удалось создать baseline')
         print('=== сброс завершён ===')
         return
 
     if args.baseline:
-        if not os.path.exists(SAVE):
-            print('!! сохранёнка не найдена:', SAVE)
-            return
-        shutil.copyfile(SAVE, BASELINE)
-        print('baseline сохранён:', BASELINE)
+        # D32: раньше здесь была только копия УЖЕ существующего сейва, а при
+        # его отсутствии - ошибка «запусти сначала новую игру». Теперь
+        # baseline.py сам запускает игру и доводит её до автосейва.
+        ok = baseline.ensure(GAME_DIR, log=print)
+        if not ok:
+            print('!! не удалось создать baseline')
         return
 
-    if not os.path.exists(BASELINE):
-        print('!! нет baseline. Запусти сначала новую игру, потом:')
-        print('   py evo.py --baseline')
-        return
+    if not baseline.exists():
+        print('baseline отсутствует - создаю автоматически (D32)...')
+        if not baseline.ensure(GAME_DIR, log=print):
+            print('!! не удалось создать baseline')
+            return
 
     # С этого момента мы обязаны закрыть игру даже при исключении/Ctrl+C.
     # Раньше main() не был обёрнут в try/finally: RuntimeError или сбой Popen

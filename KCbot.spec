@@ -22,7 +22,8 @@ RES_FILES = ['bounties.txt',
              # bot3.py обязателен как файл: evo.default_genome() читает его
              # через spec_from_file_location (аудит E2)
              'bot3.py', 'evo.py', 'converter.py', 'recorder.py',
-             'human_trainer.py', 'gamepath.py', 'kc_common.py', 'hold.py']
+             'human_trainer.py', 'gamepath.py', 'kc_common.py', 'hold.py',
+             'baseline.py']
 
 a = Analysis(
     ['launcher.py'],
