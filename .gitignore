@@ -16,6 +16,11 @@ logs/
 *.log
 human_recording.json
 
+# Runtime state - геномы, история эволюции, эталонный сейв.
+# Создаётся самим приложением; в репозиторий не попадает (решения D10, D26).
+data/
+saves/
+
 # Game analysis / decompiled copy — do not commit (юридический риск)
 _game_analysis/
 kc_src/
