@@ -295,8 +295,10 @@ def build_command(cfg):
 
     Список, а не строка: subprocess.Popen работает без shell, поэтому не
     тянет cmd.exe и не интерпретирует кавычки/спецсимволы (аудит №14).
+    Интерпретатор берём из sys.executable, а не из хардкода 'py' (лаунчер
+    уже работает на нужном python; 'py' требует наличие лаунчера в PATH).
     """
-    cmd = ['py', 'evo.py',
+    cmd = [sys.executable, 'evo.py',
            '--pop', str(cfg['pop']),
            '--rounds', str(cfg['rounds']),
            '--episode', str(cfg['episode']),
@@ -1844,9 +1846,11 @@ class App:
         env = os.environ.copy()
         env['PYTHONUTF8'] = '1'
         if getattr(sys, 'frozen', False):
-            # 'py evo.py ...' -> '...' для KC_EVO_ARGS (его читает shlex)
-            args_part = ' '.join(cmd[2:]) if cmd[:2] == ['py', 'evo.py'] \
-                else ' '.join(cmd)
+            # '<python> evo.py ...' -> '...' для KC_EVO_ARGS (его читает shlex)
+            if len(cmd) > 1 and cmd[1] == 'evo.py':
+                args_part = ' '.join(cmd[2:])
+            else:
+                args_part = ' '.join(cmd)
             env['KC_EVO_ARGS'] = args_part
             env['KC_RUN_MODULE'] = 'evo'
             self.process = subprocess.Popen([sys.executable], shell=False, cwd=HERE,
