@@ -149,17 +149,30 @@ class _Ctx(object):
 
 
 def _parse_kclog(path):
-    """Вернуть (имя_сборки, (major,minor,build,rev), blob_сигнатуры Tick)."""
+    """Вернуть (имя_сборки, (major,minor,build,rev), blob_сигнатуры Tick).
+
+    Имя сборки для AssemblyRef берётся из ИМЕНИ ФАЙЛА, а не из манифеста.
+    В папке игры лежит KCLog5.dll, чей манифест называет сборку
+    'KCLog5_new' - Unity резолвит плагины по имени файла, и AssemblyRef со
+    значением 'KCLog5_new' даёт FileNotFoundException (проверено на реальной
+    игре: 35329 ошибок в output_log.txt, kcdbg.txt не создаётся). Старый
+    рабочий patch.exe тоже подставлял 'KCLog5'.
+    """
     c = _Ctx(path)
     t = c.t
-    name, ver = None, (0, 0, 0, 0)
+    ver = (0, 0, 0, 0)
+    manifest_name = None
     for i in range(t.counts.get(0x20, 0)):
         r = t.read_fields(0x20, i)
-        name = t.read_str(r['Name'])
+        manifest_name = t.read_str(r['Name'])
         ver = (r['MajorVersion'], r['MinorVersion'],
                r['BuildNumber'], r['RevisionNumber'])
-    if not name:
+    if manifest_name is None:
         raise ValueError('в %s нет Assembly' % path)
+    asm_name = os.path.splitext(os.path.basename(path))[0]
+    if asm_name != manifest_name:
+        log_name = 'имя в манифсте %r -> используем %r (по имени файла)'
+        print('  ' + (log_name % (manifest_name, asm_name)))
     # TypeDef KCDbg -> метод Tick
     td = t.find_typedef('KCDbg')
     if td is None:
@@ -168,7 +181,7 @@ def _parse_kclog(path):
     if mid is None:
         raise ValueError('в %s нет метода KCDbg.Tick' % path)
     sig = t.read_blob(t.read_fields(6, mid)['Signature'])
-    return name, ver, bytes(sig)
+    return asm_name, ver, bytes(sig)
 
 
 # ------------------------------------------------------------- пересбор #~

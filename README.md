@@ -42,7 +42,9 @@ KCbot/
 │   ├── gamepath.py          # папка игры, путь сейва, автопоиск Steam
 │   └── kc_common.py         # атомарная запись JSON и прочее
 ├── Инструменты
-│   ├── tools/               # patch.exe, KCLog5.dll, Mono.Cecil.dll
+│   ├── tools/               # KCLog5.dll — рантайм-логгер игры (+ его исходник)
+│   ├── patcher.py           # патчинг Assembly-CSharp.dll (чистый Python)
+│   ├── dotnet.py            # PE + метаданные .NET (используется патчером)
 │   └── assets/              # иконки для сборки
 ├── Сборка
 │   ├── KCbot.spec           # рецепт PyInstaller
@@ -102,6 +104,33 @@ py evo.py --resetAll --game-dir "C:\...\Kingdom"
 pip install -r requirements.txt
 pyinstaller KCbot.spec          # → dist/KCbot/KCbot.exe
 ```
+
+## Патч игры
+
+Боту нужен логгер `KCLog5.dll`, вклеенный в `Assembly-CSharp.dll`. Патчер —
+чистый Python (`patcher.py` + `dotnet.py`), без C#-инструментов.
+
+```
+py patcher.py --status           # пропатчена ли игра
+py patcher.py --patch            # пропатчить (спросит про бэкап)
+py patcher.py --unpatch          # восстановить бэкап
+```
+
+Лаунчер сам проверяет патч при запуске и при изменении скорости.
+
+Что делает патч: вставляет `call KCDbg::Tick()` в начало `Director.Update()`.
+Три новые строки метаданных (`AssemblyRef KCLog5`, `TypeRef KCDbg`,
+`MemberRef Tick`) добавляются **в конец** своих таблиц, чтобы не сдвинуть
+номера строк, на которые ссылается существующий IL; `#~` и `#Strings`
+пересобираются и переезжают в секцию `.reloc` (последняя, заканчивается на
+EOF — её просто наращиваем); новое тело метода пишется в свободный хвост
+секции `.text`. Всё остальное не двигается.
+
+> [!warning] Имя сборки берётся из имени файла
+> В папке игры `KCLog5.dll` имеет в манифсте имя `KCLog5_new`. Unity
+> резолвит плагины по имени **файла**, поэтому `AssemblyRef` должен быть
+> `KCLog5`. При `KCLog5_new` игра выдаёт `FileNotFoundException` и
+> `kcdbg.txt` не создаётся.
 
 ## Релизы
 
