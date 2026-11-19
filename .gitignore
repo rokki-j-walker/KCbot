@@ -3,7 +3,7 @@ __pycache__/
 *.pyc
 _tmp_*.json
 _tmp_*.py
-*.spec
+*.egg-info/
 
 # Build artifacts
 build/
@@ -11,12 +11,17 @@ dist/
 bin/
 obj/
 
-# Logs
+# Logs (runtime)
 logs/
+*.log
+human_recording.json
+
+# Game analysis / decompiled copy — do not commit (юридический риск)
+_game_analysis/
+kc_src/
 
 # Temp
-*.log
- KCbot.spec
+*.bak
+*.tmp
 
-# game analysis (decompiled copy, do not commit)
-_game_analysis/
+# PyInstaller spec — ВЕРСИОНИРУЕТСЯ (рецепт сборки должен жить в репозитории)
