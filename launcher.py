@@ -59,6 +59,12 @@ def t(key, **kwargs):
         return val
 
 
+def t_raw(key):
+    """Перевод БЕЗ .format() - для многострочных текстов, в которых могут
+    встретиться фигурные/угловые скобки (справка, шаблоны путей)."""
+    return _CURRENT_LOCALE.get(key, key)
+
+
 # Загрузить локаль по умолчанию (из конфига подгрузится позже в App)
 load_locale('ru')
 APPDATA_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'KCbot')
@@ -428,7 +434,8 @@ class ConsoleWindow:
 
         if detached:
             self.window, self._content = create_themed_toplevel(
-                parent, t('console_title'), colors, 900, 620, on_attach)
+                parent, t('console_title'), colors, 900, 620, on_attach,
+                geometry_key='console_window')
         else:
             self.window = tk.Frame(parent, bg=colors['bg'])
             self._content = self.window
@@ -1089,7 +1096,7 @@ class App:
             self._hint_labels[key] = hint
 
         self.restart_var = tk.BooleanVar(value=self.config.get('restart', True))
-        cb = tk.Checkbutton(self.params_frame, text='Перезапуск', variable=self.restart_var,
+        cb = tk.Checkbutton(self.params_frame, text=t('chk_restart'), variable=self.restart_var,
                             bg=c['bg'], fg=c['fg'], selectcolor=c['entry_bg'],
                             activebackground=c['bg'], activeforeground=c['fg'],
                             font=('Segoe UI', 10))
@@ -1097,7 +1104,7 @@ class App:
         self.restart_var.trace_add('write', lambda *a: self.schedule_calculate())
 
         self.launch_after_var = tk.BooleanVar(value=self.config.get('launch_after', False))
-        cb2 = tk.Checkbutton(self.params_frame, text='Лаунчер после', variable=self.launch_after_var,
+        cb2 = tk.Checkbutton(self.params_frame, text=t('chk_launch_after'), variable=self.launch_after_var,
                              bg=c['bg'], fg=c['fg'], selectcolor=c['entry_bg'],
                              activebackground=c['bg'], activeforeground=c['fg'],
                              font=('Segoe UI', 10))
@@ -1105,11 +1112,11 @@ class App:
 
         btn_frame = tk.Frame(self.params_frame, bg=c['bg'])
         btn_frame.pack(pady=8)
-        self.start_btn = tk.Button(btn_frame, text='Старт', command=self.start_training,
+        self.start_btn = tk.Button(btn_frame, text=t('btn_start'), command=self.start_training,
                                   bg=c['accent'], fg='white', font=('Segoe UI', 11, 'bold'),
                                   padx=16, pady=4)
         self.start_btn.pack(side=tk.LEFT, padx=4)
-        self.stop_btn = tk.Button(btn_frame, text='Стоп', command=self.stop_training,
+        self.stop_btn = tk.Button(btn_frame, text=t('btn_stop'), command=self.stop_training,
                                  bg='#f44336', fg='white', font=('Segoe UI', 11, 'bold'),
                                  padx=16, pady=4)
         # Кнопка Стоп скрыта по умолчанию (показывается при запуске обучения)
@@ -1208,7 +1215,7 @@ class App:
                                   command=lambda: self._move_panel('detail', 'right'))
         move_right_btn.pack(side=tk.LEFT, padx=2)
 
-        tk.Label(header, text='Детали', bg=c['title_bg'], fg=c['fg'],
+        tk.Label(header, text=t('detail_title'), bg=c['title_bg'], fg=c['fg'],
                  font=('Segoe UI', 10, 'bold')).pack(side=tk.LEFT, padx=8)
 
         # Кнопка открепления (справа)
@@ -1315,7 +1322,11 @@ class App:
     def _create_detail_window(self):
         c = self.colors
         panel_bg = c.get('panel_bg', c['entry_bg'])
-        self.detail_window, content = create_themed_toplevel(self.root, 'Детали', c, 320, 600, attach_callback=self._attach_detail)
+        # geometry_key - стабильный (не переводится), иначе геометрия окна
+        # теряется при смене языка
+        self.detail_window, content = create_themed_toplevel(
+            self.root, t('detail_title'), c, 320, 600,
+            attach_callback=self._attach_detail, geometry_key='detail_window')
         for w in content.winfo_children():
             w.destroy()
         detail_scroll = ttk.Scrollbar(content, orient=tk.VERTICAL)
@@ -1369,28 +1380,6 @@ class App:
         else:
             self.console_window = ConsoleWindow(self.root, self.colors, detached=True,
                                                content=self.config.get('console_content', 'both'))
-    def apply_and_close():
-        self.config['theme'] = theme_var.get()
-        self.config['console_content'] = content_var.get()
-        save_config(self.config)
-        if HAS_SV_TTK:
-            sv_theme = 'light' if self.config.get('theme', 'dark') in ('light', 'white') else 'dark'
-            sv_ttk.set_theme(sv_theme)
-            setup_scrollbar_style()
-        c2 = COLOR_SCHEMES.get(self.config.get('theme', 'dark'), COLOR_SCHEMES['dark'])
-        self.colors = c2
-        self.root.configure(bg=c2['bg'])
-        self.title_bar.configure(bg=c2['title_bg'])
-        if self.config.get('show_params', True):
-            _params_expand = (self.config.get('detail_side', 'left') == 'right') and not self.config.get('detail_detached', False)
-            self.params_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=_params_expand, padx=(0, 5))
-        else:
-            self.params_frame.pack_forget()
-        self._build_detail_panel()
-        settings_win.destroy()
-        tk.Button(btn_frame, text='Применить', command=apply_and_close, bg=c['accent'], fg='white').pack(side=tk.LEFT, padx=5)
-        tk.Button(btn_frame, text='Закрыть', command=settings_win.destroy, bg=c['entry_bg'], fg=c['fg']).pack(side=tk.LEFT, padx=5)
-
     def _open_theme_menu(self):
         c = self.colors
         menu = tk.Menu(self.root, tearoff=0, bg=c['entry_bg'], fg=c['fg'],
@@ -1420,7 +1409,7 @@ class App:
         c = self.colors
         menu = tk.Menu(self.root, tearoff=0, bg=c['entry_bg'], fg=c['fg'],
                        activebackground=c['accent'], activeforeground='white')
-        for code, label in (('ru', 'Русский'), ('en', 'English')):
+        for code, label in (('ru', t('lang_name_ru')), ('en', t('lang_name_en'))):
             menu.add_command(label=label, command=lambda cd=code, lb=label: self._apply_language(cd, lb))
         try:
             x = self.lang_btn.winfo_rootx()
@@ -1488,109 +1477,10 @@ class App:
         help_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Подробное содержимое справки
-        body = []
-        body.append(t('help_intro'))
-        body.append('')
-        body.append('=' * 60)
-        body.append(t('param_section').upper())
-        body.append('=' * 60)
-        body.append('')
-        params_detail = [
-            ('pop', 'Популяция (population)',
-             'Сколько ботов (геномов) в одном поколении. Каждый бот играет отдельный эпизод. '
-             'Больше = разнообразнее поиск и точнее отбор, но линейно растёт время обучения. '
-             'Рекомендуется 30-80. Минимум 50 (защита от вырождения).'),
-            ('rounds', 'Раунды (generations)',
-             'Сколько поколений будет обучаться бот. Каждый раунд: все боты играют эпизод → отбор лучших → скрещивание/мутация → новое поколение. '
-             'Больше раундов = лучше финальный геном. Рекомендуется 10-25.'),
-            ('episode', 'Эпизод, сек (episode length)',
-             'Длительность одного эпизода в секундах при скорости 1x. За это время бот должен набрать максимум очков. '
-             'Короткий эпизод = быстрое обучение, но бот не успевает развиться. Рекомендуется 20-40.'),
-            ('episode_increment', 'Прирост, сек (episode increment)',
-             'На сколько секунд растёт эпизод каждый следующий раунд. Позволяет постепенно усложнять задачу: сначала короткие эпизоды, потом длинные. '
-             'Рекомендуется 3-10. 0 = фиксированная длина.'),
-            ('speed', 'Скорость (game speed)',
-             'Скорость игры: 1x, 2x, 4x. При 4x обучение в 4 раза быстрее, игра это выдерживает. 8x ломает игру (тайминги). '
-             'Рекомендуется 4.0.'),
-            ('top_percent', 'Топ (elitism fraction)',
-             'Доля лучших ботов, которые переходят в следующее поколение без изменений (элитизм). '
-             '0.1 = 10% лучших сохраняются. Остальные 90% — скрещивание/мутация. Рекомендуется 0.1-0.25.'),
-        ]
-        for key, name, desc in params_detail:
-            body.append('%s [%s]' % (name, key))
-            body.append('  ' + desc)
-            body.append('')
-        body.append('Дополнительные (через командную строку / evo.py):')
-        body.append('  --elite-window N  Окно сглаживания элитного генома (по умолч. 3).')
-        body.append('  --crossover-rate  Вероятность скрещивания (по умолч. 0.5).')
-        body.append('  --mut-strength    Начальная сила мутации (по умолч. 0.15).')
-        body.append('  --mut-decay       Затухание мутации по раундам (по умолч. 0.9).')
-        body.append('  --mut-min         Минимальная сила мутации (по умолч. 0.03).')
-        body.append('  --restart         Перезапускать игру между раундами (по умолч. вкл.).')
-        body.append('  --no-restart      Не перезапускать игру.')
-        body.append('  --baseline        Запустить baseline на случайных геномах.')
-        body.append('  --resetAll        Сбросить все данные (геномы, история, baseline).')
-        body.append('  --human-genomes   Путь к human_genome_*.json (через запятую).')
-        body.append('')
-        body.append('=' * 60)
-        body.append('КАК РАБОТАЕТ БОТ')
-        body.append('=' * 60)
-        body.append('')
-        body.append(t('how_it_works_text'))
-        body.append('')
-        body.append('Управление: бот контролирует только короля (клавиши A/D/Shift/S). '
-                    'Окно игры не захватывается без необходимости.')
-        body.append('Горячие клавиши (обрабатываются в evo.py): F8 — пауза, F9 — стоп бота, F12 — полный стоп.')
-        body.append('')
-        body.append('Скоринг:')
-        body.append('  - Здания/деревья: очки начисляются только при завершении постройки/сруба.')
-        body.append('  - Найм: очки только при успешном найме нищего (recruited_beggars).')
-        body.append('  - Смерть: -10000 (повторная атака без монет или корона унесена в портал).')
-        body.append('  - Бездействие: idle=-5, no_interaction=-5 (смягчено, но не убрано).')
-        body.append('  - Прогресс: множитель 1.05, дневной бонус 0.05.')
-        body.append('')
-        body.append('Геномы людей: файлы human_genome_*.json автоматически подгружаются из папки проекта.')
-        body.append('Скорость игры: максимум 4x (8x ломает игру).')
-        body.append('')
-        body.append('=' * 60)
-        body.append('КОМАНДНАЯ СТРОКА')
-        body.append('=' * 60)
-        body.append('')
-        body.append('Запуск обучения вручную:')
-        body.append('  py evo.py --pop 50 --rounds 15 --episode 20 --episode-increment 5 --speed 3 --top-percent 0.1')
-        body.append('')
-        body.append('Все аргументы:')
-        body.append('  --pop N               Популяция (умолч. 12)')
-        body.append('  --rounds N            Раунды (умолч. 10)')
-        body.append('  --episode F           Длина эпизода, сек (умолч. 30.0)')
-        body.append('  --episode-increment F Прирост длины (умолч. 10.0)')
-        body.append('  --speed F             Скорость игры 1-3 (умолч. 3.0, 4x+ ломает игру)')
-        body.append('  --top-percent F       Доля элиты 0-1 (умолч. 0.1)')
-        body.append('  --elite-window N      Окно сглаживания (умолч. 3)')
-        body.append('  --crossover-rate F    Скрещивание (умолч. 0.5)')
-        body.append('  --mut-strength F      Сила мутации (умолч. 0.15)')
-        body.append('  --mut-decay F         Затухание (умолч. 0.9)')
-        body.append('  --mut-min F           Мин. мутация (умолч. 0.03)')
-        body.append('  --restart / --no-restart   Перезапуск игры')
-        body.append('  --baseline            Baseline-режим')
-        body.append('  --resetAll            Полный сброс')
-        body.append('  --human-genomes PATH  Человеческие геномы')
-        body.append('')
-        body.append('=' * 60)
-        body.append('ЛАУНЧЕР (launcher.py)')
-        body.append('=' * 60)
-        body.append('')
-        body.append('Параметры вводятся в левой панели. Кнопка «По умолчанию» сбрасывает к рекомендованным.')
-        body.append('Тема: кнопка солнца в заголовке → выбор из списка, применяется на лету.')
-        body.append('Язык: кнопка глобуса → Русский/English, локализация из locales/*.json.')
-        body.append('Справка: кнопка «?» → это окно. Поиск: введите текст, подсветятся все совпадения,')
-        body.append('переход по результатам кнопками ◀ ▶, счётчик показывает текущий/всего.')
-        body.append('Панели можно двигать стрелками ← → в заголовке панели.')
-        body.append('Консоль и детали можно открепить в отдельные окна (кнопка ↙).')
-        body.append('Геометрия всех окон сохраняется в %APPDATA%/KCbot/ и восстанавливается при перезапуске.')
-        body.append('')
-        body.append('Логи: logs/<время_запуска>/<N> generation_<M> bot.log — не удаляются очисткой.')
+        # Справка целиком лежит в локали одним ключом help_body
+        # (96 строк). t_raw() не делает .format() - в тексте есть
+        # угловые скобки в путях и шаблонах.
+        body = t_raw('help_body').split('\n')
 
         full_text = '\n'.join(body)
         help_text.insert('1.0', full_text)
@@ -1693,13 +1583,15 @@ class App:
         # Пересчёт
         self.schedule_calculate()
 
+    # Сообщения хранятся КЛЮЧАМИ локали, а не текстом: класс создаётся при
+    # импорте, а язык может смениться позже - переводим в момент показа.
     VALIDATION_RULES = {
-        'pop': (50, 500, 'Мин. 50, макс. 500'),
-        'rounds': (1, 50, 'Мин. 1, макс. 50'),
-        'episode': (10, 300, 'Мин. 10 сек, макс. 300 сек'),
-        'episode_increment': (0, 60, 'Мин. 0, макс. 60 сек'),
-        'speed': (1, 3, 'Мин. 1x, макс. 3x (на 4x и выше игра ломается)'),
-        'top_percent': (0.01, 1.0, 'От 0.01 до 1.0'),
+        'pop': (50, 500, 'val_pop'),
+        'rounds': (1, 50, 'val_rounds'),
+        'episode': (10, 300, 'val_episode'),
+        'episode_increment': (0, 60, 'val_increment'),
+        'speed': (1, 3, 'val_speed'),
+        'top_percent': (0.01, 1.0, 'val_top'),
     }
 
     def _validate_all(self):
@@ -1720,7 +1612,7 @@ class App:
                 e.config(bg='#3a1a1a', highlightbackground='#ff5555',
                          highlightcolor='#ff5555', highlightthickness=1)
                 if hint:
-                    hint.config(text=msg)
+                    hint.config(text=t(msg))
                 all_valid = False
             else:
                 e.config(bg=self.colors['entry_bg'], highlightthickness=0)
@@ -1753,38 +1645,40 @@ class App:
         cfg = self.get_params()
         if cfg is None:
             if hasattr(self, 'result_label'):
-                self.result_label.config(text='Ошибка: проверьте параметры')
+                self.result_label.config(text=t('err_params_check'))
             return
         total, hours, minutes, details = calc_time(cfg)
 
         if hasattr(self, 'result_label') and self.result_label.winfo_exists():
-            self.result_label.config(text='Общее время: %.0f сек = %.1f ч %.0f мин' % (total, hours, minutes))
+            self.result_label.config(text=t('total_time', sec='%.0f' % total,
+                                           h='%.1f' % hours, m='%.0f' % minutes))
         if hasattr(self, 'result_detail') and self.result_detail.winfo_exists():
-            self.result_detail.config(text='Всего ботов: %d' % (cfg['pop'] * cfg['rounds']))
+            self.result_detail.config(
+                text=t('total_bots', n=cfg['pop'] * cfg['rounds']))
 
         # Обновляем обе панели деталей
         for dt in [self.detail_text, getattr(self, 'detail_right_text', None)]:
             if dt is None:
                 continue
             dt.delete('1.0', tk.END)
-            dt.insert(tk.END, '=== Параметры ===\n')
+            dt.insert(tk.END, t('sec_params') + '\n')
             dt.insert(tk.END, '  pop: %d\n' % cfg['pop'])
             dt.insert(tk.END, '  rounds: %d\n' % cfg['rounds'])
-            dt.insert(tk.END, '  episode: %.1f сек\n' % cfg['episode'])
-            dt.insert(tk.END, '  episode-increment: %.1f сек\n' % cfg['episode_increment'])
+            dt.insert(tk.END, t('sec_episode', v='%.1f' % cfg['episode']) + '\n')
+            dt.insert(tk.END, t('sec_increment', v='%.1f' % cfg['episode_increment']) + '\n')
             dt.insert(tk.END, '  speed: %.1fx\n' % cfg['speed'])
             dt.insert(tk.END, '  restart: %s\n' % cfg['restart'])
             dt.insert(tk.END, '  top-percent: %.4f\n' % cfg['top_percent'])
-            dt.insert(tk.END, '\n=== По раундам ===\n')
+            dt.insert(tk.END, '\n' + t('sec_rounds') + '\n')
             for rnd, ep, rt in details:
-                dt.insert(tk.END, '  Раунд %2d: episode=%.0f сек, раунд=%.0f сек (%.1f мин)\n' %
-                          (rnd, ep, rt, rt / 60.0))
+                dt.insert(tk.END, t('round_line', n='%2d' % rnd, ep='%.0f' % ep,
+                                    rt='%.0f' % rt, min='%.1f' % (rt / 60.0)) + '\n')
 
     def start_training(self):
         cfg = self.get_params()
         if cfg is None:
             if hasattr(self, 'result_label'):
-                self.result_label.config(text='Ошибка: неверные параметры')
+                self.result_label.config(text=t('err_params'))
             return
         # Папка игры: сохраняем и проверяем ДО запуска. Раньше launчер её не
         # проверял вообще - evo.py падал посреди прогона с RuntimeError.
@@ -1856,11 +1750,11 @@ class App:
             self.process.wait()
         except Exception as e:
             if console is not None:
-                console.append('\n!! ошибка чтения вывода: %r\n' % (e,))
+                console.append('\n' + t('msg_read_err', err='%r' % (e,)) + '\n')
         finally:
             self.process_running = False
             if console is not None:
-                console.append('\n=== Обучение завершено ===\n')
+                console.append('\n' + t('msg_done') + '\n')
             # кнопки - только через главный поток
             try:
                 self.start_btn.after(0, lambda: self.start_btn.pack(side=tk.LEFT, padx=4))
@@ -1888,7 +1782,7 @@ class App:
         except Exception:
             pass
         if self.console_window is not None:
-            self.console_window.append('\n=== Остановлено пользователем ===\n')
+            self.console_window.append('\n' + t('msg_stopped') + '\n')
         self.stop_btn.pack_forget()
         self.start_btn.pack(side=tk.LEFT, padx=4)
 
