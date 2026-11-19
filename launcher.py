@@ -811,11 +811,13 @@ class App:
             messagebox.showinfo(t('patch_title'), t('patch_ok'))
             self.console_window.append('=== %s ===\n' % t('patch_ok'))
             self._patch_prompted = True
+            self._refresh_patch_status()
             return True
 
         messagebox.showerror(t('patch_title'),
                              t('patch_fail', err='\n'.join(logs[-3:]) or '?'))
         self._patch_prompted = True
+        self._refresh_patch_status()
         return False
 
     def _on_speed_change(self, event=None):
@@ -993,6 +995,65 @@ class App:
         self.game_dir_status.pack(fill=tk.X)
         self._refresh_game_dir_status()
 
+        # Статус патча + кнопка отката (Фаза 7)
+        prow = tk.Frame(box, bg=c['bg'])
+        prow.pack(fill=tk.X, pady=(3, 0))
+        self.patch_status = tk.Label(prow, text='', bg=c['bg'], fg='#888888',
+                                     anchor='w', font=('Segoe UI', 9))
+        self.patch_status.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        tk.Button(prow, text=t('patch_unpatch'), command=self._unpatch_game,
+                  width=14, bg=c['entry_bg'], fg=c['fg'],
+                  activebackground=c['accent'], activeforeground='#ffffff',
+                  relief=tk.FLAT, borderwidth=1).pack(side=tk.RIGHT, padx=(4, 0))
+        self._refresh_patch_status()
+
+    def _refresh_patch_status(self):
+        """Показать состояние патча рядом с папкой игры."""
+        if not hasattr(self, 'patch_status'):
+            return
+        try:
+            code, _msg = patcher.status(
+                (self.game_dir_var.get() or '').strip() or None)
+        except Exception as e:
+            self.patch_status.config(text=str(e)[:80], fg='#ff5555')
+            return
+        label = {'ok': t('patch_state_ok'),
+                 'not_patched': t('patch_state_no')}.get(
+                     code, t('patch_state_unknown'))
+        color = {'ok': '#4CAF50', 'not_patched': '#ff5555'}.get(code, '#888888')
+        self.patch_status.config(text=label, fg=color)
+
+    def _unpatch_game(self):
+        """Откатить патч из бэкапа (с подтверждением)."""
+        from tkinter import messagebox
+        if not messagebox.askyesno(t('patch_title'), t('patch_unpatch_q')):
+            return
+        if self.console_window is None or not self.console_window.window.winfo_exists():
+            self.console_window = ConsoleWindow(self.root, self.colors,
+                                                detached=True, content='both')
+        logs = []
+
+        def _log(s):
+            logs.append(s)
+            self.console_window.append('  %s\n' % s)
+
+        self.console_window.append('\n--- %s ---\n' % t('patch_unpatch'))
+        try:
+            ok = patcher.unpatch(
+                (self.game_dir_var.get() or '').strip() or None, log=_log)
+        except Exception as e:
+            ok = False
+            _log('!! %r' % (e,))
+            logs.append(str(e))
+
+        self._refresh_patch_status()
+        if ok:
+            messagebox.showinfo(t('patch_title'), t('patch_unpatch_ok'))
+        else:
+            messagebox.showerror(t('patch_title'),
+                                 t('patch_unpatch_fail',
+                                   err=(logs[-1] if logs else '?')))
+
     def _refresh_game_dir_status(self):
         p = (self.game_dir_var.get() or '').strip()
         exe = os.path.join(p, 'Kingdom.exe') if p else ''
@@ -1028,6 +1089,7 @@ class App:
             self.game_dir_status.config(text=str(e), fg='#ff5555')
             return
         self._refresh_game_dir_status()
+        self._refresh_patch_status()
 
     def _build_main(self):
         c = self.colors
