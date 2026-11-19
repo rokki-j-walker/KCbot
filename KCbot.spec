@@ -68,7 +68,8 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['assets/kc_bot.ico'],
-    version=None,            # добавить .rc с версией при выпуске релиза
+    # ресурс версии: Свойства файла -> Версии = 1.0.0.0 (выпуск релиза)
+    version='KCbot_version.txt',
 )
 coll = COLLECT(
     exe,

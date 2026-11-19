@@ -1,0 +1,33 @@
+# UTF-8
+# Ресурс версии KCbot.exe: Свойства файла -> Версии = 1.0.0.0
+# Формат PyInstaller: файл целиком прогоняется через eval(), поэтому это
+# валидный Python-выражение с именами полей из
+# PyInstaller.utils.win32.versioninfo.FixedFileInfo (не путать с устаревшим
+# примером из доков, где поля назывались FileVersion/FileFlags/...).
+VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(1, 0, 0, 0),
+    prodvers=(1, 0, 0, 0),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,          # VOS_NT_WINDOWS32
+    fileType=0x1,        # VFT_APP - приложение
+    subtype=0x0,
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo(
+      [
+        StringTable(
+          '040904B0',
+          [StringStruct('CompanyName', 'rokki-j-walker'),
+           StringStruct('FileDescription', 'KC Bot for Kingdom: Classic'),
+           StringStruct('FileVersion', '1.0.0.0'),
+           StringStruct('InternalName', 'KCbot'),
+           StringStruct('OriginalFilename', 'KCbot.exe'),
+           StringStruct('ProductName', 'KCbot'),
+           StringStruct('ProductVersion', '1.0.0.0')])
+      ]),
+    VarFileInfo([VarStruct('Translation', [1033, 1200])])
+  ]
+)
