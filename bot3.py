@@ -976,20 +976,49 @@ class Bot(object):
 
     # ------------------------------------------------------------- метрики
     def track(self, st):
-        """Считаем метрики эпизода - по ним эволюция оценивает стратегию."""
-        f = self.fit
-        if f['base'] is None:
-            f['base'] = dict(purse=st.purse, wall=st.wall, shop=st.shop,
-                             farm=st.farm, portal=st.portal, arc=st.arc,
-                             wrk=st.wrk, frm=st.frm, knt=st.knt, hc=st.hc,
-                             p0=len(st.cit('P')))
-            f['last_purse'] = st.purse
-            f['last_px'] = st.px
-            # стартовые здания и деревья не считаем как построенные/срубленные
-            f['max_buildings'] = st.wall + st.shop + st.farm
-            f['min_trees'] = len([p for p in st.payables if p.type == 'PayableTree'])
+        """Считаем метрики эпизода - по ним эволюция оценивает стратегию.
+
+        Оркестратор: тело разбито на секции _track_* (рефакторинг D27).
+        Порядок вызовов обязан совпадать с прежним порядком тела: секции
+        читают и пишут общие поля self.fit (last_interaction, prev_hc и др.).
+        """
+        if self.fit['base'] is None:
+            self._track_init(st)
             return
-        # Экран проигрыша (The Crown Lost): фиксируем смерть, не обновляем метрики
+        if self._track_game_over(st):
+            return
+        d = self._track_coins(st)
+        self._track_firsts(st)
+        self._track_built(st)
+        self._track_trees(st)
+        self._track_distance(st)
+        self._track_horse(st)
+        self._track_world(st, d)
+        self._track_recruit(st)
+        self._track_idle_penalty()
+        self._track_buildings(st)
+        self._track_crown_death(st)
+
+    # ------------------------------------------------------- секции track()
+    def _track_init(self, st):
+        """Первый кадр: базовые значения, по которым считаем все дельты."""
+        f = self.fit
+        f['base'] = dict(purse=st.purse, wall=st.wall, shop=st.shop,
+                         farm=st.farm, portal=st.portal, arc=st.arc,
+                         wrk=st.wrk, frm=st.frm, knt=st.knt, hc=st.hc,
+                         p0=len(st.cit('P')))
+        f['last_purse'] = st.purse
+        f['last_px'] = st.px
+        # стартовые здания и деревья не считаем как построенные/срубленные
+        f['max_buildings'] = st.wall + st.shop + st.farm
+        f['min_trees'] = len([p for p in st.payables if p.type == 'PayableTree'])
+
+    def _track_game_over(self, st):
+        """Экран проигрыша (The Crown Lost): фиксируем смерть, метрики не трогаем.
+
+        True - эпизод завершён, track() должен остановиться.
+        """
+        f = self.fit
         if (not st.playing and st.hc == 0
                 and self.now() - f.get('start', 0) > 10.0):
             if not f.get('game_over_detected', False):
@@ -998,7 +1027,16 @@ class Bot(object):
                     f['deaths'] = f.get('deaths', 0) + 1
                     f['death_latch'] = True
                 self.note('world', 'ЭКРАН ПРОИГРЫША: The Crown Lost')
-            return
+            return True
+        return False
+
+    def _track_coins(self, st):
+        """День: смена суток, приток/траты/потери монет, монеты на земле.
+
+        Возвращает d - изменение purse за кадр (его же ждёт _track_world
+        при проверке налогов).
+        """
+        f = self.fit
         f['day'] = st.day
         d = st.purse - f['last_purse']
         if d > 0:
@@ -1020,7 +1058,11 @@ class Bot(object):
         # отслеживаем не подобранные монеты
         if len(st.ground_coins) > f.get('unpicked_coins', 0):
             f['unpicked_coins'] = len(st.ground_coins)
-        # отслеживаем первого лучника и первого рабочего
+        return d
+
+    def _track_firsts(self, st):
+        """Первый лучник и первый рабочий (оба фиксируются как успех)."""
+        f = self.fit
         b = f['base']
         if 'arc0' not in b:
             b['arc0'] = st.arc
@@ -1031,9 +1073,10 @@ class Bot(object):
         if b.get('wrk0', 1) == 0 and st.wrk >= 1 and f.get('first_worker', 0) == 0:
             f['first_worker'] = 1
             f['last_interaction'] = self.now()
-        # сохраняем базовые значения
-        # отслеживание завершённого строительства (по изменению walls/shops/farms)
-        # используем max, чтобы не считать перестройки
+
+    def _track_built(self, st):
+        """Завершённое строительство: рост wall+shop+farm (max не считает перестройки)."""
+        f = self.fit
         cur_buildings = st.wall + st.shop + st.farm
         max_buildings = f.get('max_buildings', 0)
         if cur_buildings > max_buildings:
@@ -1044,8 +1087,10 @@ class Bot(object):
                       (delta, st.wall, st.shop, st.farm))
         elif max_buildings == 0:
             f['max_buildings'] = cur_buildings
-        # отслеживание срубленных деревьев (дерево исчезло из payables)
-        # используем min, чтобы не считать появление новых деревьев
+
+    def _track_trees(self, st):
+        """Срубленные деревья: дерево исчезло из payables (min не считает новые)."""
+        f = self.fit
         cur_trees = len([p for p in st.payables if p.type == 'PayableTree'])
         min_trees = f.get('min_trees', 9999)
         if cur_trees < min_trees and min_trees != 9999:
@@ -1055,7 +1100,10 @@ class Bot(object):
             self.note('world', 'срублено %d деревьев (осталось %d)' % (chopped, cur_trees))
         elif min_trees == 9999:
             f['min_trees'] = cur_trees
-        # дистанция (ходьба vs бег)
+
+    def _track_distance(self, st):
+        """Пройденная дистанция: ходьба vs бег."""
+        f = self.fit
         if f['last_px'] is not None:
             dist = abs(st.px - f['last_px'])
             f['distance'] += dist
@@ -1064,7 +1112,10 @@ class Bot(object):
             else:
                 f['walk_distance'] = f.get('walk_distance', 0.0) + dist
         f['last_px'] = st.px
-        # переутомление лошади (стамина упала до 0)
+
+    def _track_horse(self, st):
+        """Лошадь: переутомление (стамина <= 0) и накопленное время отдыха."""
+        f = self.fit
         if st.stamina <= 0.01 and f.get('last_stamina', 1.0) > 0.01:
             f['horse_exhaustion'] = f.get('horse_exhaustion', 0) + 1
         f['last_stamina'] = st.stamina
@@ -1078,7 +1129,10 @@ class Bot(object):
             f['last_track_time'] = now
         else:
             f['last_track_time'] = self.now()
-        # логирование событий мира и персонажей
+
+    def _track_world(self, st, d):
+        """События мира: смена дня, враги, порталы, корона, налоги."""
+        f = self.fit
         # смена дня
         if 'prev_day' not in f:
             f['prev_day'] = st.day
@@ -1103,7 +1157,7 @@ class Bot(object):
             else:
                 self.note('world', 'портал закрыт (всего %d)' % st.portal)
             f['prev_portals'] = st.portal
-        # корона
+        # корона (счётчики ниже, в _track_crown_death - здесь только заметки)
         if f.get('prev_hc', 1) == 1 and st.hc == 0:
             self.note('world', 'КОРОНА ПОТЕРЯНА! (purse=%d)' % st.purse)
         if f.get('prev_hc', 1) == 0 and st.hc == 1:
@@ -1112,7 +1166,9 @@ class Bot(object):
         if d > 0 and not any(abs(c - st.px) < 3 for c in st.ground_coins):
             if d > 1:
                 self.note('world', 'налог собран: +%d монет (purse=%d)' % (d, st.purse))
-        # проверка найма: если бросали монету, но Peasant не появился
+
+    def _track_recruit(self, st):
+        """Проверка найма: бросали монету, но Peasant не появился."""
         if getattr(self, '_recruit_check_time', 0) > 0 and self.now() > self._recruit_check_time:
             if len(st.cit('P')) > getattr(self, '_recruit_check_p_count', 0):
                 # найм удался - сбрасываем таймер бездействия
@@ -1124,11 +1180,18 @@ class Bot(object):
                 if hasattr(self, 'fit'):
                     self.fit['failed_recruit'] = self.fit.get('failed_recruit', 0) + 1
             self._recruit_check_time = 0.0
-        # штраф за бездействие: каждые 5 сек без взаимодействия
+
+    def _track_idle_penalty(self):
+        """Штраф за бездействие: каждые 5 сек без взаимодействия."""
+        f = self.fit
         idle_time = self.now() - f['last_interaction']
         expected_penalty = int(idle_time / 5.0)
         if expected_penalty > f['inactivity_penalty']:
             f['inactivity_penalty'] = expected_penalty
+
+    def _track_buildings(self, st):
+        """Дельта зданий (с рабочими/без них) и численность граждан."""
+        f = self.fit
         b = f['base']
         f['buildings'] = ((st.wall - b['wall']) + (st.shop - b['shop'])
                           + (st.farm - b['farm']) + (st.portal - b['portal']))
@@ -1148,7 +1211,10 @@ class Bot(object):
         f['citizens'] = ((st.arc - b['arc']) + (st.wrk - b['wrk'])
                          + (st.frm - b['frm']) + (st.knt - b['knt'])
                          + (p_count - b['p0']))
-        # корона: потеря (удар врага), подъём обратно и смерть
+
+    def _track_crown_death(self, st):
+        """Корона (потеря/подбор), фронт атаки врага и засчёт смерти."""
+        f = self.fit
         prev_hc = f.get('prev_hc', 1)
         if prev_hc == 1 and st.hc == 0:
             f['crown_lost'] += 1
@@ -1170,6 +1236,7 @@ class Bot(object):
             if (onset and st.purse == 0) or crown_gone:
                 f['deaths'] = f.get('deaths', 0) + 1
                 f['death_latch'] = True
+
     def metrics(self):
         f = self.fit
         m = dict(coins_in=f['coins_in'], coins_spent=f['coins_spent'],
