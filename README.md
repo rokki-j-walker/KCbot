@@ -38,9 +38,12 @@ KCbot/
 │   ├── converter.py         # конвертация записи → геном
 │   ├── restart.py           # мягкий перезапуск игры (WM_CLOSE)
 │   └── hold.py, shot.py     # зажатие клавиши / скриншот
+├── CLI и проверки
+│   ├── kcbot.py             # единая точка входа: все подкоманды + diag
+│   └── difftest.py          # дифф-тест парсера (зелёный/красный прогон)
 ├── Общее
 │   ├── gamepath.py          # папка игры, путь сейва, автопоиск Steam
-│   └── kc_common.py         # атомарная запись JSON и прочее
+│   └── kc_common.py         # атомарный JSON, find_window, утилиты
 ├── Инструменты
 │   ├── tools/               # KCLog5.dll — рантайм-логгер игры (+ его исходник)
 │   ├── patcher.py           # патчинг Assembly-CSharp.dll (чистый Python)
@@ -88,6 +91,38 @@ py evo.py --baseline            # создать/восстановить эта
 py human_trainer.py --sessions 4 --duration 120
 py recorder.py --duration 120 --output human_1.json
 py evo.py --resetAll --game-dir "C:\...\Kingdom"
+```
+
+### Единый CLI (`kcbot.py`)
+
+Все инструменты доступны одной командой (подкоманды лишь перенаправляют
+аргументы в модуль, поведение не меняется):
+
+```
+py kcbot.py                      # список подкоманд
+py kcbot.py diag                 # папка игры, патч, окно, свежесть kcdbg, состояние
+py kcbot.py patch-status         # пропатчена ли игра
+py kcbot.py patch | unpatch      # пропатчить / откатить
+py kcbot.py record --duration 120 --output human_1.json
+py kcbot.py convert --input human_1.json --output human_genome_1.json
+py kcbot.py human-train --sessions 4 --duration 120
+py kcbot.py baseline [--force]
+py kcbot.py restart [--close|--kill]
+py kcbot.py hold s 3             # зажать клавишу на 3 с
+py kcbot.py shot out.png         # скриншот окна игры
+py kcbot.py bot --own-focus --speed 3
+py kcbot.py evo --pop 50 --rounds 15
+```
+
+### Проверка парсера (`difftest.py`)
+
+При любой правке `parse_line`/`State` — дифф-тест на реальных строках
+`kcdbg.txt` (зелёный/красный прогон):
+
+```
+py difftest.py status   # покрытие: 17/17 секций, 25 kv-ключей
+py difftest.py ref      # снять эталон ДО правки
+py difftest.py check    # сравнить: 0 расхождений = зелёный прогон
 ```
 
 Горячие клавиши в игре:
@@ -149,4 +184,20 @@ EOF — её просто наращиваем); новое тело метод�
 
 ## Документация
 
-База знаний по проекту: `C:\Users\joker\CodeProjects\aAI\_obsidian\KCbot` (открывается как vault в Obsidian).
+База знаний по проекту: `C:\Users\joker\CodeProjects\aAI\_obsidian\KCbot`
+(открывается как vault в Obsidian).
+
+| Заметка | Содержание |
+|---|---|
+| `00 Обзор` | цель, стек, горячие клавиши |
+| `01 Архитектура` | схема потока данных, модули, контракты |
+| `02 Файлы и папки` | структура репозитория, что удалено и почему |
+| `03 Аудит кода` | сводная таблица проблем: исправлено / осталось |
+| `04 Аудит — ядро bot3 и evo` | полный отчёт по движку |
+| `04 Аудит — вспомогательные скрипты` | полный отчёт по лаунчеру и тулов |
+| `04 Аудит — C# и инструменты` | полный отчёт (сохранён как справочник) |
+| `05 История изменений` | журнал: что, когда, зачем |
+| `06 Решения и проблемы` | договорённости D1–D33 |
+| `07 План` | 10 фаз с чек-листами и счётчиками |
+| `08 Знания об игре` | клавиши, скип обучения, патч, мониторы |
+| `09 Словарь терминов` | прогон, партия, фикс, скан-тест, инвариант |
