@@ -1,12 +1,12 @@
 ; =============================================================================
-; KCbot.iss - инсталлер KCbot (Inno Setup 6)
+; KCbot.iss - инсталлер KCbot (Inno Setup 7)
 ;
 ; Компиляция:
 ;   1. Собрать портабл:   py -m PyInstaller KCbot.spec --noconfirm --clean
-;   2. Собрать инсталлер: "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" KCbot.iss
+;   2. Собрать инсталлер: "C:\Program Files\utils\Inno Setup 7\ISCC.exe" KCbot.iss
 ;   Результат: Setup\KCbot-<версия>.exe
 ;
-; Требование: Inno Setup 6 (https://jrsoftware.org/isinfo.php) - в проекте
+; Требование: Inno Setup 7 (https://jrsoftware.org/isinfo.php) - в проекте
 ; не входит, ставится отдельно.
 ; =============================================================================
 

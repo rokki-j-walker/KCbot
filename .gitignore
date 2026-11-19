@@ -32,3 +32,6 @@ kc_src/
 *.tmp
 
 # PyInstaller spec — ВЕРСИОНИРУЕТСЯ (рецепт сборки должен жить в репозитории)
+
+# Installer output (13 МБ, собирается из KCbot.iss)
+Setup/
