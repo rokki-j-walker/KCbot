@@ -53,7 +53,6 @@ KEYEVENTF_KEYUP = 0x0002
 SC_A = 0x1E
 SC_D = 0x20
 SC_S = 0x1F
-SC_ESC = 0x01
 SC_LSHIFT = 0x2A
 
 
@@ -516,13 +515,11 @@ CFG = dict(
                             # (согласовано с DEFAULT_GENOME: раньше здесь стояло
                             #  3.0, и одиночный запуск работал иначе, чем
                             #  эволюция с геномом - аудит B11 / решение D17)
-    pay_black_time=90.0,    # на сколько забыть неоплачиваемый объект
     coin_timeout=5.0,       # сколько ждать монету, которую не подобрали
     coin_black_time=15.0,
     tree_prio=90,           # деревья - самый дешёвый доход
     sprint_min_dist=4.0,
     sprint_min_stamina=0.15,
-    idle_x=None,            # None = у костра
     # веса покупок (меньше = важнее) - по умолчанию из DEFAULT_GENOME
     w_mason=12, w_castle=14, w_workshop=16, w_wall3=18,
     w_wall2=19, w_wall1=20, w_wall0=25, w_tower=28,
@@ -817,34 +814,26 @@ class Bot(object):
         self.coin_timeout = CFG['coin_timeout'] / self.speed
         self.pay_giveup = CFG['pay_giveup'] / self.speed
         self.tax_wait = CFG['tax_wait'] / self.speed
-        self.pay_timeout_base = 0.5 / self.speed
-        self.scan_interval = 0.45 / self.speed
         self.recruit_check = 5.0 / self.speed
         self.esc_cooldown = 3.0 / self.speed
         self.skip_cooldown = 30.0 / self.speed
-        self.loop_sleep = 0.2 / self.speed
         self.ts = {}
         self.last_focus = 0.0
         self.pay_target = None
         self.pay_phase = None
         self.pay_started = 0.0
         self.pay_purse0 = 0
-        self.pay_wait_sel = 0.0
         self.pay_since = 0.0          # когда начали искать точку оплаты
-        self._pay_settle = 0.0        # когда полностью остановились у точки оплаты
         self._pay_last_px = None      # для проверки реальной остановки
         self._pay_still_since = 0.0
         self._recruit_check_time = 0.0
         self._recruit_check_p_count = 0
-        self._recruit_check_purse = 0
-        self._recruit_drop_x = None
         self._retreat_until = 0.0
         self._retreat_x = 0.0
         self.scan_x = None            # текущая точка оплаты
         self.scan_i = 0
         self.scan_t = 0.0
         self.pay_black = {}           # неоплачиваемые объекты -> до какого времени
-        self.nudge = 0.0
         self.coin_target = None
         self.coin_since = 0.0
         self.coin_purse = 0
@@ -861,7 +850,6 @@ class Bot(object):
                         castle_upgrade_buys_with_workers=0,
                         castle_upgrade_buys_without_workers=0,
                         buildings_with_workers=0, buildings_without_workers=0,
-                        prev_buildings=None, prev_trees=0,
                         buildings_started=0, buildings_completed=0,
                         max_buildings=0, min_trees=9999,
                         trees_marked=0, trees_chopped=0,
@@ -1623,9 +1611,7 @@ class Bot(object):
             self.stat['last_recruit'] = self.now()
             # запоминаем состояние до найма и проверяем, появился ли Peasant
             self._recruit_check_time = self.now() + self.recruit_check
-            self._recruit_check_purse = st.purse
             self._recruit_check_p_count = len(st.cit('P'))
-            self._recruit_drop_x = st.px
             # не подбираем свою же монету
             self.coin_black[st.px] = self.now() + 4.0
             # монета падает назад от короля -> уходим ВПЕРЁД (по направлению движения)
@@ -1725,7 +1711,6 @@ class Bot(object):
         dx = target - st.px
         if abs(dx) > CFG['pay_tol']:
             self.release_s()
-            self._pay_settle = 0.0
             self.note('task', 'PAY %s(%d) -> %.2f (px=%.2f)' %
                       (p.base, p.price, target, st.px))
             self.walk_to(st, target, sprint=False, tol=CFG['pay_tol'])
@@ -1737,7 +1722,6 @@ class Bot(object):
             # король ещё движется (инерция) - ждём
             self._pay_last_px = st.px
             self._pay_still_since = now
-            self._pay_settle = 0.0
             return
         if self._pay_still_since == 0.0:
             self._pay_still_since = now
@@ -1767,7 +1751,6 @@ class Bot(object):
             self.scan_t = 0.0
             self.scan_i = (self.scan_i + 1) % len(SCAN)
             self.scan_x = p.x + SCAN[self.scan_i]
-            self._pay_settle = 0.0
             self.note('pay_scan', '%s @%.1f -> %.2f sel=%s' %
                       (p.base, p.x, self.scan_x, st.sel))
         if now - self.pay_since > self.pay_giveup:
@@ -1827,19 +1810,14 @@ class Bot(object):
         self.pay_target = None
         self.pay_phase = None
         self.pay_purse0 = 0
-        self.nudge = 0.0
-        self.pay_wait_sel = 0.0
         self.scan_x = None
         self.scan_i = 0
         self.scan_t = 0.0
         self.pay_since = 0.0
-        self._pay_settle = 0.0
         self._pay_last_px = None
         self._pay_still_since = 0.0
         self._recruit_check_time = 0.0
         self._recruit_check_p_count = 0
-        self._recruit_check_purse = 0
-        self._recruit_drop_x = None
         self._retreat_until = 0.0
         self._retreat_x = 0.0
         self.last_recruit_drop = 0.0
@@ -1848,7 +1826,7 @@ class Bot(object):
             self.fit['last_interaction'] = self.now()
 
     # ============================================================== главный
-    def ensure_focus(self, need_input=True):
+    def ensure_focus(self):
         """Бот НЕ перехватывает фокус: если игрок переключился в другое окно,
         бот ждёт, пока пользователь сам вернётся в игру (иначе он не сможет
         управлять королём - игра получает клавиши только в фокусе).
@@ -1941,8 +1919,7 @@ class Bot(object):
         except Exception:
             pass
         if not self.dry:
-            need = self.task[0] not in ('idle',)
-            if not self.ensure_focus(need):
+            if not self.ensure_focus():
                 self.stop_all()
                 return
         self.execute(st)
@@ -2050,7 +2027,6 @@ def main():
                     continue
                 st = read_state()
                 if st is not None:
-                    bot._last_state = st
                     bot.track(st)
                 bot.step()
                 # запись живого результата (для раннего убийства при отрицательном счёте)
