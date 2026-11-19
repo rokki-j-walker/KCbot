@@ -102,8 +102,19 @@ py evo.py --resetAll --game-dir "C:\...\Kingdom"
 
 ```
 pip install -r requirements.txt
-pyinstaller KCbot.spec          # → dist/KCbot/KCbot.exe
+pyinstaller KCbot.spec --noconfirm --clean     # → dist/KCbot/KCbot.exe
 ```
+
+Портабль-дистрибутив — вся папка `dist/KCbot/` (37 МБ, 976 файлов).
+
+### Инсталлер (Inno Setup)
+
+```
+"C:\Program Files (x86)\Inno Setup 6\ISCC.exe" KCbot.iss   # → Setup/KCbot-1.0.0.exe
+```
+
+Скрипт `KCbot.iss` готов; сам Inno Setup 6 в проект не входит и ставится
+отдельно (https://jrsoftware.org/isinfo.php).
 
 ## Патч игры
 

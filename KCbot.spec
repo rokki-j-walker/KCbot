@@ -23,7 +23,14 @@ RES_FILES = ['bounties.txt',
              # через spec_from_file_location (аудит E2)
              'bot3.py', 'evo.py', 'converter.py', 'recorder.py',
              'human_trainer.py', 'gamepath.py', 'kc_common.py', 'hold.py',
-             'baseline.py']
+             'baseline.py',
+             # автономные CLI-инструменты: в frozen-сборке их пока нельзя
+             # запустить напрямую, но файлы должны лежать рядом (готовность
+             # к kcbot.py с подкомандами, решение D30)
+             'restart.py', 'shot.py',
+             # patcher/dotnet нужны файлом? Нет - они импортируются лаунчером
+             # и попадают в PYZ. Оставляем только импорт.
+             ]
 
 a = Analysis(
     ['launcher.py'],
