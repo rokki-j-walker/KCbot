@@ -923,6 +923,11 @@ class Bot(object):
         self.stat = {}
         self.skip_until = 0.0          # до какого времени держим S (скип обучения)
         self.last_skip = 0.0
+        # неблокирующие нажатия (B14): клавиша -> время отпускания;
+        # обрабатывается _release_due() в начале step()
+        self._press_until = {}
+        self._intro_skip_time = 0.0    # кулдаун кадра скипа обучения (day == 0)
+        self._intro_hold = 0.0         # до какого времени держим S на интро
         self.fit = dict(purse0=None, last_purse=0, coins_in=0.0, coins_spent=0.0,
                         buys=0, buildings=0, citizens=0, crown_lost=0,
                         tool_buys=0, hammer_buys=0, bow_buys=0, scythe_buys=0,
@@ -1291,6 +1296,27 @@ class Bot(object):
 
     def release_s(self):
         self.inp.up(SC_S)
+
+    def press_for(self, key, dur):
+        """Нажать клавишу на dur секунд, НЕ блокируя цикл (B14).
+
+        Раньше здесь был time.sleep(dur): цикл замирал целиком - F9 не
+        отвечал, read_state не читался. Теперь отпускание планируется и
+        выполняется в _release_due() в начале step().
+        """
+        if self.dry:
+            return
+        self.inp.down(key)
+        self._press_until[key] = self.now() + dur
+
+    def _release_due(self):
+        """Отпустить клавиши, у которых вышло время (B14)."""
+        if not self._press_until:
+            return
+        now = self.now()
+        for key in [k for k, t in list(self._press_until.items()) if now >= t]:
+            del self._press_until[key]
+            self.inp.up(key)
 
     def stop_all(self):
         self.stop_move()
@@ -1770,10 +1796,9 @@ class Bot(object):
     def _exec_recruit_drop(self, st):
         """Найм: бросить монету и отойти, чтобы бомж её подобрал."""
         self.note('task', 'RECRUIT drop coin @%.1f' % st.px)
-        if not self.dry:
-            self.inp.down(SC_S)
-            time.sleep(0.15 / self.speed)
-            self.inp.up(SC_S)
+        # нажатие без блокировки цикла (B14): отпускание планируется,
+        # физически S отпустит _release_due() или release_s() в ретрите
+        self.press_for(SC_S, 0.15 / self.speed)
         self.last_recruit_drop = self.now()
         self._recruit_drop_until = self.now() + 2.0
         self.stat['last_recruit'] = self.now()
@@ -2051,6 +2076,7 @@ class Bot(object):
         return None
 
     def step(self):
+        self._release_due()       # отпустить клавиши с вышедшим сроком (B14)
         st = read_state()
         if st is None:
             # Клавиши обязательно отпускаем: иначе зажатые A/D/Shift продолжают
@@ -2064,10 +2090,8 @@ class Bot(object):
             if not hasattr(self, "_esc_pressed_time"):
                 self._esc_pressed_time = 0.0
             if self.now() - self._esc_pressed_time > self.esc_cooldown:
-                if not self.dry:
-                    self.inp.down(0x1C)  # SC_ENTER
-                    time.sleep(0.1 / self.speed)
-                    self.inp.up(0x1C)
+                # нажатие Enter без блокировки цикла (B14)
+                self.press_for(0x1C, 0.1 / self.speed)   # SC_ENTER
                 self._esc_pressed_time = self.now()
                 self.note("esc_menu", "нажат Enter для закрытия меню/настроек")
             # скип обучения/интро: зажать S на 5 секунд (только если игра в фокусе
@@ -2095,11 +2119,20 @@ class Bot(object):
             # Скип обучения/интро: подсказка на экране просит «нажать вниз»,
             # а «вниз» в этой игре = клавиша S. Достаточно 2-3 секунд
             # (проверено вживую; 5 с работает, но избыточно).
-            if not self.dry and st.day == 0 and self.now() - getattr(self, '_intro_skip_time', 0.0) > 5.0:
-                self._intro_skip_time = self.now()
-                self.inp.force_focus()
-                self.inp.down(SC_S); time.sleep(3.0); self.inp.up(SC_S)
-                self.note('intro_skip', 'удержание S для скипа обучения')
+            # Удержание НЕ блокирует цикл (B14): stop_all() в начале ветки
+            # отпускает S каждый кадр - держим его пере-нажатием, как skip_until.
+            if not self.dry and st.day == 0:
+                if self.now() < self._intro_hold:
+                    self.inp.down(SC_S)            # продолжаем удержание
+                elif self._intro_hold > 0.0:
+                    self.inp.up(SC_S)              # время вышло (страховка)
+                    self._intro_hold = 0.0
+                elif self.now() - self._intro_skip_time > 5.0:
+                    self._intro_skip_time = self.now()
+                    self._intro_hold = self.now() + 3.0
+                    self.inp.force_focus()
+                    self.inp.down(SC_S)
+                    self.note('intro_skip', 'удержание S для скипа обучения')
             self.note('not_playing', st.next)
             return
 
@@ -2107,6 +2140,9 @@ class Bot(object):
         if self.skip_until != 0.0:
             self.inp.up(SC_S)
             self.skip_until = 0.0
+        if self._intro_hold != 0.0:
+            self.inp.up(SC_S)
+            self._intro_hold = 0.0
         new = self.decide(st)
         self.task = new
         # обновляем текущий счёт для вывода в консоль

@@ -101,6 +101,28 @@ def test_structure():
           py.count('def score_episode(') == 1 and
           'bot3_module().fitness' in py)
 
+    # B14: ввод не должен блокировать главный цикл
+    b3 = read('bot3.py')
+    check('B14: нет блокирующего time.sleep(3.0)', 'time.sleep(3.0)' not in b3)
+    check('B14: нет sleep в нажатиях (0.15/0.1)',
+          'time.sleep(0.15' not in b3 and 'time.sleep(0.1 /' not in b3)
+    check('B14: press_for определён и используется',
+          'def press_for(' in b3 and 'self.press_for(' in b3)
+    check('B14: _release_due вызывается в step()',
+          re.search(r'def step\(self\):\s*\n\s*self\._release_due\(', b3) is not None)
+
+    # глобальный конфиг изменяется только при старте: все 3 записи в
+    # load_genome() (заливка генома, D17). Во время цикла - никогда.
+    # (Аудит предлагал CFG/BOUNTIES -> объект; инвариант закреплён проверкой.)
+    m_lg = re.search(r'\ndef load_genome\(.*?(?=\ndef )', py, re.S)
+    outside = py.replace(m_lg.group(0), '') if m_lg else py
+    assigns = re.findall(
+        r'\b(?:CFG|BOUNTIES)\[[^\]]*\](?:\[[^\]]*\])*\s*(?:[+\-*/]=|=(?!=))'
+        r'|\b(?:CFG|BOUNTIES)\.(?:update|pop|setdefault|clear)\('
+        r'|\bdel\s+(?:CFG|BOUNTIES)\[', outside)
+    check('CFG/BOUNTIES записываются только в load_genome()',
+          m_lg is not None and not assigns, '; '.join(assigns[:5]))
+
 
 # ----------------------------------------------------------------- сборка
 def test_build_files():
