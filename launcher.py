@@ -7,6 +7,7 @@ launcher.py - лаунчер обучения KingdomBot.
 """
 import collections
 import ctypes
+import gamepath
 import json
 import os
 import queue
@@ -711,6 +712,7 @@ class App:
     def __init__(self, root):
         self.root = root
         self.config = load_config()
+        self._migrate_config()
         load_locale(self.config.get('language', 'ru'))
         self.colors = COLOR_SCHEMES.get(self.config.get('theme', 'dark'), COLOR_SCHEMES['dark'])
         self.console_window = None
@@ -734,6 +736,34 @@ class App:
         self._schedule_detail_update()
         # Применить стиль панели задач после отображения окна
         pass  # _apply_taskbar_style отключён (скрывал окно)
+
+    def _migrate_config(self):
+        """Привести сохранённый конфиг к текущим допустимым диапазонам.
+
+        Без этого устаревшие значения блокируют «Старт» навсегда: после того
+        как потолок скорости стал 3x, конфиг с speed=4.0 делал валидацию
+        неуспешной, а _validate_all() выключала кнопку. Раньше миграции не
+        было вовсе (аудит: «насильственная миграция конфига»).
+        """
+        changed = False
+        for key, rules in self.VALIDATION_RULES.items():
+            if key not in self.config:
+                continue
+            min_val, max_val, _msg = rules
+            try:
+                fv = float(self.config[key])
+            except (TypeError, ValueError):
+                self.config[key] = DEFAULTS.get(key, self.config[key])
+                changed = True
+                continue
+            if fv < min_val or fv > max_val:
+                self.config[key] = min(max(fv, min_val), max_val)
+                changed = True
+        if changed:
+            try:
+                save_config(self.config)
+            except OSError:
+                pass
 
     def _build_title_bar(self):
         c = self.colors
@@ -836,6 +866,74 @@ class App:
             self.root.geometry('%dx%d+0+0' % (sw, sh))
             self._maximized = True
 
+    def _build_game_dir_row(self, c):
+        """Строка «Папка игры»: путь + Обзор + Автопоиск."""
+        box = tk.Frame(self.params_frame, bg=c['bg'])
+        box.pack(fill=tk.X, pady=(0, 6))
+
+        tk.Label(box, text=t('game_dir_title'), bg=c['bg'], fg=c['fg'],
+                 anchor='w', font=('Segoe UI', 10)).pack(fill=tk.X)
+
+        path = gamepath.game_dir() or gamepath.autodetect_game_dir()
+        self.game_dir_var = tk.StringVar(value=path)
+        row = tk.Frame(box, bg=c['bg'])
+        row.pack(fill=tk.X, pady=(2, 0))
+        ent = tk.Entry(row, textvariable=self.game_dir_var, width=30,
+                       font=('Segoe UI', 9), bg=c['entry_bg'], fg=c['fg'],
+                       insertbackground=c['fg'], relief=tk.FLAT, borderwidth=1)
+        ent.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        def _mk(label, cmd, width=11):
+            tk.Button(row, text=label, command=cmd, width=width,
+                      bg=c['entry_bg'], fg=c['fg'],
+                      activebackground=c['accent'], activeforeground='#ffffff',
+                      relief=tk.FLAT, borderwidth=1).pack(side=tk.LEFT, padx=(4, 0))
+
+        _mk(t('game_dir_browse'), self._browse_game_dir)
+        _mk(t('game_dir_autodetect'), self._autodetect_game_dir)
+
+        self.game_dir_status = tk.Label(box, text='', bg=c['bg'],
+                                        fg='#ff5555', anchor='w',
+                                        font=('Segoe UI', 9))
+        self.game_dir_status.pack(fill=tk.X)
+        self._refresh_game_dir_status()
+
+    def _refresh_game_dir_status(self):
+        p = (self.game_dir_var.get() or '').strip()
+        exe = os.path.join(p, 'Kingdom.exe') if p else ''
+        if p and os.path.isfile(exe):
+            self.game_dir_status.config(text='', fg='#888888')
+            return True
+        self.game_dir_status.config(text=t('game_dir_missing'), fg='#ff5555')
+        return False
+
+    def _browse_game_dir(self):
+        from tkinter import filedialog
+        path = filedialog.askdirectory(title=t('game_dir_title'),
+                                       initialdir=self.game_dir_var.get() or '')
+        if not path:
+            return
+        self.game_dir_var.set(path)
+        self._save_game_dir()
+
+    def _autodetect_game_dir(self):
+        path = gamepath.autodetect_game_dir()
+        if not path:
+            self.game_dir_status.config(text=t('game_dir_not_found'),
+                                        fg='#ff5555')
+            return
+        self.game_dir_var.set(path)
+        self._save_game_dir()
+
+    def _save_game_dir(self):
+        path = (self.game_dir_var.get() or '').strip()
+        try:
+            gamepath.set_game_dir(path)
+        except OSError as e:
+            self.game_dir_status.config(text=str(e), fg='#ff5555')
+            return
+        self._refresh_game_dir_status()
+
     def _build_main(self):
         c = self.colors
         self.main_frame = tk.Frame(self.root, bg=c['bg'])
@@ -850,6 +948,11 @@ class App:
 
         tk.Label(self.params_frame, text=t('params_title'), bg=c['bg'], fg=c['fg'],
                  font=('Segoe UI', 13, 'bold')).pack(pady=(0, 8))
+
+        # --- Папка игры -------------------------------------------------
+        # Раньше её писал только C#-лаунчер (удалён в Фазе 0), а Python-версия
+        # вообще не умела её задавать - эволюция падала с RuntimeError.
+        self._build_game_dir_row(c)
 
         fields = [
             ('pop', t('param_pop'), 'int'),
@@ -1587,6 +1690,18 @@ class App:
         if cfg is None:
             if hasattr(self, 'result_label'):
                 self.result_label.config(text='Ошибка: неверные параметры')
+            return
+        # Папка игры: сохраняем и проверяем ДО запуска. Раньше launчер её не
+        # проверял вообще - evo.py падал посреди прогона с RuntimeError.
+        self._save_game_dir()
+        if not self._refresh_game_dir_status():
+            msg = t('game_dir_missing')
+            if hasattr(self, 'result_label'):
+                self.result_label.config(text=msg)
+            if self.console_window is None or not self.console_window.window.winfo_exists():
+                self.console_window = ConsoleWindow(self.root, self.colors,
+                                                    detached=True, content='both')
+            self.console_window.append('!! %s\n' % msg)
             return
         self.config.update(cfg)
         save_config(self.config)

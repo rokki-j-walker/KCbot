@@ -46,6 +46,12 @@
   "console_title": "Консоль",
   "detail_title": "Детали",
 
+  "game_dir_title": "Папка игры",
+  "game_dir_browse": "Обзор...",
+  "game_dir_autodetect": "Автопоиск",
+  "game_dir_missing": "Папка игры не указана или не содержит Kingdom.exe",
+  "game_dir_not_found": "Игра не найдена автоматически - укажите папку вручную",
+
   "console_filter_all": "Все",
   "console_filter_warn": "Предупр.",
   "console_filter_error": "Ошибки",

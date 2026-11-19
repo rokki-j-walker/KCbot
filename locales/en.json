@@ -46,6 +46,12 @@
   "console_title": "Console",
   "detail_title": "Details",
 
+  "game_dir_title": "Game folder",
+  "game_dir_browse": "Browse...",
+  "game_dir_autodetect": "Find",
+  "game_dir_missing": "Game folder is missing or has no Kingdom.exe",
+  "game_dir_not_found": "Game not found automatically - pick the folder manually",
+
   "console_filter_all": "All",
   "console_filter_warn": "Warnings",
   "console_filter_error": "Errors",
