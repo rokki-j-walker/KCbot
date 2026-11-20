@@ -19,6 +19,10 @@ import threading
 import tkinter as tk
 from tkinter import ttk
 
+# Дизайн-библиотека (решение по дизайну 2026-11-21): современные виджеты
+# со своим DPI-масштабированием - убирает «лесенки» дробного tk scaling.
+import customtkinter as ctk
+
 try:
     import sv_ttk
     HAS_SV_TTK = True
@@ -257,6 +261,184 @@ THEME_KEYS = {
 }
 
 
+# ---------- Шрифты и цвета карточек (Fluent, целые размеры) ----------
+_FONT_CACHE = {}
+
+
+def F(size, weight='normal', mono=False):
+    """Кэшированный шрифт: Segoe UI / Consolas, только целые размеры.
+
+    Дробные размеры при ручном tk scaling давали «лесенки» - CTk сам
+    масштабирует по DPI, размеры задаём как есть.
+    """
+    key = (size, weight, mono)
+    if key not in _FONT_CACHE:
+        _FONT_CACHE[key] = ctk.CTkFont(family='Consolas' if mono else 'Segoe UI',
+                                       size=size, weight=weight)
+    return _FONT_CACHE[key]
+
+
+def FT(size, family='Consolas'):
+    """Шрифт для tk-виджетов (Text) с поправкой на масштаб Windows.
+
+    CTk масштабирует свои шрифты сам, tk - нет: без поправки текст в
+    tk.Text был мельче остального интерфейса при масштабе125%.
+    """
+    return (family, max(8, int(round(size * win_ui_scale()))))
+
+
+def card_color(colors):
+    """Фон карточки: на ступень светлее/темнее фона окна (Fluent surface)."""
+    return colors.get('card') or colors['entry_bg']
+
+
+# ---------- Дизайн-токены: ОДИН размер на класс элементов ----------
+# (жалобы: «везде разные размеры кнопок, разные размеры шрифтов»;
+#  эталон структуры - MSI Center: крупный заголовок секции, единые
+#  высоты контролов, ровные отступы)
+H_HEADER = 48        # высота шапки окна (кнопки шапки = во всю высоту)
+H_BTN = 40           # высота ВСЕХ содержательных кнопок
+H_INPUT = 40         # высота полей ввода (= кнопке - строкы выровнены)
+FS_TITLE = 18        # название окна
+FS_SECTION = 15      # заголовок раздела (Параметры, Детали, Папка игры)
+FS_BODY = 13         # подписи, переключатели, кнопки, статус-кнопки
+FS_CAPTION = 11      # комментарии под полями, статусы
+FS_VALUE = 16        # значение в поле (моно, вправо)
+FS_MONO = 13         # моно-тела: результат, консоль, панель деталей
+PAD_CARD = 16        # внутренний отступ карточек/разделов
+GAP_SECTION = 16     # вертикальный ритм между блоками
+
+
+def _self_shot(path):
+    """Снять ОКНО САМОГО приложения изнутри (отладочный хук).
+
+    Внешние захватчики на двухмониторной/DPI-конфигурации ловили не то
+    окно; Tk в своём процессе знает свои координаты физически.
+    Включается переменной окружения KCBOT_UI_SHOT=<путь.png>.
+    """
+    try:
+        from PIL import ImageGrab
+        root = _self_shot.root
+        root.update_idletasks()
+        x, y = root.winfo_rootx(), root.winfo_rooty()
+        w, h = root.winfo_width(), root.winfo_height()
+        if x >= 0 and y >= 0:
+            img = ImageGrab.grab(bbox=(x, y, x + w, y + h), all_screens=False)
+        else:
+            img = ImageGrab.grab(bbox=(x, y, x + w, y + h), all_screens=True)
+        img.save(path)
+        print('UI-SHOT saved: %s %s' % (path, img.size), flush=True)
+    except Exception as e:
+        print('UI-SHOT failed: %r' % (e,), flush=True)
+
+
+def _shade(hex_color, factor):
+    """Затемнить #RRGGBB на factor (<1 - темнее) для hover-состояний."""
+    h = hex_color.lstrip('#')
+    try:
+        r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    except (ValueError, IndexError):
+        return hex_color
+    return '#%02x%02x%02x' % tuple(
+        max(0, min(255, int(v * factor))) for v in (r, g, b))
+
+
+def win_ui_scale():
+    """Масштаб интерфейса Windows из реестра (125% -> 1.25).
+
+    GetDpiForSystem в процессе без DPI-awareness честно возвращает96 -
+    врёт; AppliedDPI в HKCU всегда отражает выбранный пользователем
+    масштаб. Читаем его и подстраиваем CTk/геометрию (жалоба: «при125%
+    не всё влезает»).
+    """
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                            r'Control Panel\Desktop\WindowMetrics') as k:
+            applied, _type = winreg.QueryValueEx(k, 'AppliedDPI')
+        if applied:
+            return applied / 96.0
+    except Exception:
+        pass
+    try:
+        dpi = ctypes.windll.user32.GetDpiForSystem()
+        if dpi:
+            return dpi / 96.0
+    except Exception:
+        pass
+    return 1.0
+
+
+def _work_area():
+    """Рабочая область экрана (без панели задач) в px: (ширина, высота)."""
+    class _RECT(ctypes.Structure):
+        _fields_ = [('left', ctypes.c_long), ('top', ctypes.c_long),
+                    ('right', ctypes.c_long), ('bottom', ctypes.c_long)]
+    r = _RECT()
+    try:
+        # SPI_GETWORKAREA =0x0030
+        ctypes.windll.user32.SystemParametersInfoW(0x0030, 0,
+                                                   ctypes.byref(r), 0)
+        return r.right - r.left, r.bottom - r.top
+    except Exception:
+        return 1920, 1040
+
+
+# Скорость: показ «1x/2x/3x», хранение «1/2/3» (как в конфиге/CLI)
+SPEED_DISPLAY = {'1': '1x', '2': '2x', '3': '3x'}
+SPEED_REVERSE = {v: k for k, v in SPEED_DISPLAY.items()}
+SPEED_VALUES = ['1x', '2x', '3x']
+
+
+def _norm_int_str(value):
+    """'3.0' / 3 / '3' -> '3' (конфиг хранит speed float)."""
+    try:
+        return str(int(float(str(value))))
+    except (ValueError, TypeError):
+        return str(value)
+
+
+class _OptionField(object):
+    """CTkOptionMenu с интерфейсом Entry (get/insert/delete/configure/bind).
+
+    Поле «Скорость» теперь список (решение по концепции), но живёт в
+    self.entries как обычная строка ввода - get_params/_validate_all/
+    _reset_defaults работают без переделки.
+    """
+
+    def __init__(self, menu, var, display=None, reverse=None):
+        self.menu = menu
+        self.var = var
+        self._d = display or {}
+        self._r = reverse or {}
+
+    def get(self):
+        v = self.var.get().strip()
+        return self._r.get(v, v)
+
+    def insert(self, index, value):          # сброс параметров
+        self.var.set(self._d.get(_norm_int_str(value),
+                                self._d.get(str(value), str(value))))
+
+    def delete(self, first, last=None):      # insert сразу перезапишет
+        pass
+
+    def configure(self, **kw):               # валидация пытается красить поле
+        allowed = {}
+        for k in ('fg_color', 'button_color', 'button_hover_color',
+                  'text_color', 'state'):
+            if k in kw:
+                allowed[k] = kw[k]
+        if allowed:
+            try:
+                self.menu.configure(**allowed)
+            except Exception:
+                pass
+
+    def bind(self, *args, **kwargs):         # FocusOut/Return не нужны
+        pass
+
+
 def load_config():
     old_config = os.path.join(kc_common.data_dir(), 'data', '.launcher_config.json')
     if not os.path.exists(CONFIG_FILE) and os.path.exists(old_config):
@@ -329,11 +511,32 @@ def calc_time(params):
     return total_seconds, hours, minutes, details
 
 
+def make_resizable(win):
+    """Разрешить растягивание окна с кастомным заголовком.
+
+    overrideredirect(True) снимает рамку растягивания - окно консоли
+    нельзя было изменить (жалоба пользователя). WS_THICKFRAME возвращает
+    хват за края/угол; вызывать ПОСЛЕ overrideredirect (wm снимает стиль).
+    """
+    try:
+        import ctypes
+        user32 = ctypes.windll.user32
+        hwnd = win.winfo_id()
+        real = user32.GetParent(hwnd) or hwnd
+        GWL_STYLE = -16
+        WS_THICKFRAME = 0x00040000
+        style = user32.GetWindowLongW(real, GWL_STYLE)
+        user32.SetWindowLongW(real, GWL_STYLE, style | WS_THICKFRAME)
+    except Exception:
+        pass
+
+
 def create_themed_toplevel(parent, title, colors, width=800, height=600, attach_callback=None, geometry_key=None):
     """Создаёт Toplevel окно с кастомным заголовком и тёмной темой."""
     win = tk.Toplevel(parent)
     win.title(title)
     win.overrideredirect(True)
+    make_resizable(win)
     if geometry_key is None:
         geometry_key = title
     win._geometry_key = geometry_key
@@ -370,26 +573,26 @@ def create_themed_toplevel(parent, title, colors, width=800, height=600, attach_
         except Exception:
             pass
 
-    # Заголовок
-    title_bar = tk.Frame(win, bg=colors['title_bg'], height=30)
+    # Заголовок (токены единой типографики)
+    title_bar = tk.Frame(win, bg=colors['title_bg'], height=H_BTN)
     title_bar.pack(fill=tk.X, side=tk.TOP)
     title_bar.pack_propagate(False)
 
-    title_label = tk.Label(title_bar, text=title, bg=colors['title_bg'], fg=colors['fg'],
-                           font=('Segoe UI', 10))
-    title_label.pack(side=tk.LEFT, padx=8)
+    title_label = tk.Label(title_bar, text=title, bg=colors['title_bg'],
+                           fg=colors['fg'], font=('Segoe UI', 13, 'bold'))
+    title_label.pack(side=tk.LEFT, padx=12)
 
     btn_frame = tk.Frame(title_bar, bg=colors['title_bg'])
     btn_frame.pack(side=tk.RIGHT)
 
     # Кнопка прикрепления (если есть callback)
     if attach_callback:
-        attach_btn = tk.Button(btn_frame, text='\u2199', font=('Segoe UI', 12),
+        attach_btn = tk.Button(btn_frame, text='\u2199', font=('Segoe UI', 13),
                                bg=colors['title_bg'], fg=colors['fg'], relief=tk.FLAT,
-                               borderwidth=0, width=3, cursor='hand2', command=attach_callback)
+                               borderwidth=0, width=4, cursor='hand2', command=attach_callback)
         attach_btn.pack(side=tk.LEFT)
-        attach_btn.bind('<Enter>', lambda e: attach_btn.config(bg=colors['btn_hover']))
-        attach_btn.bind('<Leave>', lambda e: attach_btn.config(bg=colors['title_bg']))
+        attach_btn.bind('<Enter>', lambda e: attach_btn.configure(bg=colors['btn_hover']))
+        attach_btn.bind('<Leave>', lambda e: attach_btn.configure(bg=colors['title_bg']))
 
     # Кнопки управления
     def do_minimize(w):
@@ -404,26 +607,33 @@ def create_themed_toplevel(parent, title, colors, width=800, height=600, attach_
     def _finish_restore(win):
         if win.state() in ('normal', 'zoomed'):
             win.overrideredirect(True)
+            make_resizable(win)      # wm снял стиль - возвращаем ресайз
             win.update_idletasks()
             win.update()
             apply_taskbar_style(win)
         else:
             win.after(50, lambda: _finish_restore(win))
 
-    for text, cmd, hover_bg in [('\u2014', None, colors['btn_hover']),
-                                ('\u25A1', None, colors['btn_hover']),
+    def do_maximize(w):
+        """Развернуть/вернуть (раньше кнопка была мёртвой)."""
+        if getattr(w, '_maximized', False):
+            w.geometry(getattr(w, '_normal_geo', '%dx%d' % (width, height)))
+            w._maximized = False
+        else:
+            w._normal_geo = w.geometry()
+            w.geometry('%dx%d+0+0' % (w.winfo_screenwidth(),
+                                     w.winfo_screenheight()))
+            w._maximized = True
+
+    for text, cmd, hover_bg in [('\u2014', lambda w=win: do_minimize(w), colors['btn_hover']),
+                                ('\u25A1', lambda w=win: do_maximize(w), colors['btn_hover']),
                                 ('\u2715', win.destroy, '#e81123')]:
-        if cmd is None:
-            if text == '\u2014':
-                cmd = lambda w=win: do_minimize(w)
-            elif text == '\u25A1':
-                cmd = lambda w=win: None  # maximize handled separately
-        btn = tk.Button(btn_frame, text=text, font=('Segoe UI', 9),
+        btn = tk.Button(btn_frame, text=text, font=('Segoe UI', 13),
                         bg=colors['title_bg'], fg=colors['fg'], relief=tk.FLAT,
-                        borderwidth=0, width=4, cursor='hand2', command=cmd)
+                        borderwidth=0, width=6, cursor='hand2', command=cmd)
         btn.pack(side=tk.LEFT)
-        btn.bind('<Enter>', lambda e, b=btn, h=hover_bg: b.config(bg=h))
-        btn.bind('<Leave>', lambda e, b=btn, bg=colors['title_bg']: b.config(bg=bg))
+        btn.bind('<Enter>', lambda e, b=btn, h=hover_bg: b.configure(bg=h))
+        btn.bind('<Leave>', lambda e, b=btn, bg=colors['title_bg']: b.configure(bg=bg))
 
     # Перетаскивание
     def start_move(event):
@@ -514,12 +724,10 @@ class ConsoleWindow:
     def _build_ui(self):
         c = self.colors
 
-        # --- панель инструментов ---
-        bar = tk.Frame(self._content, bg=c['bg'])
-        bar.pack(fill=tk.X, padx=5, pady=(5, 2))
-
-        tk.Label(bar, text=t('console_filter_all'), bg=c['bg'], fg=c['fg'],
-                 anchor='w').pack(side=tk.LEFT)
+        # --- панель инструментов (единые размеры с основным окном) ---
+        bar = ctk.CTkFrame(self._content, fg_color='transparent',
+                           corner_radius=0)
+        bar.pack(fill=tk.X, padx=PAD_CARD, pady=(PAD_CARD, 8))
 
         self._filter_labels = [t('console_filter_all'),
                                t('console_filter_warn'),
@@ -527,48 +735,67 @@ class ConsoleWindow:
         # None = показывать всё; иначе - только эти уровни и выше по важности
         self._filter_levels = [None, ('warn', 'error'), ('error',)]
         self.filter_var = tk.StringVar(value=self._filter_labels[0])
-        flt = ttk.Combobox(bar, textvariable=self.filter_var,
-                           values=self._filter_labels, state='readonly',
-                           width=12)
+
+        # строка1: список фильтра (эталонный вид + масштаб Windows) + поиск
+        row1 = ctk.CTkFrame(bar, fg_color='transparent', corner_radius=0)
+        row1.pack(fill=tk.X)
+        # CTkOptionMenu вместо ttk.Combobox: вид приложения (пользователь:
+        # «выпадающий список не оформлен в стиле приложения»)
+        flt = ctk.CTkOptionMenu(row1, values=self._filter_labels,
+                                variable=self.filter_var,
+                                command=lambda _v: self._rebuild(),
+                                width=170, height=H_BTN, font=F(FS_BODY),
+                                fg_color=c['entry_bg'],
+                                text_color=c['fg'],
+                                button_color=c['btn_hover'],
+                                button_hover_color=c['accent'],
+                                dropdown_fg_color=c['entry_bg'],
+                                dropdown_text_color=c['fg'],
+                                dropdown_hover_color=c['btn_hover'],
+                                corner_radius=4)
         flt.pack(side=tk.LEFT, padx=(0, 8))
-        flt.bind('<<ComboboxSelected>>', lambda e: self._rebuild())
 
         self.search_var = tk.StringVar()
-        ent = tk.Entry(bar, textvariable=self.search_var, width=24,
-                       bg=c['entry_bg'], fg=c['fg'], insertbackground=c['fg'],
-                       relief=tk.FLAT, borderwidth=1)
-        ent.pack(side=tk.LEFT, padx=(0, 2))
+        ent = ctk.CTkEntry(row1, textvariable=self.search_var, width=240,
+                           height=H_BTN, font=F(FS_BODY), corner_radius=4)
+        ent.pack(side=tk.LEFT, padx=(0, 8))
         ent.bind('<Return>', lambda e: self._find_next())
 
-        self._mkbtn(bar, t('console_find'), self._find_next)
-        self._mkbtn(bar, t('console_clear'), self.clear)
-        self._mkbtn(bar, t('console_copy'), self.copy_all)
-        self._mkbtn(bar, t('console_export'), self.export)
+        self._mkbtn(row1, t('console_find'), self._find_next)
+        self._mkbtn(row1, t('console_clear'), self.clear)
 
+        # строка2: автоскролл слева; Копировать/Экспорт/статус справа
+        # (строка1 при900px переполнялась - последние кнопки обрезались)
+        row2 = ctk.CTkFrame(bar, fg_color='transparent', corner_radius=0)
+        row2.pack(fill=tk.X, pady=(6, 0))
         self.follow_var = tk.BooleanVar(value=True)
-        tk.Checkbutton(bar, text=t('console_autoscroll'),
-                       variable=self.follow_var,
-                       command=self._follow_toggled,
-                       bg=c['bg'], fg=c['fg'], activebackground=c['bg'],
-                       activeforeground=c['fg'], highlightthickness=0
-                       ).pack(side=tk.RIGHT, padx=(8, 0))
+        ctk.CTkSwitch(row2, text=t('console_autoscroll'),
+                      variable=self.follow_var,
+                      command=self._follow_toggled, font=F(FS_BODY),
+                      text_color=c['fg'], progress_color=c['accent']
+                      ).pack(side=tk.LEFT)
+        right2 = ctk.CTkFrame(row2, fg_color='transparent', corner_radius=0)
+        right2.pack(side=tk.RIGHT)
         self.status_var = tk.StringVar(value=t('console_status', n=0))
-        tk.Label(bar, textvariable=self.status_var, bg=c['bg'], fg=c['fg'],
-                 anchor='e').pack(side=tk.RIGHT, padx=(0, 8))
+        self._mkbtn(right2, t('console_copy'), self.copy_all)
+        self._mkbtn(right2, t('console_export'), self.export)
+        ctk.CTkLabel(right2, textvariable=self.status_var, font=F(FS_CAPTION),
+                     text_color='#9a9a9a', anchor='e').pack(
+            side=tk.LEFT, padx=(6, 2))
 
         # --- текст ---
         body = tk.Frame(self._content, bg=c['bg'])
-        body.pack(fill=tk.BOTH, expand=True, padx=5, pady=(0, 5))
+        body.pack(fill=tk.BOTH, expand=True, padx=PAD_CARD, pady=(8, PAD_CARD))
 
         scroll = ttk.Scrollbar(body, orient=tk.VERTICAL)
-        self.console_text = tk.Text(body, font=('Consolas', 10),
+        self.console_text = tk.Text(body, font=FT(FS_MONO),
                                     bg=c['entry_bg'], fg=c['fg'],
                                     insertbackground=c['fg'],
                                     selectbackground='#264f78',
                                     relief=tk.FLAT, borderwidth=1,
                                     wrap=tk.WORD,
                                     yscrollcommand=self._on_yscroll)
-        scroll.config(command=self._scrollbar_cmd)
+        scroll.configure(command=self._scrollbar_cmd)
         self.console_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self._scrollbar = scroll
@@ -581,12 +808,13 @@ class ConsoleWindow:
         scroll.bind('<B1-Motion>', self._on_user_scroll, add='+')
 
     def _mkbtn(self, parent, label, cmd):
-        return tk.Button(parent, text=label, command=cmd,
-                         bg=self.colors['entry_bg'], fg=self.colors['fg'],
-                         activebackground=self.colors['accent'],
-                         activeforeground='#ffffff', relief=tk.FLAT,
-                         borderwidth=1, padx=7, pady=1).pack(side=tk.LEFT,
-                                                             padx=2)
+        return ctk.CTkButton(parent, text=label, command=cmd, height=H_BTN,
+                             corner_radius=4, font=F(FS_BODY),
+                             fg_color='transparent', border_width=1,
+                             border_color=self.colors['border'],
+                             text_color=self.colors['fg'],
+                             hover_color=self.colors['btn_hover']).pack(
+            side=tk.LEFT, padx=4)
 
     # ------------------------------------------------------------ потокобезопасность
     def append(self, text):
@@ -798,6 +1026,16 @@ class App:
         self._migrate_config()
         load_locale(self.config.get('language', 'ru'))
         self.colors = COLOR_SCHEMES[resolve_theme(self.config.get('theme', 'dark'))]
+        # Масштаб интерфейса: CTk обычно определяет DPI сам, но сверяемся с
+        # честным источником - AppliedDPI из реестра (масштаб под параметры
+        # ОС; GetDpiForSystem в unaware-процессе врёт и отдаёт96).
+        _sc = win_ui_scale()
+        try:
+            if abs(ctk.ScalingTracker.get_window_scaling(self.root) - _sc) > 0.02:
+                ctk.set_widget_scaling(_sc)
+                ctk.set_window_scaling(_sc)
+        except Exception:
+            pass
         self.console_window = None
         self.process_running = False
         self.settings_dialog = None
@@ -808,7 +1046,7 @@ class App:
 
         root.geometry(self._normal_geometry)
         root.minsize(800, 500)
-        root.configure(bg=self.colors['bg'])
+        root.configure(fg_color=self.colors['bg'])
 
         # Кастомный заголовок (overrideredirect) — отключено, окно не показывалось
         # # root.overrideredirect(True)
@@ -938,58 +1176,92 @@ class App:
                 pass
 
     def _build_title_bar(self):
+        """Шапка окна (Fluent header).
+
+        Порядок справа налево: Язык, Тема, Справка | ─ □ ✕ - служебные
+        кнопки СЛЕВА от управления окном (требование пользователя),
+        крестик крайний справа. Кнопки пакуются напрямую в шапку:
+        вложенный CTk-фрейм не авто-размерился (propagate у CTk не
+        работает) и содержимое уезжало за край окна.
+        """
         c = self.colors
         # Обработка закрытия окна (убить обучение и игру)
         self.root.protocol('WM_DELETE_WINDOW', self._on_close)
-        self.title_bar = tk.Frame(self.root, bg=c['title_bg'], height=30)
+        self.title_bar = ctk.CTkFrame(self.root, height=H_HEADER, corner_radius=0,
+                                      fg_color=c['title_bg'])
         self.title_bar.pack(fill=tk.X, side=tk.TOP)
         self.title_bar.pack_propagate(False)
 
-        # Кнопка выбора темы
-        self.theme_btn = tk.Button(self.title_bar, text='\u263c', font=('Segoe UI', 13),
-                             bg=c['title_bg'], fg=c['fg'], relief=tk.FLAT,
-                             borderwidth=0, cursor='hand2', command=self._open_theme_menu)
-        self.theme_btn.pack(side=tk.LEFT, padx=(10, 2))
+        # Слева: консоль + название
+        self.console_toggle_btn = ctk.CTkButton(
+            self.title_bar, text='⌨', width=H_HEADER, height=H_HEADER,
+            corner_radius=0,
+            fg_color='transparent', text_color=c['fg'], hover_color=c['btn_hover'],
+            font=F(17), command=self._toggle_console_panel)
+        self.console_toggle_btn.pack(side=tk.LEFT)
 
-        # Кнопка выбора языка
-        self.lang_btn = tk.Button(self.title_bar, text='\U0001F310', font=('Segoe UI', 11),
-                             bg=c['title_bg'], fg=c['fg'], relief=tk.FLAT,
-                             borderwidth=0, cursor='hand2', command=self._open_language_menu)
-        self.lang_btn.pack(side=tk.LEFT, padx=2)
+        title_label = ctk.CTkLabel(self.title_bar, text='KC Bot',
+                                   font=F(FS_TITLE, 'bold'), text_color=c['fg'])
+        title_label.pack(side=tk.LEFT, padx=(6, 0))
 
-        # Кнопка справки
-        self.help_btn = tk.Button(self.title_bar, text='?', font=('Segoe UI', 12, 'bold'),
-                             bg=c['title_bg'], fg=c['fg'], relief=tk.FLAT,
-                             borderwidth=0, cursor='hand2', command=self._open_help)
-        self.help_btn.pack(side=tk.LEFT, padx=2)
+        # Справа: pack(side=RIGHT) - первый упакованный занимает крайнюю
+        # правую позицию, поэтому порядок упаковки обратный желаемому.
+        def _cap(text, cmd, w, hover=None):
+            b = ctk.CTkButton(self.title_bar, text=text, width=w,
+                              height=H_HEADER,
+                              corner_radius=0, fg_color='transparent',
+                              text_color=c['fg'],
+                              hover_color=hover or c['btn_hover'],
+                              font=F(FS_BODY), command=cmd)
+            b.pack(side=tk.RIGHT)
+            return b
 
-        title_label = tk.Label(self.title_bar, text='KC Bot', bg=c['title_bg'], fg=c['fg'],
-                               font=('Segoe UI', 10))
-        title_label.pack(side=tk.LEFT, padx=2)
+        # крайние справа - управление окном (крестик с красным hover)
+        _cap('\u2715', self.root.destroy, 46, hover='#e81123')
+        _cap('\u25A1', self.toggle_maximize, 46)
+        _cap('\u2014', self.minimize, 46)
+        # сразу левее них - Справка
+        self.help_btn = _cap(t('help_title'), self._open_help, 88)
 
-        # Кнопки переключения панелей
-        panel_btns = tk.Frame(self.title_bar, bg=c['title_bg'])
-        panel_btns.pack(side=tk.LEFT, padx=10)
+        # Тема и Язык - списки в стиле фильтра консоли (эталон пользователя):
+        # видно текущее значение, выбор из списка, масштаб вместе с Windows
+        cur_theme = self.config.get('theme', 'dark')
+        theme_names = list(THEME_KEYS)
+        theme_labels = [t(THEME_KEYS[n]) for n in theme_names]
+        theme_var = tk.StringVar(
+            value=(theme_labels[theme_names.index(cur_theme)]
+                   if cur_theme in theme_names else theme_labels[0]))
+        theme_menu = ctk.CTkOptionMenu(
+            self.title_bar, values=theme_labels, variable=theme_var,
+            width=170, height=36, corner_radius=4, font=F(FS_BODY),
+            fg_color=c['title_bg'], text_color=c['fg'],
+            button_color=c['btn_hover'], button_hover_color=c['accent'],
+            dropdown_fg_color=c['entry_bg'], dropdown_text_color=c['fg'],
+            dropdown_hover_color=c['btn_hover'],
+            command=lambda lab: self._apply_theme(
+                theme_names[theme_labels.index(lab)]))
+        theme_menu.pack(side=tk.RIGHT, padx=(0, 6), pady=6)
+        self.theme_btn = theme_menu
 
-        self.console_toggle_btn = tk.Button(panel_btns, text='\u2328', font=('Segoe UI', 12),
-                                           bg=c['title_bg'], fg=c['fg'], relief=tk.FLAT,
-                                           borderwidth=0, cursor='hand2',
-                                           command=self._toggle_console_panel)
-        self.console_toggle_btn.pack(side=tk.LEFT, padx=2)
+        lang_codes = ['ru', 'en']
+        lang_labels = [t('lang_name_ru'), t('lang_name_en')]
+        cur_lang = self.config.get('language', 'ru')
+        lang_var = tk.StringVar(
+            value=(lang_labels[lang_codes.index(cur_lang)]
+                   if cur_lang in lang_codes else lang_labels[0]))
+        lang_menu = ctk.CTkOptionMenu(
+            self.title_bar, values=lang_labels, variable=lang_var,
+            width=130, height=36, corner_radius=4, font=F(FS_BODY),
+            fg_color=c['title_bg'], text_color=c['fg'],
+            button_color=c['btn_hover'], button_hover_color=c['accent'],
+            dropdown_fg_color=c['entry_bg'], dropdown_text_color=c['fg'],
+            dropdown_hover_color=c['btn_hover'],
+            command=lambda lab: self._apply_language(
+                lang_codes[lang_labels.index(lab)], lab))
+        lang_menu.pack(side=tk.RIGHT, padx=(0, 6), pady=6)
+        self.lang_btn = lang_menu
 
-        btn_frame = tk.Frame(self.title_bar, bg=c['title_bg'])
-        btn_frame.pack(side=tk.RIGHT)
-
-        for text, cmd, hover_bg in [('\u2014', self.minimize, c['btn_hover']),
-                                    ('\u25A1', self.toggle_maximize, c['btn_hover']),
-                                    ('\u2715', self.root.destroy, '#e81123')]:
-            btn = tk.Button(btn_frame, text=text, font=('Segoe UI', 9),
-                            bg=c['title_bg'], fg=c['fg'], relief=tk.FLAT,
-                            borderwidth=0, width=4, cursor='hand2', command=cmd)
-            btn.pack(side=tk.LEFT)
-            btn.bind('<Enter>', lambda e, b=btn, h=hover_bg: b.config(bg=h))
-            btn.bind('<Leave>', lambda e, b=btn, bg=c['title_bg']: b.config(bg=bg))
-
+        # Перетаскивание окна
         self.title_bar.bind('<Button-1>', self._start_move)
         self.title_bar.bind('<B1-Motion>', self._do_move)
         title_label.bind('<Button-1>', self._start_move)
@@ -1039,47 +1311,53 @@ class App:
             self._maximized = True
 
     def _build_game_dir_row(self, c):
-        """Строка «Папка игры»: путь + Обзор + Автопоиск."""
-        box = tk.Frame(self.params_frame, bg=c['bg'])
-        box.pack(fill=tk.X, pady=(0, 6))
+        """Карточка «Папка игры»: подпись, путь + кнопки, бейдж патча."""
+        box = ctk.CTkFrame(self.params_frame, corner_radius=8,
+                           fg_color=card_color(c))
+        box.pack(fill=tk.X, padx=PAD_CARD, pady=(0, GAP_SECTION))
 
-        tk.Label(box, text=t('game_dir_title'), bg=c['bg'], fg=c['fg'],
-                 anchor='w', font=('Segoe UI', 10)).pack(fill=tk.X)
+        inner = ctk.CTkFrame(box, fg_color='transparent', corner_radius=0)
+        inner.pack(fill=tk.X, padx=PAD_CARD, pady=PAD_CARD)
+
+        ctk.CTkLabel(inner, text=t('game_dir_title'), font=F(FS_SECTION, 'bold'),
+                     text_color=c['fg'], anchor='w').pack(fill=tk.X)
 
         path = gamepath.game_dir() or gamepath.autodetect_game_dir()
         self.game_dir_var = tk.StringVar(value=path)
-        row = tk.Frame(box, bg=c['bg'])
-        row.pack(fill=tk.X, pady=(2, 0))
-        ent = tk.Entry(row, textvariable=self.game_dir_var, width=30,
-                       font=('Segoe UI', 9), bg=c['entry_bg'], fg=c['fg'],
-                       insertbackground=c['fg'], relief=tk.FLAT, borderwidth=1)
-        ent.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        row = ctk.CTkFrame(inner, fg_color='transparent', corner_radius=0)
+        row.pack(fill=tk.X, pady=(8, 0))
+        ent = ctk.CTkEntry(row, textvariable=self.game_dir_var, height=H_INPUT,
+                           font=F(FS_BODY), corner_radius=4)
+        ent.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
-        def _mk(label, cmd, width=11):
-            tk.Button(row, text=label, command=cmd, width=width,
-                      bg=c['entry_bg'], fg=c['fg'],
-                      activebackground=c['accent'], activeforeground='#ffffff',
-                      relief=tk.FLAT, borderwidth=1).pack(side=tk.LEFT, padx=(4, 0))
+        def _mk(label, cmd):
+            b = ctk.CTkButton(row, text=label, command=cmd, height=H_BTN,
+                              width=140, corner_radius=4, font=F(FS_BODY),
+                              fg_color='transparent', border_width=1,
+                              border_color=c['border'], text_color=c['fg'],
+                              hover_color=c['btn_hover'])
+            b.pack(side=tk.LEFT, padx=(0, 8))
+            return b
 
         _mk(t('game_dir_browse'), self._browse_game_dir)
         _mk(t('game_dir_autodetect'), self._autodetect_game_dir)
 
-        self.game_dir_status = tk.Label(box, text='', bg=c['bg'],
-                                        fg='#ff5555', anchor='w',
-                                        font=('Segoe UI', 9))
-        self.game_dir_status.pack(fill=tk.X)
+        self.game_dir_status = ctk.CTkLabel(inner, text='', font=F(FS_CAPTION),
+                                            text_color='#ff5555', anchor='w')
+        self.game_dir_status.pack(fill=tk.X, pady=(8, 0))
         self._refresh_game_dir_status()
 
-        # Статус патча + кнопка отката (Фаза 7)
-        prow = tk.Frame(box, bg=c['bg'])
-        prow.pack(fill=tk.X, pady=(3, 0))
-        self.patch_status = tk.Label(prow, text='', bg=c['bg'], fg='#888888',
-                                     anchor='w', font=('Segoe UI', 9))
+        # Статус патча + кнопка отката (Фаза 7): бейдж слева, кнопка справа
+        prow = ctk.CTkFrame(inner, fg_color='transparent', corner_radius=0)
+        prow.pack(fill=tk.X, pady=(8, 0))
+        self.patch_status = ctk.CTkLabel(prow, text='', font=F(FS_CAPTION),
+                                         text_color='#888888', anchor='w')
         self.patch_status.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        tk.Button(prow, text=t('patch_unpatch'), command=self._unpatch_game,
-                  width=14, bg=c['entry_bg'], fg=c['fg'],
-                  activebackground=c['accent'], activeforeground='#ffffff',
-                  relief=tk.FLAT, borderwidth=1).pack(side=tk.RIGHT, padx=(4, 0))
+        ctk.CTkButton(prow, text=t('patch_unpatch'), command=self._unpatch_game,
+                      height=H_BTN, width=160, corner_radius=4, font=F(FS_BODY),
+                      fg_color='transparent', border_width=1,
+                      border_color=c['border'], text_color=c['fg'],
+                      hover_color=c['btn_hover']).pack(side=tk.RIGHT)
         self._refresh_patch_status()
 
     def _refresh_patch_status(self):
@@ -1090,13 +1368,13 @@ class App:
             code, _msg = patcher.status(
                 (self.game_dir_var.get() or '').strip() or None)
         except Exception as e:
-            self.patch_status.config(text=str(e)[:80], fg='#ff5555')
+            self.patch_status.configure(text=str(e)[:80], text_color='#ff5555')
             return
         label = {'ok': t('patch_state_ok'),
                  'not_patched': t('patch_state_no')}.get(
                      code, t('patch_state_unknown'))
         color = {'ok': '#4CAF50', 'not_patched': '#ff5555'}.get(code, '#888888')
-        self.patch_status.config(text=label, fg=color)
+        self.patch_status.configure(text=label, text_color=color)
 
     def _unpatch_game(self):
         """Откатить патч из бэкапа (с подтверждением)."""
@@ -1133,9 +1411,9 @@ class App:
         p = (self.game_dir_var.get() or '').strip()
         exe = os.path.join(p, 'Kingdom.exe') if p else ''
         if p and os.path.isfile(exe):
-            self.game_dir_status.config(text='', fg='#888888')
+            self.game_dir_status.configure(text='', text_color='#888888')
             return True
-        self.game_dir_status.config(text=t('game_dir_missing'), fg='#ff5555')
+        self.game_dir_status.configure(text=t('game_dir_missing'), text_color='#ff5555')
         return False
 
     def _browse_game_dir(self):
@@ -1150,8 +1428,8 @@ class App:
     def _autodetect_game_dir(self):
         path = gamepath.autodetect_game_dir()
         if not path:
-            self.game_dir_status.config(text=t('game_dir_not_found'),
-                                        fg='#ff5555')
+            self.game_dir_status.configure(text=t('game_dir_not_found'),
+                                        text_color='#ff5555')
             return
         self.game_dir_var.set(path)
         self._save_game_dir()
@@ -1161,25 +1439,40 @@ class App:
         try:
             gamepath.set_game_dir(path)
         except OSError as e:
-            self.game_dir_status.config(text=str(e), fg='#ff5555')
+            self.game_dir_status.configure(text=str(e), text_color='#ff5555')
             return
         self._refresh_game_dir_status()
         self._refresh_patch_status()
 
     def _build_main(self):
+        """Главное окно: слева карточки параметров, справа панель деталей.
+
+        Правила дизайна (11 Дизайн UI): каждое поле - вертикальная группа
+        «подпись -> поле -> комментарий» в одной колонке сетки (раньше
+        подпись слева, поле справа, комментарий внизу - глаза теряли
+        связь); Старт - первичная (акцент), Стоп - danger, Сброс - ghost.
+        """
         c = self.colors
-        self.main_frame = tk.Frame(self.root, bg=c['bg'])
-        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        self.main_frame = ctk.CTkFrame(self.root, fg_color='transparent',
+                                       corner_radius=0)
+        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=14, pady=(6, 14))
+        # Сетка вместо pack: pack_propagate у CTk не работает (проверено) -
+        # ширина колонок задаётся только сеткой: параметры растут, панель
+        # деталей держит минимум (иначе она схлопывалась в «сливку»)
+        self.main_frame.grid_columnconfigure(0, weight=1)
+        self.main_frame.grid_columnconfigure(1, minsize=360, weight=0)
+        self.main_frame.grid_rowconfigure(0, weight=1)
 
-        # Левая панель: параметры
-        self.params_frame = tk.Frame(self.main_frame, bg=c['bg'], width=260)
-        self.params_frame.pack_propagate(False)
+        # Левая колонка: параметры
+        self.params_frame = ctk.CTkFrame(self.main_frame, fg_color='transparent',
+                                         corner_radius=0)
         if self.config.get('show_params', True):
-            _params_expand = (self.config.get('detail_side', 'left') == 'right') and not self.config.get('detail_detached', False)
-            self.params_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=_params_expand, padx=(0, 5))
+            self.params_frame.grid(row=0, column=0, sticky='nsew', padx=(0, 10))
 
-        tk.Label(self.params_frame, text=t('params_title'), bg=c['bg'], fg=c['fg'],
-                 font=('Segoe UI', 13, 'bold')).pack(pady=(0, 8))
+        ctk.CTkLabel(self.params_frame, text=t('params_title'),
+                     font=F(FS_SECTION, 'bold'),
+                     text_color=c['fg'], anchor='w').pack(
+            fill=tk.X, padx=PAD_CARD, pady=(0, GAP_SECTION))
 
         # --- Папка игры -------------------------------------------------
         # Раньше её писал только C#-лаунчер (удалён в Фазе 0), а Python-версия
@@ -1195,70 +1488,108 @@ class App:
             ('top_percent', t('param_top_percent'), 'float'),
         ]
 
+        # Сетка2 колонки x3 ряда: подпись, поле и комментарий каждого
+        # параметра живут в ОДНОЙ группе - связь «поле <-> текст» видна глазом
+        grid = ctk.CTkFrame(self.params_frame, fg_color='transparent',
+                            corner_radius=0)
+        grid.pack(fill=tk.X, padx=PAD_CARD)
+        grid.columnconfigure(0, weight=1, uniform='p')
+        grid.columnconfigure(1, weight=1, uniform='p')
+
         self.entries = {}
-        self._validation_labels = {}
-        for key, label, typ in fields:
-            row = tk.Frame(self.params_frame, bg=c['bg'])
-            row.pack(fill=tk.X, pady=2)
-            tk.Label(row, text=label, bg=c['bg'], fg=c['fg'], width=22, anchor='w',
-                     font=('Segoe UI', 10)).pack(side=tk.LEFT)
-            e = tk.Entry(row, width=6, font=('Consolas', 11), bg=c['entry_bg'], fg=c['fg'],
-                         insertbackground=c['fg'], relief=tk.FLAT, borderwidth=1)
-            e.insert(0, str(self.config.get(key, DEFAULTS[key])))
-            e.pack(side=tk.RIGHT)
-            self.entries[key] = (e, typ)
-            e.bind('<KeyRelease>', lambda ev: self._on_param_change())
-            e.bind('<FocusOut>', lambda ev: self._on_param_change())
-
-            # Комментарий-подсказка под полем
-            desc = tk.Label(self.params_frame, text=t('desc_' + key), bg=c['bg'], fg='#888888',
-                            font=('Segoe UI', 9), justify=tk.LEFT, wraplength=250, anchor='w')
-            desc.pack(fill=tk.X, pady=(0, 4))
-
-        # Смена скорости требует пропатченной игры: без патча kcdbg.txt не
-        # пишется и бот не видит состояние (ТЗ: проверка при изменении скорости)
-        if 'speed' in self.entries:
-            _sp = self.entries['speed'][0]
-            _sp.bind('<FocusOut>', self._on_speed_change, add='+')
-            _sp.bind('<Return>', self._on_speed_change, add='+')
-
-        # Подсказки для валидации (под полями)
         self._hint_labels = {}
-        for key, label, typ in fields:
-            hint_row = tk.Frame(self.params_frame, bg=c['bg'])
-            hint_row.pack(fill=tk.X, pady=0)
-            hint = tk.Label(hint_row, text='', bg=c['bg'], fg='#ff5555',
-                           font=('Segoe UI', 9), anchor='w')
-            hint.pack(side=tk.LEFT, padx=(0, 0))
+        self._desc_labels = {}
+        for i, (key, label, typ) in enumerate(fields):
+            r, col = divmod(i, 2)
+            group = ctk.CTkFrame(grid, fg_color='transparent', corner_radius=0)
+            group.grid(row=r, column=col, sticky='nsew',
+                       padx=(0, 8) if col == 0 else (8, 0),
+                       pady=(0, GAP_SECTION))
+            # подпись - над СВОИМ полем
+            ctk.CTkLabel(group, text=label, font=F(FS_BODY), text_color=c['fg'],
+                         anchor='w').pack(fill='x')
+            if key == 'speed':
+                # Скорость - выпадающий список (концепция): значения только
+                # из набора1x/2x/3x (потолок D7), ошибка ввода исключена
+                # структурно; вид как у фильтра консоли - эталон пользователя
+                var = tk.StringVar(
+                    value=SPEED_DISPLAY.get(_norm_int_str(
+                        self.config.get(key, DEFAULTS[key])), '3x'))
+                menu = ctk.CTkOptionMenu(
+                    group, values=SPEED_VALUES, variable=var,
+                    height=H_INPUT, font=F(FS_VALUE, mono=True),
+                    corner_radius=4, width=140,
+                    fg_color=c['entry_bg'], text_color=c['fg'],
+                    button_color=c['btn_hover'],
+                    button_hover_color=c['accent'],
+                    dropdown_fg_color=c['entry_bg'],
+                    dropdown_text_color=c['fg'],
+                    dropdown_hover_color=c['btn_hover'],
+                    command=lambda _v: self._on_speed_change())
+                menu.pack(fill='x', pady=(3, 0))
+                e = _OptionField(menu, var, SPEED_DISPLAY, SPEED_REVERSE)
+                self.entries[key] = (e, typ)
+            else:
+                e = ctk.CTkEntry(group, height=H_INPUT, font=F(FS_VALUE, mono=True),
+                                 justify='right', corner_radius=4)
+                e.insert(0, str(self.config.get(key, DEFAULTS[key])))
+                e.pack(fill='x', pady=(3, 0))
+                self.entries[key] = (e, typ)
+                e.bind('<KeyRelease>', lambda ev: self._on_param_change())
+                e.bind('<FocusOut>', lambda ev: self._on_param_change())
+            # комментарий - под СВОИМ полем; сюда же падает текст ошибки
+            desc = ctk.CTkLabel(group, text=t('desc_' + key), font=F(11),
+                                text_color='#9a9a9a', anchor='w',
+                                justify='left', wraplength=220)
+            desc.pack(fill='x', pady=(3, 0))
+            self._desc_labels[key] = desc
+            hint = ctk.CTkLabel(group, text='', font=F(11),
+                                text_color='#ff5555', anchor='w')
+            hint.pack(fill='x')
             self._hint_labels[key] = hint
 
+        # Для speed событие смены уходит из CTkOptionMenu(command=...)
+        # выше по тексту; блок старых привязок FocusOut/Return удалён.
+
+        # --- Переключатели (Fluent switch) ---------------------------------
+        sw_row = ctk.CTkFrame(self.params_frame, fg_color='transparent',
+                              corner_radius=0)
+        sw_row.pack(fill=tk.X, padx=PAD_CARD, pady=(4, 0))
         self.restart_var = tk.BooleanVar(value=self.config.get('restart', True))
-        cb = tk.Checkbutton(self.params_frame, text=t('chk_restart'), variable=self.restart_var,
-                            bg=c['bg'], fg=c['fg'], selectcolor=c['entry_bg'],
-                            activebackground=c['bg'], activeforeground=c['fg'],
-                            font=('Segoe UI', 10))
-        cb.pack(anchor='w', pady=3)
+        ctk.CTkSwitch(sw_row, text=t('chk_restart'), variable=self.restart_var,
+                      font=F(FS_BODY), text_color=c['fg'],
+                      progress_color=c['accent']).pack(side=tk.LEFT, padx=(0, 24))
         self.restart_var.trace_add('write', lambda *a: self.schedule_calculate())
 
         self.launch_after_var = tk.BooleanVar(value=self.config.get('launch_after', False))
-        cb2 = tk.Checkbutton(self.params_frame, text=t('chk_launch_after'), variable=self.launch_after_var,
-                             bg=c['bg'], fg=c['fg'], selectcolor=c['entry_bg'],
-                             activebackground=c['bg'], activeforeground=c['fg'],
-                             font=('Segoe UI', 10))
-        cb2.pack(anchor='w', pady=3)
+        ctk.CTkSwitch(sw_row, text=t('chk_launch_after'),
+                      variable=self.launch_after_var, font=F(FS_BODY),
+                      text_color=c['fg'],
+                      progress_color=c['accent']).pack(side=tk.LEFT)
 
-        btn_frame = tk.Frame(self.params_frame, bg=c['bg'])
-        btn_frame.pack(pady=8)
-        self.start_btn = tk.Button(btn_frame, text=t('btn_start'), command=self.start_training,
-                                  bg=c['accent'], fg='white', font=('Segoe UI', 11, 'bold'),
-                                  padx=16, pady=4)
-        self.start_btn.pack(side=tk.LEFT, padx=4)
-        self.stop_btn = tk.Button(btn_frame, text=t('btn_stop'), command=self.stop_training,
-                                 bg='#f44336', fg='white', font=('Segoe UI', 11, 'bold'),
-                                 padx=16, pady=4)
+        # --- Действия: первичная / danger / ghost ---------------------------
+        actions = ctk.CTkFrame(self.params_frame, fg_color='transparent',
+                               corner_radius=0)
+        actions.pack(fill=tk.X, padx=PAD_CARD, pady=(GAP_SECTION, 0))
+        actions.columnconfigure(0, weight=3)
+        actions.columnconfigure(1, weight=2)
+        actions.columnconfigure(2, weight=2)
+
+        self.start_btn = ctk.CTkButton(
+            actions, text=t('btn_start'), command=self.start_training,
+            height=H_BTN, corner_radius=4, font=F(FS_BODY, 'bold'),
+            fg_color=c['accent'], hover_color=_shade(c['accent'], 0.85),
+            text_color='#ffffff')
+        self.start_btn.grid(row=0, column=0, sticky='ew', padx=(0, 8))
+
+        self.stop_btn = ctk.CTkButton(
+            actions, text=t('btn_stop'), command=self.stop_training,
+            height=H_BTN, corner_radius=4, font=F(FS_BODY, 'bold'),
+            fg_color='transparent', border_width=1, border_color='#e81123',
+            text_color='#e81123', hover_color='#c42b1c')
         # Кнопка Стоп скрыта по умолчанию (показывается при запуске обучения)
 
-        # Кнопка сброса параметров к рекомендованным
+        # Кнопка сброса параметров к рекомендованным (ghost)
         def _reset_defaults():
             rec = {'pop': 50, 'rounds': 15, 'episode': 20.0, 'episode_increment': 5.0,
                    'speed': 3.0, 'top_percent': 0.1}
@@ -1267,16 +1598,23 @@ class App:
                     e.delete(0, tk.END)
                     e.insert(0, str(rec[key]))
             self._on_param_change()
-        tk.Button(self.params_frame, text=t('btn_default'), command=_reset_defaults,
-                  bg=c['entry_bg'], fg=c['fg'], relief=tk.FLAT, cursor='hand2').pack(
-            fill=tk.X, pady=(8, 4))
+        ctk.CTkButton(actions, text=t('btn_default'), command=_reset_defaults,
+                      height=H_BTN, corner_radius=4, font=F(FS_BODY),
+                      fg_color='transparent', text_color=c['fg'],
+                      hover_color=c['btn_hover']).grid(row=0, column=2,
+                                                       sticky='ew', padx=(8, 0))
 
-        self.result_label = tk.Label(self.params_frame, text='', bg=c['bg'], fg=c['fg'],
-                                     font=('Consolas', 12, 'bold'), justify=tk.LEFT)
-        self.result_label.pack(pady=8, anchor='w')
-        self.result_detail = tk.Label(self.params_frame, text='', bg=c['bg'], fg=c['fg'],
-                                     font=('Consolas', 10), justify=tk.LEFT)
-        self.result_detail.pack(anchor='w')
+        # --- Результат расчёта (одна копия: раньше блок дублировался) ------
+        self.result_label = ctk.CTkLabel(self.params_frame, text='',
+                                         font=F(FS_VALUE, 'bold', mono=True),
+                                         text_color=c['fg'], anchor='w',
+                                         justify='left')
+        self.result_label.pack(fill=tk.X, padx=PAD_CARD, pady=(GAP_SECTION, 0))
+        self.result_detail = ctk.CTkLabel(self.params_frame, text='',
+                                          font=F(FS_MONO, mono=True),
+                                          text_color='#9a9a9a', anchor='w',
+                                          justify='left')
+        self.result_detail.pack(fill=tk.X, padx=PAD_CARD)
 
         # Валидация при запуске
         self.root.after(100, self._validate_pop)
@@ -1284,27 +1622,79 @@ class App:
         # Панель подробностей (через _build_detail_panel для консистентности)
         self._build_detail_panel()
 
-        self.result_label = tk.Label(self.params_frame, text='', bg=c['bg'], fg=c['fg'],
-                                    font=('Consolas', 12, 'bold'), justify=tk.LEFT)
-        self.result_label.pack(pady=8, anchor='w')
-        self.result_detail = tk.Label(self.params_frame, text='', bg=c['bg'], fg=c['fg'],
-                                     font=('Consolas', 10), justify=tk.LEFT)
-        self.result_detail.pack(anchor='w')
-
-        # Валидация при запуске
-        self.root.after(100, self._validate_pop)
-
         # Консоль - отдельное окно (по умолчанию)
         if not self.config.get('console_detached', True):
             self.config['console_detached'] = True
             save_config(self.config)
 
-        # График внизу (только если консоль встроена - но она всегда отдельная, так что не показываем)
-        # График будет в окне консоли
-
-        # Установить размер окна
         self.root.update_idletasks()
-        self.root.minsize(600, 400)
+        scale = win_ui_scale()
+        self.root.minsize(int(880 * scale), int(580 * scale))
+        # Подогнать высоту окна под содержимое с учётом масштаба Windows
+        self._fit_window()
+        # Повторная подгонка после полной отрисовки: первый замер берётся,
+        # пока шрифты/детали ещё не осели (замер завышен - окно растёт с
+        # пустым низом; жалоба «снизу много свободного пространства»)
+        self.root.after(700, self._fit_window)
+    def _fit_window(self):
+        """Растянуть окно под содержимое с учётом масштаба Windows.
+
+        При масштабе125% (реестр AppliedDPI=120) CTk увеличивает виджеты -
+        сохранённая/дефолтная геометрия перестаёт вмещать содержимое
+        (жалоба: «не всё влезло в окно»). Считаем натура��ную высоту и
+        ширину содержимого и растим окно, но не больше рабочей области
+        экрана (с учётом панели задач).
+        """
+        try:
+            import re as _re
+            self.root.update_idletasks()
+            # Единицы Tk (= единицы geometry)! Win32-метрики в unaware-
+            # процессе дают другую систему координат и окно вылезало за
+            # экран (жалоба: «не влезло»). Экран Tk минус панель задач.
+            work_w = self.root.winfo_screenwidth() - 8
+            work_h = self.root.winfo_screenheight() - 80
+            req_w = self.main_frame.winfo_reqwidth() + 32
+            req_h = (self.title_bar.winfo_reqheight()
+                     + self.main_frame.winfo_reqheight() + 26)
+            # Единицы: winfo отдаёт физические пиксели (шрифты уже
+            # масштабированы CTk), geometry - логические единицы Tk
+            # (проверено: geometry1072 -> winfo1340 при масштабе1.25).
+            # Приводим req к логическим, иначе окно оказывается выше
+            # контента на ~20% (пустой низ) или ниже (обрезка).
+            scale = win_ui_scale()
+            content_h = int(req_h / scale) + 8
+            geo_str = self.root.geometry()
+            m = _re.match(r'(\d+)x(\d+)', geo_str)
+            cur_w = int(m.group(1)) if m else req_w
+            # позиция может быть и 'x+y', и '-1450+60' (2-й монитор слева)
+            pm = _re.search(r'([+-]\d+)([+-]\d+)$', geo_str)
+            if pm:
+                x, y = int(pm.group(1)), int(pm.group(2))
+            else:
+                x, y = 80, 60
+            # высоту - по содержимому (в логических единицах): и растим,
+            # и ужимаем; не выше рабочей области экрана
+            new_h = min(max(content_h, 560), work_h)
+            # ширина: req без запаса сжимал левую колонку (поле пути
+            # обрезалось) - даём +240 на воздух, не уже текущей
+            new_w = min(max(cur_w, int(req_w / scale) + 240), work_w)
+            import os as _os
+            if _os.environ.get('KCBOT_FIT_DEBUG'):
+                print('FIT: req=%dx%d work=%dx%d -> %dx%d (geo было %s)'
+                      % (req_w, req_h, work_w, work_h, new_w, new_h,
+                         self.root.geometry()), flush=True)
+            # окно обязано целиком помещаться на экране; координаты со
+            # знаком минус (второй монитор) не трогаем - их границы Tk
+            # для второго экрана не сообщает
+            if x >= 0:
+                x = min(max(x, 0), max(0, work_w - new_w))
+            if y >= 0:
+                y = min(max(y, 0), max(0, work_h - new_h))
+            self.root.geometry('%dx%d+%d+%d' % (new_w, new_h, x, y))
+            self._normal_geometry = '%dx%d' % (new_w, new_h)
+        except Exception:
+            pass
+
     def _build_detail_panel(self):
         c = self.colors
         panel_bg = c.get('panel_bg', c['entry_bg'])
@@ -1330,53 +1720,36 @@ class App:
             self._create_detail_window()
             return
 
-        self.detail_frame = tk.Frame(self.main_frame, bg=panel_bg, width=280)
-        self.detail_frame.pack_propagate(False)
+        self.detail_frame = ctk.CTkFrame(self.main_frame, fg_color=panel_bg,
+                                         corner_radius=8)
 
-        # Заголовок с кнопками
-        header = tk.Frame(self.detail_frame, bg=c['title_bg'], height=26)
+        # Заголовок; кнопки переноса ← → удалены (больше не нужны,2026-11-21)
+        header = ctk.CTkFrame(self.detail_frame, fg_color=c['title_bg'],
+                              corner_radius=0)
         header.pack(fill=tk.X)
-        header.pack_propagate(False)
-
-        # Кнопка перемещения влево (скрыта если крайнее левое)
-        # Обе стрелки всегда отображаются
-        move_left_btn = tk.Button(header, text='\u2190', font=('Segoe UI', 11),
-                                 bg=c['title_bg'], fg=c['fg'], relief=tk.FLAT,
-                                 borderwidth=0, cursor='hand2',
-                                 command=lambda: self._move_panel('detail', 'left'))
-        move_left_btn.pack(side=tk.LEFT, padx=2)
-
-        move_right_btn = tk.Button(header, text='\u2192', font=('Segoe UI', 11),
-                                  bg=c['title_bg'], fg=c['fg'], relief=tk.FLAT,
-                                  borderwidth=0, cursor='hand2',
-                                  command=lambda: self._move_panel('detail', 'right'))
-        move_right_btn.pack(side=tk.LEFT, padx=2)
-
-        tk.Label(header, text=t('detail_title'), bg=c['title_bg'], fg=c['fg'],
-                 font=('Segoe UI', 10, 'bold')).pack(side=tk.LEFT, padx=8)
-
-        # Кнопка открепления (справа)
+        ctk.CTkLabel(header, text=t('detail_title'),
+                     font=F(FS_SECTION, 'bold'),
+                     text_color=c['fg']).pack(side=tk.LEFT, padx=PAD_CARD,
+                                              pady=10)
 
         content = tk.Frame(self.detail_frame, bg=panel_bg)
         content.pack(fill=tk.BOTH, expand=True)
         self._build_detail_content(content, c)
 
-        # Упаковать в правильную позицию
-        if self.config.get('detail_side', 'left') == 'left':
-            self.detail_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
-        else:
-            self.detail_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=False, padx=(0, 5))
+        # Правая колонка сетки main_frame (minsize задаётся там же)
+        self.detail_frame.grid(row=0, column=1, sticky='nsew')
 
     def _build_detail_content(self, parent, c):
         detail_scroll = ttk.Scrollbar(parent, orient=tk.VERTICAL)
-        self.detail_text = tk.Text(parent, font=('Consolas', 9), wrap=tk.WORD,
+        self.detail_text = tk.Text(parent, font=FT(FS_MONO), wrap=tk.WORD,
+                                  width=56,
                                   bg=c.get('panel_bg', c['entry_bg']), fg=c['fg'],
                                   insertbackground=c['fg'],
                                   selectbackground='#264f78',
                                   relief=tk.FLAT, borderwidth=0,
                                   yscrollcommand=detail_scroll.set,
-                                  padx=8, pady=8)
-        detail_scroll.config(command=self.detail_text.yview)
+                                  padx=10, pady=10)
+        detail_scroll.configure(command=self.detail_text.yview)
         self.detail_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         detail_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -1474,7 +1847,7 @@ class App:
                                   relief=tk.FLAT, borderwidth=0,
                                   yscrollcommand=detail_scroll.set,
                                   padx=8, pady=8)
-        detail_scroll.config(command=self.detail_text.yview)
+        detail_scroll.configure(command=self.detail_text.yview)
         self.detail_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         detail_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -1517,20 +1890,6 @@ class App:
         else:
             self.console_window = ConsoleWindow(self.root, self.colors, detached=True,
                                                content=self.config.get('console_content', 'both'))
-    def _open_theme_menu(self):
-        c = self.colors
-        menu = tk.Menu(self.root, tearoff=0, bg=c['entry_bg'], fg=c['fg'],
-                       activebackground=c['accent'], activeforeground='white')
-        for name in THEME_KEYS:
-            menu.add_command(label=t(THEME_KEYS[name]),
-                             command=lambda n=name: self._apply_theme(n))
-        try:
-            x = self.theme_btn.winfo_rootx()
-            y = self.theme_btn.winfo_rooty() + self.theme_btn.winfo_height()
-            menu.post(x, y)
-        except Exception:
-            menu.post(self.root.winfo_pointerx(), self.root.winfo_pointery())
-
     def _apply_theme(self, name):
         self.config['theme'] = name
         save_config(self.config)
@@ -1539,22 +1898,9 @@ class App:
             sv_ttk.set_theme(sv_theme)
         setup_scrollbar_style()
         self.colors = COLOR_SCHEMES[resolve_theme(name)]
-        self.root.configure(bg=self.colors['bg'])
+        self.root.configure(fg_color=self.colors['bg'])
         # Перестроить интерфейс с новыми цветами
         self._rebuild_ui()
-
-    def _open_language_menu(self):
-        c = self.colors
-        menu = tk.Menu(self.root, tearoff=0, bg=c['entry_bg'], fg=c['fg'],
-                       activebackground=c['accent'], activeforeground='white')
-        for code, label in (('ru', t('lang_name_ru')), ('en', t('lang_name_en'))):
-            menu.add_command(label=label, command=lambda cd=code, lb=label: self._apply_language(cd, lb))
-        try:
-            x = self.lang_btn.winfo_rootx()
-            y = self.lang_btn.winfo_rooty() + self.lang_btn.winfo_height()
-            menu.post(x, y)
-        except Exception:
-            menu.post(self.root.winfo_pointerx(), self.root.winfo_pointery())
 
     def _apply_language(self, code, label):
         self.config['language'] = code
@@ -1611,7 +1957,7 @@ class App:
         help_text = tk.Text(text_frame, wrap=tk.WORD, bg=c['entry_bg'], fg=c['fg'],
                             font=('Segoe UI', 10), relief=tk.FLAT, borderwidth=0,
                             yscrollcommand=scroll.set, padx=8, pady=8)
-        scroll.config(command=help_text.yview)
+        scroll.configure(command=help_text.yview)
         help_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -1622,7 +1968,7 @@ class App:
 
         full_text = '\n'.join(body)
         help_text.insert('1.0', full_text)
-        help_text.config(state=tk.DISABLED)
+        help_text.configure(state=tk.DISABLED)
 
         # Поиск с навигацией
         matches = []
@@ -1630,7 +1976,7 @@ class App:
         def do_search(*args):
             nonlocal matches
             query = search_var.get().strip()
-            help_text.config(state=tk.NORMAL)
+            help_text.configure(state=tk.NORMAL)
             help_text.tag_remove('found', '1.0', tk.END)
             help_text.tag_remove('current', '1.0', tk.END)
             matches = []
@@ -1651,10 +1997,10 @@ class App:
                 help_text.see(matches[0][0])
                 help_text.tag_add('current', matches[0][0], matches[0][1])
                 help_text.tag_remove('found', matches[0][0], matches[0][1])
-                count_label.config(text='1/%d' % len(matches))
+                count_label.configure(text='1/%d' % len(matches))
             else:
-                count_label.config(text='0/0' if query else '')
-            help_text.config(state=tk.DISABLED)
+                count_label.configure(text='0/0' if query else '')
+            help_text.configure(state=tk.DISABLED)
 
         current_index = [0]
 
@@ -1664,14 +2010,14 @@ class App:
             current_index[0] = (current_index[0] + 1) % len(matches)
             i = current_index[0]
             pos, end_pos = matches[i]
-            help_text.config(state=tk.NORMAL)
+            help_text.configure(state=tk.NORMAL)
             # восстановить предыдущий в found
             help_text.tag_remove('current', '1.0', tk.END)
             # перетегать все found заново проще: добавить current поверх
             help_text.see(pos)
             help_text.tag_add('current', pos, end_pos)
-            count_label.config(text='%d/%d' % (i + 1, len(matches)))
-            help_text.config(state=tk.DISABLED)
+            count_label.configure(text='%d/%d' % (i + 1, len(matches)))
+            help_text.configure(state=tk.DISABLED)
 
         def go_prev():
             if not matches:
@@ -1679,12 +2025,12 @@ class App:
             current_index[0] = (current_index[0] - 1) % len(matches)
             i = current_index[0]
             pos, end_pos = matches[i]
-            help_text.config(state=tk.NORMAL)
+            help_text.configure(state=tk.NORMAL)
             help_text.tag_remove('current', '1.0', tk.END)
             help_text.see(pos)
             help_text.tag_add('current', pos, end_pos)
-            count_label.config(text='%d/%d' % (i + 1, len(matches)))
-            help_text.config(state=tk.DISABLED)
+            count_label.configure(text='%d/%d' % (i + 1, len(matches)))
+            help_text.configure(state=tk.DISABLED)
 
         # Обернуть do_search чтобы сбрасывать индекс
         orig_search = do_search
@@ -1693,8 +2039,8 @@ class App:
             orig_search(*args)
         search_var.trace_add('write', do_search2)
         search_entry.bind('<Return>', lambda e: go_next())
-        prev_btn.config(command=go_prev)
-        next_btn.config(command=go_next)
+        prev_btn.configure(command=go_prev)
+        next_btn.configure(command=go_next)
 
     def get_params(self):
         # Валидация pop
@@ -1746,20 +2092,22 @@ class App:
             min_val, max_val, msg = rules
             hint = self._hint_labels.get(key)
             if val is None or val < min_val or val > max_val:
-                e.config(bg='#3a1a1a', highlightbackground='#ff5555',
-                         highlightcolor='#ff5555', highlightthickness=1)
+                # CTk-поле: подсветка через fg_color/border_color
+                # (bg/highlight* из tk CTk не принимает - колбэк падал)
+                e.configure(fg_color='#3a1a1a', border_color='#ff5555')
                 if hint:
-                    hint.config(text=t(msg))
+                    hint.configure(text=t(msg))
                 all_valid = False
             else:
-                e.config(bg=self.colors['entry_bg'], highlightthickness=0)
+                e.configure(fg_color=self.colors['entry_bg'],
+                            border_color=self.colors['border'])
                 if hint:
-                    hint.config(text='')
+                    hint.configure(text='')
 
         if all_valid:
-            self.start_btn.config(state=tk.NORMAL)
+            self.start_btn.configure(state=tk.NORMAL)
         else:
-            self.start_btn.config(state=tk.DISABLED)
+            self.start_btn.configure(state=tk.DISABLED)
         return all_valid
 
     def _validate_pop(self):
@@ -1782,15 +2130,15 @@ class App:
         cfg = self.get_params()
         if cfg is None:
             if hasattr(self, 'result_label'):
-                self.result_label.config(text=t('err_params_check'))
+                self.result_label.configure(text=t('err_params_check'))
             return
         total, hours, minutes, details = calc_time(cfg)
 
         if hasattr(self, 'result_label') and self.result_label.winfo_exists():
-            self.result_label.config(text=t('total_time', sec='%.0f' % total,
+            self.result_label.configure(text=t('total_time', sec='%.0f' % total,
                                            h='%.1f' % hours, m='%.0f' % minutes))
         if hasattr(self, 'result_detail') and self.result_detail.winfo_exists():
-            self.result_detail.config(
+            self.result_detail.configure(
                 text=t('total_bots', n=cfg['pop'] * cfg['rounds']))
 
         # Обновляем обе панели деталей
@@ -1815,7 +2163,7 @@ class App:
         cfg = self.get_params()
         if cfg is None:
             if hasattr(self, 'result_label'):
-                self.result_label.config(text=t('err_params'))
+                self.result_label.configure(text=t('err_params'))
             return
         # Папка игры: сохраняем и проверяем ДО запуска. Раньше launчер её не
         # проверял вообще - evo.py падал посреди прогона с RuntimeError.
@@ -1823,7 +2171,7 @@ class App:
         if not self._refresh_game_dir_status():
             msg = t('game_dir_missing')
             if hasattr(self, 'result_label'):
-                self.result_label.config(text=msg)
+                self.result_label.configure(text=msg)
             if self.console_window is None or not self.console_window.window.winfo_exists():
                 self.console_window = ConsoleWindow(self.root, self.colors,
                                                     detached=True, content='both')
@@ -1996,14 +2344,10 @@ if __name__ == '__main__':
             import bot3
             bot3.main()
         sys.exit(0)
-    root = tk.Tk()
+    root = ctk.CTk()
     root.title('KC Bot')
-    # DPI-awareness
-    try:
-        dpi = root.winfo_fpixels('1i')
-        root.tk.call('tk', 'scaling', dpi / 72.0)
-    except Exception:
-        pass
+    # Масштаб по DPI делает сам CustomTkinter. Старый ручной
+    # tk scaling = dpi/72 давал дробные кегли шрифтов («лесенки») - удалён.
     # Иконка
     icon_path = os.path.join(HERE, 'assets', 'kc_bot.ico')
     if os.path.exists(icon_path):
@@ -2019,9 +2363,14 @@ if __name__ == '__main__':
             except Exception:
                 pass
 
-    # Восстановить размер/позицию окна
+    # Восстановить размер/позицию окна. KCBOT_UI_GEOMETRY (напр.
+    # '-1450+60') принудительно открывает окно на 2-м мониторе слева -
+    # пользователь смотрит экран, пока агент запускает приложение.
     saved_geo = load_config().get('window_geometry', None) if 'load_config' in globals() else None
-    if saved_geo:
+    forced_geo = os.environ.get('KCBOT_UI_GEOMETRY')
+    if forced_geo:
+        root.geometry(forced_geo)
+    elif saved_geo:
         root.geometry(saved_geo)
     else:
         screen_w = root.winfo_screenwidth()
@@ -2075,7 +2424,7 @@ if __name__ == '__main__':
     except Exception as e:
         print('icon error:', e)
 
-    root.configure(bg='#1e1e1e')
+    root.configure(fg_color='#1e1e1e')
 
     app = App(root)
     root.deiconify()
@@ -2103,6 +2452,12 @@ if __name__ == '__main__':
     root.after(50, _apply_icon_now)
     root.after(300, _apply_icon_now)
 
+    # Отладочный автоснимок окна: KCBOT_UI_SHOT=<путь.png> - снять себя
+    # через1.5 с после старта и выйти (для проверки дизайна скриншотами)
+    _shot = os.environ.get('KCBOT_UI_SHOT')
+    if _shot:
+        _self_shot.root = root
+        root.after(1500, lambda: (_self_shot(_shot), root.destroy()))
     root.mainloop()
 
     # Сохранить геометрию при выходе

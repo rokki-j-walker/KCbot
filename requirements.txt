@@ -7,5 +7,8 @@ sv-ttk>=2.1
 # Скриншоты окна игры (shot.py) и иконка окна с fallback на PIL (launcher.py)
 Pillow>=10.0
 
+# Дизайн-библиотека UI лаунчера: современные виджеты, свой DPI-масштаб (Fluent)
+customtkinter>=5.2
+
 # --- Разработка ---
 # pytest>=8.0

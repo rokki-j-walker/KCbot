@@ -14,6 +14,23 @@ gdi32 = ctypes.windll.gdi32
 PW_RENDERFULLCONTENT = 2
 
 
+def _make_dpi_aware():
+    """Физические пиксели для координат окон.
+
+    Без этого Windows отдаёт НЕaware-процессу логические координаты
+    (делённые на масштаб125%) - GetWindowRect врёт, и снимок уезжает
+    на чужой участок экрана (ловили чат вместо окна лаунчера).
+    """
+    try:
+        # PROCESS_PER_MONITOR_DPI_AWARE =2 (Win8.1+)
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDpiAwarenessContext(-4)
+        except Exception:
+            pass
+
+
 def find_window(title='Kingdom'):
     """Единая реализация - kc_common.find_window.
 
@@ -50,6 +67,7 @@ def _printwindow(hwnd):
     Возвращает Image или None. Для Unity-окон старых версий работает;
     если кадр оказался полностью чёрным - отказываемся (фолбэк ниже).
     """
+    _make_dpi_aware()
     r = wt.RECT()
     user32.GetWindowRect(hwnd, ctypes.byref(r))
     w, h = r.right - r.left, r.bottom - r.top
@@ -82,11 +100,20 @@ def _printwindow(hwnd):
 
 
 def _grab_screen(hwnd):
-    """Фолбэк: ImageGrab региона экрана. Окно поднимаем в TOPMOST - чат и
-    прочие окна могут быть поверх всех, обычного фокуса мало."""
+    """Фолбэк: снимок экрана в прямоугольнике окна (с подъёмом окна).
+
+    Многоэкранный нюанс: при all_screens=True PIL трактует bbox
+    относительно начала ВИРТУАЛЬНОГО экрана (левый верхний монитор,
+    SM_XVIRTUALSCREEN=-2048 у пользователя) - наивный bbox с координатами
+    primary-монитора уводил снимок на другой монитор (попадал виджет
+    чата вместо окна). Переводим абсолютные координаты в виртуальные.
+    """
+    _make_dpi_aware()
     r = wt.RECT()
     user32.GetWindowRect(hwnd, ctypes.byref(r))
-    box = (r.left, r.top, r.right, r.bottom)
+    vx = user32.GetSystemMetrics(76)        # SM_XVIRTUALSCREEN
+    vy = user32.GetSystemMetrics(77)        # SM_YVIRTUALSCREEN
+    box = (r.left - vx, r.top - vy, r.right - vx, r.bottom - vy)
     focus_window(hwnd)
     user32.SetWindowPos(hwnd, -1, 0, 0, 0, 0, 0x0001 | 0x0002)   # TOPMOST
     try:

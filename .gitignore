@@ -41,3 +41,10 @@ shot.png
 
 # скриншоты сессии игры (знания - в базе Obsidian)
 play*.png
+
+# скриншоты UI-проверок и перенаправления вывода диагностик
+ui_*.png
+dbg_*.png
+user_shot.png
+err*.txt
+out*.txt
