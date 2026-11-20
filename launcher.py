@@ -1896,6 +1896,15 @@ class App:
                 console.append('\n' + t('msg_read_err', err='%r' % (e,)) + '\n')
         finally:
             self.process_running = False
+            # Игра не должна пережить обучение: evo закрывает её сам (с
+            # проверкой), но если процесс обучения убит/упал - подстраховка.
+            # Аудит 2026-11-20: незакрытая игра висела в фоне ~9 часов.
+            try:
+                subprocess.run(['taskkill', '/F', '/IM', 'Kingdom.exe'],
+                               stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL)
+            except Exception:
+                pass
             console = self.console_window
             if console is not None:
                 console.append('\n' + t('msg_done') + '\n')

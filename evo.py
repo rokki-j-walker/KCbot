@@ -60,6 +60,29 @@ def find_window(title='Kingdom'):
     return kc_common.find_window(title)
 
 
+def close_game(timeout=10.0):
+    """Закрыть игру и УБЕДИТЬСЯ, что она закрылась. True - закрыта.
+
+    Аудит 2026-11-20: раньше здесь был безусловный taskkill и печать
+    «Игра закрыта.» БЕЗ проверки - если taskkill не срабатывал, игра
+    висела в фоне часами (факт: после обучения игра жила ~9 часов, пока
+    пользователь не закрыл лаунчер). Теперь: kill -> ждём исчезновения
+    окна -> при необходимости повтор -> честный результат.
+    """
+    subprocess.run(['taskkill', '/F', '/IM', 'Kingdom.exe'],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if find_window() is None:
+            return True
+        time.sleep(0.5)
+    # последняя попытка и ещё одна проверка
+    subprocess.run(['taskkill', '/F', '/IM', 'Kingdom.exe'],
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(1.0)
+    return find_window() is None
+
+
 def wait_window(timeout=90):
     t0 = time.time()
     while time.time() - t0 < timeout:
@@ -612,8 +635,7 @@ def main():
         for i, g in enumerate(pop, 1):
             if _f12_pressed():
                 print('Остановка по F12')
-                subprocess.run(['taskkill', '/F', '/IM', 'Kingdom.exe'],
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                close_game(timeout=5.0)
                 return
             # попытки запуска бота (до 3 раз, если не контролирует игру)
             retries = 0
@@ -693,11 +715,12 @@ def main():
 
     print('\n=== готово. best_genome.json обновлён ===')
 
-    # закрыть игру после завершения обучения
+    # закрыть игру после завершения обучения (с проверкой - см. close_game)
     print('Закрытие игры...', flush=True)
-    subprocess.run(['taskkill', '/F', '/IM', 'Kingdom.exe'],
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print('Игра закрыта.', flush=True)
+    if close_game():
+        print('Игра закрыта.', flush=True)
+    else:
+        print('!! игра НЕ закрылась - закройте её вручную', flush=True)
 
     # запустить лаунчер после обучения (если включено в настройках)
     try:
@@ -711,8 +734,17 @@ def main():
                 _cfg = _json.load(_f)
             if _cfg.get('launch_after', False):
                 print('Запуск лаунчера...', flush=True)
-                subprocess.Popen([sys.executable, os.path.join(HERE, 'launcher.py')],
-                                 cwd=HERE)
+                # DEVNULL: лаунчер не должен наследовать наш stdout - иначе
+                # пайп остаётся открытым ПОСЛЕ выхода evo и любая обёртка
+                # (pipe/Tee) виснет часами (аудит2026-11-20: команда обучения
+                # ждала закрытия пайпа9 часов). CREATE_NO_WINDOW: в dev
+                # python.exe не создаёт лишнее окно консоли.
+                subprocess.Popen(
+                    [sys.executable, os.path.join(HERE, 'launcher.py')],
+                    cwd=HERE,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=(0x08000000 if os.name == 'nt' else 0))
     except Exception:
         pass
 
@@ -732,5 +764,4 @@ if __name__ == '__main__':
         # (при штатном завершении main() уже закрыл игру - повторный taskkill
         #  безвреден)
         if _TRAINING:
-            subprocess.run(['taskkill', '/F', '/IM', 'Kingdom.exe'],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            close_game(timeout=5.0)
