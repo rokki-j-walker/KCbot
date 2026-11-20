@@ -256,6 +256,92 @@ class State(object):
         return best
 
 
+class Fit(object):
+    """Накопитель метрик эпизода: явная схема вместо «супа» ключей (R2/Д27).
+
+    Раньше 13 ключей создавалось лениво (.get(k, default) / 'k' not in f) -
+    полный набор нигде не был объявлен, опечатка молча давала None/0.
+    Все поля объявлены здесь и сгруппированы по доменам. as_flat() отдаёт
+    плоский dict с ПРЕЖНИМИ именами ключей (эталон tracktest, отладка);
+    формат metrics()/JSON-контракта bot3<->evo не меняется.
+    """
+
+    def __init__(self) -> None:
+        # --- состояние трекера (не попадает в metrics/fitness) ---
+        self.base = None                    # снапшот первого кадра (+arc0/wrk0)
+        self.purse0 = None
+        self.last_purse = 0
+        self.last_px = None
+        self.last_interaction = time.time()
+        self.last_track_time = None
+        self.last_stamina = 1.0
+        self.start = time.time()
+        self.inactivity_penalty = 0.0
+        self.prev_day = None                # ленивые prev_* - теперь объявлены
+        self.prev_enemies = None
+        self.prev_portals = None
+        self.prev_hc = 1
+        self.prev_buildings = None
+        self.prev_crown_x = None
+        self.attacking_prev = False
+        self.death_latch = False
+        self.game_over_detected = False
+        # --- монеты ---
+        self.coins_in = 0.0
+        self.coins_spent = 0.0
+        self.coins_lost = 0
+        self.unpicked_coins = 0
+        # --- покупки ---
+        self.buys = 0
+        self.tool_buys = 0
+        self.hammer_buys = 0
+        self.bow_buys = 0
+        self.scythe_buys = 0
+        self.castle_base_buys = 0
+        self.castle_upgrade_buys = 0
+        self.castle_upgrade_buys_with_workers = 0
+        self.castle_upgrade_buys_without_workers = 0
+        # --- здания и граждане ---
+        self.buildings = 0
+        self.buildings_started = 0
+        self.buildings_completed = 0
+        self.buildings_with_workers = 0
+        self.buildings_without_workers = 0
+        self.max_buildings = 0
+        self.citizens = 0
+        # --- деревья ---
+        self.trees_marked = 0
+        self.trees_chopped = 0
+        self.min_trees = 9999
+        self.tree_chops_with_workers = 0
+        self.tree_chops_without_workers = 0
+        # --- корона и смерти ---
+        self.crown_lost = 0
+        self.crown_picked = 0
+        self.deaths = 0
+        # --- день и прогресс ---
+        self.day = 1
+        self.first_archer = 0
+        self.first_worker = 0
+        # --- дистанция ---
+        self.distance = 0.0
+        self.walk_distance = 0.0
+        self.run_distance = 0.0
+        # --- лошадь ---
+        self.horse_exhaustion = 0
+        self.horse_rest_time = 0.0
+        # --- найм и отказы ---
+        self.recruited_beggars = 0
+        self.failed_recruit = 0
+        self.failed_coin = 0
+        self.failed_buy = 0
+        self.failed_tree = 0
+
+    def as_flat(self) -> dict:
+        """Плоский dict с прежними именами ключей (эталон/отладка)."""
+        return dict(self.__dict__)
+
+
 def _f(s: str) -> float:
     try:
         return float(s)
@@ -933,25 +1019,7 @@ class Bot(object):
         self._press_until = {}
         self._intro_skip_time = 0.0    # кулдаун кадра скипа обучения (day == 0)
         self._intro_hold = 0.0         # до какого времени держим S на интро
-        self.fit = dict(purse0=None, last_purse=0, coins_in=0.0, coins_spent=0.0,
-                        buys=0, buildings=0, citizens=0, crown_lost=0,
-                        tool_buys=0, hammer_buys=0, bow_buys=0, scythe_buys=0,
-                        castle_base_buys=0, castle_upgrade_buys=0,
-                        castle_upgrade_buys_with_workers=0,
-                        castle_upgrade_buys_without_workers=0,
-                        buildings_with_workers=0, buildings_without_workers=0,
-                        buildings_started=0, buildings_completed=0,
-                        max_buildings=0, min_trees=9999,
-                        trees_marked=0, trees_chopped=0,
-                        first_archer=0, first_worker=0,
-                        recruited_beggars=0,
-                        distance=0.0, walk_distance=0.0, run_distance=0.0, last_px=None,
-                        horse_exhaustion=0, horse_rest_time=0.0, last_track_time=None,
-                        tree_chops_with_workers=0, tree_chops_without_workers=0,
-                        failed_coin=0, failed_buy=0, failed_recruit=0, failed_tree=0,
-                        unpicked_coins=0, coins_lost=0,
-                        last_interaction=time.time(), inactivity_penalty=0.0,
-                        start=time.time(), base=None)
+        self.fit = Fit()
 
     # ------------------------------------------------------------- утилиты
     def now(self) -> float:
@@ -968,7 +1036,7 @@ class Bot(object):
             if self.episode_end is not None:
                 remaining = max(0, self.episode_end - time.time())
             else:
-                remaining = time.time() - self.fit.get('start', time.time()) if hasattr(self, 'fit') else 0
+                remaining = time.time() - self.fit.start if hasattr(self, 'fit') else 0
             if key == 'task':
                 # формат: SC=ОЧКИ T="время" ts="задача" -> координаты
                 parts = str(val).split(' -> ', 1)
@@ -992,7 +1060,7 @@ class Bot(object):
         Порядок вызовов обязан совпадать с прежним порядком тела: секции
         читают и пишут общие поля self.fit (last_interaction, prev_hc и др.).
         """
-        if self.fit['base'] is None:
+        if self.fit.base is None:
             self._track_init(st)
             return
         if self._track_game_over(st):
@@ -1013,15 +1081,15 @@ class Bot(object):
     def _track_init(self, st: State) -> None:
         """Первый кадр: базовые значения, по которым считаем все дельты."""
         f = self.fit
-        f['base'] = dict(purse=st.purse, wall=st.wall, shop=st.shop,
+        f.base = dict(purse=st.purse, wall=st.wall, shop=st.shop,
                          farm=st.farm, portal=st.portal, arc=st.arc,
                          wrk=st.wrk, frm=st.frm, knt=st.knt, hc=st.hc,
                          p0=len(st.cit('P')))
-        f['last_purse'] = st.purse
-        f['last_px'] = st.px
+        f.last_purse = st.purse
+        f.last_px = st.px
         # стартовые здания и деревья не считаем как построенные/срубленные
-        f['max_buildings'] = st.wall + st.shop + st.farm
-        f['min_trees'] = len([p for p in st.payables if p.type == 'PayableTree'])
+        f.max_buildings = st.wall + st.shop + st.farm
+        f.min_trees = len([p for p in st.payables if p.type == 'PayableTree'])
 
     def _track_game_over(self, st: State) -> bool:
         """Экран проигрыша (The Crown Lost): фиксируем смерть, метрики не трогаем.
@@ -1030,12 +1098,12 @@ class Bot(object):
         """
         f = self.fit
         if (not st.playing and st.hc == 0
-                and self.now() - f.get('start', 0) > 10.0):
-            if not f.get('game_over_detected', False):
-                f['game_over_detected'] = True
-                if not f.get('death_latch', False):
-                    f['deaths'] = f.get('deaths', 0) + 1
-                    f['death_latch'] = True
+                and self.now() - f.start > 10.0):
+            if not f.game_over_detected:
+                f.game_over_detected = True
+                if not f.death_latch:
+                    f.deaths = f.deaths + 1
+                    f.death_latch = True
                 self.note('world', 'ЭКРАН ПРОИГРЫША: The Crown Lost')
             return True
         return False
@@ -1047,13 +1115,13 @@ class Bot(object):
         при проверке налогов).
         """
         f = self.fit
-        f['day'] = st.day
-        d = st.purse - f['last_purse']
+        f.day = st.day
+        d = st.purse - f.last_purse
         if d > 0:
-            f['coins_in'] += d
-            f['last_interaction'] = self.now()   # монета собрана = успех
+            f.coins_in += d
+            f.last_interaction = self.now()   # монета собрана = успех
         elif d < 0:
-            f['coins_spent'] += -d
+            f.coins_spent += -d
             # если не покупка — это потеря монеты (враг/переполнение)
             # монета, брошенная для найма бомжа, и оплата покупки - не потеря
             recruit_window = self.now() < getattr(self, '_recruit_drop_until', 0.0)
@@ -1062,115 +1130,115 @@ class Bot(object):
                 atk and abs(ex - st.px) < CFG['danger_dist']
                 for (_n, ex, atk) in st.enemy_list)
             if self.pay_phase != 'hold' and not recruit_window and enemy_attacking:
-                f['coins_lost'] = f.get('coins_lost', 0) + (-d)
+                f.coins_lost = f.coins_lost + (-d)
             # таймер НЕ сбрасывается здесь — только при успешном действии
-        f['last_purse'] = st.purse
+        f.last_purse = st.purse
         # отслеживаем не подобранные монеты
-        if len(st.ground_coins) > f.get('unpicked_coins', 0):
-            f['unpicked_coins'] = len(st.ground_coins)
+        if len(st.ground_coins) > f.unpicked_coins:
+            f.unpicked_coins = len(st.ground_coins)
         return d
 
     def _track_firsts(self, st: State) -> None:
         """Первый лучник и первый рабочий (оба фиксируются как успех)."""
         f = self.fit
-        b = f['base']
+        b = f.base
         if 'arc0' not in b:
             b['arc0'] = st.arc
             b['wrk0'] = st.wrk
-        if b.get('arc0', 1) == 0 and st.arc >= 1 and f.get('first_archer', 0) == 0:
-            f['first_archer'] = 1
-            f['last_interaction'] = self.now()
-        if b.get('wrk0', 1) == 0 and st.wrk >= 1 and f.get('first_worker', 0) == 0:
-            f['first_worker'] = 1
-            f['last_interaction'] = self.now()
+        if b.get('arc0', 1) == 0 and st.arc >= 1 and f.first_archer == 0:
+            f.first_archer = 1
+            f.last_interaction = self.now()
+        if b.get('wrk0', 1) == 0 and st.wrk >= 1 and f.first_worker == 0:
+            f.first_worker = 1
+            f.last_interaction = self.now()
 
     def _track_built(self, st: State) -> None:
         """Завершённое строительство: рост wall+shop+farm (max не считает перестройки)."""
         f = self.fit
         cur_buildings = st.wall + st.shop + st.farm
-        max_buildings = f.get('max_buildings', 0)
+        max_buildings = f.max_buildings
         if cur_buildings > max_buildings:
             delta = cur_buildings - max_buildings
-            f['buildings_completed'] = f.get('buildings_completed', 0) + delta
-            f['max_buildings'] = cur_buildings
+            f.buildings_completed = f.buildings_completed + delta
+            f.max_buildings = cur_buildings
             self.note('world', 'построено %d зданий (wall=%d shop=%d farm=%d)' %
                       (delta, st.wall, st.shop, st.farm))
         elif max_buildings == 0:
-            f['max_buildings'] = cur_buildings
+            f.max_buildings = cur_buildings
 
     def _track_trees(self, st: State) -> None:
         """Срубленные деревья: дерево исчезло из payables (min не считает новые)."""
         f = self.fit
         cur_trees = len([p for p in st.payables if p.type == 'PayableTree'])
-        min_trees = f.get('min_trees', 9999)
+        min_trees = f.min_trees
         if cur_trees < min_trees and min_trees != 9999:
             chopped = min_trees - cur_trees
-            f['trees_chopped'] = f.get('trees_chopped', 0) + chopped
-            f['min_trees'] = cur_trees
+            f.trees_chopped = f.trees_chopped + chopped
+            f.min_trees = cur_trees
             self.note('world', 'срублено %d деревьев (осталось %d)' % (chopped, cur_trees))
         elif min_trees == 9999:
-            f['min_trees'] = cur_trees
+            f.min_trees = cur_trees
 
     def _track_distance(self, st: State) -> None:
         """Пройденная дистанция: ходьба vs бег."""
         f = self.fit
-        if f['last_px'] is not None:
-            dist = abs(st.px - f['last_px'])
-            f['distance'] += dist
+        if f.last_px is not None:
+            dist = abs(st.px - f.last_px)
+            f.distance += dist
             if st.action == 'Run':
-                f['run_distance'] = f.get('run_distance', 0.0) + dist
+                f.run_distance = f.run_distance + dist
             else:
-                f['walk_distance'] = f.get('walk_distance', 0.0) + dist
-        f['last_px'] = st.px
+                f.walk_distance = f.walk_distance + dist
+        f.last_px = st.px
 
     def _track_horse(self, st: State) -> None:
         """Лошадь: переутомление (стамина <= 0) и накопленное время отдыха."""
         f = self.fit
-        if st.stamina <= 0.01 and f.get('last_stamina', 1.0) > 0.01:
-            f['horse_exhaustion'] = f.get('horse_exhaustion', 0) + 1
-        f['last_stamina'] = st.stamina
+        if st.stamina <= 0.01 and f.last_stamina > 0.01:
+            f.horse_exhaustion = f.horse_exhaustion + 1
+        f.last_stamina = st.stamina
         # отдых лошади: если стамина низкая и бот не бежит
         threshold = BOUNTIES.get('horse_rest_threshold', 0.5)
         if st.stamina < threshold and st.action != 'Run':
             now = self.now()
-            if f.get('last_track_time') is not None:
-                dt = now - f['last_track_time']
-                f['horse_rest_time'] = f.get('horse_rest_time', 0.0) + dt
-            f['last_track_time'] = now
+            if f.last_track_time is not None:
+                dt = now - f.last_track_time
+                f.horse_rest_time = f.horse_rest_time + dt
+            f.last_track_time = now
         else:
-            f['last_track_time'] = self.now()
+            f.last_track_time = self.now()
 
     def _track_world(self, st: State, d: int) -> None:
         """События мира: смена дня, враги, порталы, корона, налоги."""
         f = self.fit
         # смена дня
-        if 'prev_day' not in f:
-            f['prev_day'] = st.day
-        elif st.day != f['prev_day']:
-            self.note('world', 'день %d -> %d (время=%.1f)' % (f['prev_day'], st.day, st.time))
-            f['prev_day'] = st.day
+        if f.prev_day is None:
+            f.prev_day = st.day
+        elif st.day != f.prev_day:
+            self.note('world', 'день %d -> %d (время=%.1f)' % (f.prev_day, st.day, st.time))
+            f.prev_day = st.day
         # враги
         cur_enemies = len(st.enemy_list)
-        if 'prev_enemies' not in f:
-            f['prev_enemies'] = cur_enemies
-        elif cur_enemies > f['prev_enemies']:
-            new_enemies = cur_enemies - f['prev_enemies']
+        if f.prev_enemies is None:
+            f.prev_enemies = cur_enemies
+        elif cur_enemies > f.prev_enemies:
+            new_enemies = cur_enemies - f.prev_enemies
             names = ', '.join(e[0] for e in st.enemy_list[-new_enemies:])
             self.note('world', 'появилось %d врагов: %s' % (new_enemies, names))
-        f['prev_enemies'] = cur_enemies
+        f.prev_enemies = cur_enemies
         # порталы
-        if 'prev_portals' not in f:
-            f['prev_portals'] = st.portal
-        elif st.portal != f['prev_portals']:
-            if st.portal > f['prev_portals']:
+        if f.prev_portals is None:
+            f.prev_portals = st.portal
+        elif st.portal != f.prev_portals:
+            if st.portal > f.prev_portals:
                 self.note('world', 'открылся портал (всего %d)' % st.portal)
             else:
                 self.note('world', 'портал закрыт (всего %d)' % st.portal)
-            f['prev_portals'] = st.portal
+            f.prev_portals = st.portal
         # корона (счётчики ниже, в _track_crown_death - здесь только заметки)
-        if f.get('prev_hc', 1) == 1 and st.hc == 0:
+        if f.prev_hc == 1 and st.hc == 0:
             self.note('world', 'КОРОНА ПОТЕРЯНА! (purse=%d)' % st.purse)
-        if f.get('prev_hc', 1) == 0 and st.hc == 1:
+        if f.prev_hc == 0 and st.hc == 1:
             self.note('world', 'корона подобрана')
         # налоги (purse увеличился от налога, не от монет на земле)
         if d > 0 and not any(abs(c - st.px) < 3 for c in st.ground_coins):
@@ -1183,113 +1251,113 @@ class Bot(object):
             if len(st.cit('P')) > getattr(self, '_recruit_check_p_count', 0):
                 # найм удался - сбрасываем таймер бездействия
                 if hasattr(self, 'fit'):
-                    self.fit['last_interaction'] = self.now()
-                    self.fit['recruited_beggars'] = self.fit.get('recruited_beggars', 0) + 1
+                    self.fit.last_interaction = self.now()
+                    self.fit.recruited_beggars = self.fit.recruited_beggars + 1
             else:
                 # найм не удался - штраф
                 if hasattr(self, 'fit'):
-                    self.fit['failed_recruit'] = self.fit.get('failed_recruit', 0) + 1
+                    self.fit.failed_recruit = self.fit.failed_recruit + 1
             self._recruit_check_time = 0.0
 
     def _track_idle_penalty(self) -> None:
         """Штраф за бездействие: каждые 5 сек без взаимодействия."""
         f = self.fit
-        idle_time = self.now() - f['last_interaction']
+        idle_time = self.now() - f.last_interaction
         expected_penalty = int(idle_time / 5.0)
-        if expected_penalty > f['inactivity_penalty']:
-            f['inactivity_penalty'] = expected_penalty
+        if expected_penalty > f.inactivity_penalty:
+            f.inactivity_penalty = expected_penalty
 
     def _track_buildings(self, st: State) -> None:
         """Дельта зданий (с рабочими/без них) и численность граждан."""
         f = self.fit
-        b = f['base']
-        f['buildings'] = ((st.wall - b['wall']) + (st.shop - b['shop'])
+        b = f.base
+        f.buildings = ((st.wall - b['wall']) + (st.shop - b['shop'])
                           + (st.farm - b['farm']) + (st.portal - b['portal']))
         # строительство засчитывается только если есть рабочие с молотками
-        prev = f.get('prev_buildings', None)
+        prev = f.prev_buildings
         if prev is None:
-            f['prev_buildings'] = f['buildings']
+            f.prev_buildings = f.buildings
         else:
-            delta = f['buildings'] - prev
+            delta = f.buildings - prev
             if delta > 0:
                 if st.wrk >= 1:
-                    f['buildings_with_workers'] = f.get('buildings_with_workers', 0) + delta
+                    f.buildings_with_workers = f.buildings_with_workers + delta
                 else:
-                    f['buildings_without_workers'] = f.get('buildings_without_workers', 0) + delta
-            f['prev_buildings'] = f['buildings']
+                    f.buildings_without_workers = f.buildings_without_workers + delta
+            f.prev_buildings = f.buildings
         p_count = len(st.cit('P'))
-        f['citizens'] = ((st.arc - b['arc']) + (st.wrk - b['wrk'])
+        f.citizens = ((st.arc - b['arc']) + (st.wrk - b['wrk'])
                          + (st.frm - b['frm']) + (st.knt - b['knt'])
                          + (p_count - b['p0']))
 
     def _track_crown_death(self, st: State) -> None:
         """Корона (потеря/подбор), фронт атаки врага и засчёт смерти."""
         f = self.fit
-        prev_hc = f.get('prev_hc', 1)
+        prev_hc = f.prev_hc
         if prev_hc == 1 and st.hc == 0:
-            f['crown_lost'] += 1
+            f.crown_lost += 1
         if prev_hc == 0 and st.hc == 1:
-            f['crown_picked'] = f.get('crown_picked', 0) + 1
-        f['prev_hc'] = st.hc
+            f.crown_picked = f.crown_picked + 1
+        f.prev_hc = st.hc
         down = (st.hc == 0)
         if not down:
-            f['death_latch'] = False
+            f.death_latch = False
         # атака врага в радиусе 3 от короля: считаем именно начало атаки (фронт), а не каждый тик
         attacking_now = any(atk and abs(ex - st.px) < 3.0 for (_n, ex, atk) in st.enemy_list)
-        onset = attacking_now and not f.get('attacking_prev', False)
-        f['attacking_prev'] = attacking_now
+        onset = attacking_now and not f.attacking_prev
+        f.attacking_prev = attacking_now
         # корона исчезла с земли, а король её не поднимал: унесли в портал
-        crown_gone = f.get('prev_crown_x') is not None and st.crown_x is None and down
-        f['prev_crown_x'] = st.crown_x if down else None
+        crown_gone = f.prev_crown_x is not None and st.crown_x is None and down
+        f.prev_crown_x = st.crown_x if down else None
         # смерть: корона уже была потеряна, монет нет и атаковали снова, либо корону унесли в портал
-        if down and prev_hc == 0 and not f.get('death_latch', False):
+        if down and prev_hc == 0 and not f.death_latch:
             if (onset and st.purse == 0) or crown_gone:
-                f['deaths'] = f.get('deaths', 0) + 1
-                f['death_latch'] = True
+                f.deaths = f.deaths + 1
+                f.death_latch = True
 
     def metrics(self) -> dict:
         f = self.fit
-        m = dict(coins_in=f['coins_in'], coins_spent=f['coins_spent'],
-                 buys=f['buys'], buildings=f['buildings'],
-                 citizens=f['citizens'], crown_lost=f['crown_lost'],
-                 recruited_beggars=f.get('recruited_beggars', 0),
-                 day=f.get('day', 1),
-                 deaths=f.get('deaths', 0),
-                 crown_picked=f.get('crown_picked', 0),
-                 buildings_started=f.get('buildings_started', 0),
-                 buildings_completed=f.get('buildings_completed', 0),
-                 max_buildings=f.get('max_buildings', 0),
-                 min_trees=f.get('min_trees', 9999),
-                 trees_marked=f.get('trees_marked', 0),
-                 trees_chopped=f.get('trees_chopped', 0),
-                 first_archer=f.get('first_archer', 0),
-                 first_worker=f.get('first_worker', 0),
-                 tool_buys=f.get('tool_buys', 0),
-                 hammer_buys=f.get('hammer_buys', 0),
-                 bow_buys=f.get('bow_buys', 0),
-                 scythe_buys=f.get('scythe_buys', 0),
-                 castle_base_buys=f.get('castle_base_buys', 0),
-                 castle_upgrade_buys=f.get('castle_upgrade_buys', 0),
-                 castle_upgrade_buys_with_workers=f.get('castle_upgrade_buys_with_workers', 0),
-                 castle_upgrade_buys_without_workers=f.get('castle_upgrade_buys_without_workers', 0),
-                 buildings_with_workers=f.get('buildings_with_workers', 0),
-                 buildings_without_workers=f.get('buildings_without_workers', 0),
-                 distance=f['distance'], walk_distance=f.get('walk_distance', 0.0),
-                 run_distance=f.get('run_distance', 0.0),
-                 horse_exhaustion=f.get('horse_exhaustion', 0),
-                 horse_rest_time=f.get('horse_rest_time', 0.0),
-                 final_purse=f['last_purse'],
-                 inactivity_penalty=f['inactivity_penalty'],
-                 tree_chops_with_workers=f.get('tree_chops_with_workers', 0),
-                 tree_chops_without_workers=f.get('tree_chops_without_workers', 0),
-                 failed_coin=f.get('failed_coin', 0),
-                 failed_buy=f.get('failed_buy', 0),
-                 failed_recruit=f.get('failed_recruit', 0),
-                 failed_tree=f.get('failed_tree', 0),
-                 unpicked_coins=f.get('unpicked_coins', 0),
-                 coins_lost=f.get('coins_lost', 0),
+        m = dict(coins_in=f.coins_in, coins_spent=f.coins_spent,
+                 buys=f.buys, buildings=f.buildings,
+                 citizens=f.citizens, crown_lost=f.crown_lost,
+                 recruited_beggars=f.recruited_beggars,
+                 day=f.day,
+                 deaths=f.deaths,
+                 crown_picked=f.crown_picked,
+                 buildings_started=f.buildings_started,
+                 buildings_completed=f.buildings_completed,
+                 max_buildings=f.max_buildings,
+                 min_trees=f.min_trees,
+                 trees_marked=f.trees_marked,
+                 trees_chopped=f.trees_chopped,
+                 first_archer=f.first_archer,
+                 first_worker=f.first_worker,
+                 tool_buys=f.tool_buys,
+                 hammer_buys=f.hammer_buys,
+                 bow_buys=f.bow_buys,
+                 scythe_buys=f.scythe_buys,
+                 castle_base_buys=f.castle_base_buys,
+                 castle_upgrade_buys=f.castle_upgrade_buys,
+                 castle_upgrade_buys_with_workers=f.castle_upgrade_buys_with_workers,
+                 castle_upgrade_buys_without_workers=f.castle_upgrade_buys_without_workers,
+                 buildings_with_workers=f.buildings_with_workers,
+                 buildings_without_workers=f.buildings_without_workers,
+                 distance=f.distance, walk_distance=f.walk_distance,
+                 run_distance=f.run_distance,
+                 horse_exhaustion=f.horse_exhaustion,
+                 horse_rest_time=f.horse_rest_time,
+                 final_purse=f.last_purse,
+                 inactivity_penalty=f.inactivity_penalty,
+                 tree_chops_with_workers=f.tree_chops_with_workers,
+                 tree_chops_without_workers=f.tree_chops_without_workers,
+                 failed_coin=f.failed_coin,
+                 failed_buy=f.failed_buy,
+                 failed_recruit=f.failed_recruit,
+                 failed_tree=f.failed_tree,
+                 unpicked_coins=f.unpicked_coins,
+                 coins_lost=f.coins_lost,
                  generation=self.generation,
-                 seconds=time.time() - f['start'])
+                 seconds=time.time() - f.start)
         m['score'] = fitness(m)
         return m
 
@@ -1627,7 +1695,7 @@ class Bot(object):
                     self.coin_black[self.coin_target] = now + CFG['coin_black_time']
                     self.note('coin_skip', '%.1f' % self.coin_target)
                     if hasattr(self, 'fit'):
-                        self.fit['failed_coin'] = self.fit.get('failed_coin', 0) + 1
+                        self.fit.failed_coin = self.fit.failed_coin + 1
                     self.coin_target = None
                 else:
                     return ('coin', self.coin_target)
@@ -1727,9 +1795,9 @@ class Bot(object):
         # отслеживаем: рубка с рабочими или без
         if hasattr(self, 'fit'):
             if st.wrk >= 1:
-                self.fit['tree_chops_with_workers'] = self.fit.get('tree_chops_with_workers', 0) + 1
+                self.fit.tree_chops_with_workers = self.fit.tree_chops_with_workers + 1
             else:
-                self.fit['tree_chops_without_workers'] = self.fit.get('tree_chops_without_workers', 0) + 1
+                self.fit.tree_chops_without_workers = self.fit.tree_chops_without_workers + 1
         return ('pay', t)
 
     # =========================================================== исполнение
@@ -1987,9 +2055,9 @@ class Bot(object):
             self.note('pay_giveup', '%s @%.1f' % (p.base, p.x))
             if hasattr(self, 'fit'):
                 if 'Tree' in p.base:
-                    self.fit['failed_tree'] = self.fit.get('failed_tree', 0) + 1
+                    self.fit.failed_tree = self.fit.failed_tree + 1
                 else:
-                    self.fit['failed_buy'] = self.fit.get('failed_buy', 0) + 1
+                    self.fit.failed_buy = self.fit.failed_buy + 1
             self.finish_pay(st, p)
         return
 
@@ -2008,33 +2076,33 @@ class Bot(object):
         # успешная покупка: сбрасываем таймер бездействия
         if spent > 0 and spent >= p.price:
             if hasattr(self, 'fit'):
-                self.fit['last_interaction'] = self.now()
+                self.fit.last_interaction = self.now()
         # отслеживаем покупки инструментов (только если успешно)
         if hasattr(self, 'fit') and spent > 0 and spent >= p.price:
-            self.fit['buys'] = self.fit.get('buys', 0) + 1
+            self.fit.buys = self.fit.buys + 1
             # отслеживаем начало строительства/рубки
             if 'Tree' in p.base:
-                self.fit['trees_marked'] = self.fit.get('trees_marked', 0) + 1
+                self.fit.trees_marked = self.fit.trees_marked + 1
             elif p.type == 'PayableUpgrade':
-                self.fit['buildings_started'] = self.fit.get('buildings_started', 0) + 1
+                self.fit.buildings_started = self.fit.buildings_started + 1
             low = p.base.lower()
             if 'castle0' in low:
-                self.fit['castle_base_buys'] = self.fit.get('castle_base_buys', 0) + 1
+                self.fit.castle_base_buys = self.fit.castle_base_buys + 1
             elif 'castle' in low:
-                self.fit['castle_upgrade_buys'] = self.fit.get('castle_upgrade_buys', 0) + 1
+                self.fit.castle_upgrade_buys = self.fit.castle_upgrade_buys + 1
                 if st.wrk >= 1:
-                    self.fit['castle_upgrade_buys_with_workers'] = self.fit.get('castle_upgrade_buys_with_workers', 0) + 1
+                    self.fit.castle_upgrade_buys_with_workers = self.fit.castle_upgrade_buys_with_workers + 1
                 else:
-                    self.fit['castle_upgrade_buys_without_workers'] = self.fit.get('castle_upgrade_buys_without_workers', 0) + 1
+                    self.fit.castle_upgrade_buys_without_workers = self.fit.castle_upgrade_buys_without_workers + 1
             if 'toolhammer' in low or 'hammer' in low:
-                self.fit['hammer_buys'] = self.fit.get('hammer_buys', 0) + 1
-                self.fit['tool_buys'] = self.fit.get('tool_buys', 0) + 1
+                self.fit.hammer_buys = self.fit.hammer_buys + 1
+                self.fit.tool_buys = self.fit.tool_buys + 1
             elif 'toolbow' in low or 'bow' in low:
-                self.fit['bow_buys'] = self.fit.get('bow_buys', 0) + 1
-                self.fit['tool_buys'] = self.fit.get('tool_buys', 0) + 1
+                self.fit.bow_buys = self.fit.bow_buys + 1
+                self.fit.tool_buys = self.fit.tool_buys + 1
             elif 'toolscythe' in low or 'scythe' in low:
-                self.fit['scythe_buys'] = self.fit.get('scythe_buys', 0) + 1
-                self.fit['tool_buys'] = self.fit.get('tool_buys', 0) + 1
+                self.fit.scythe_buys = self.fit.scythe_buys + 1
+                self.fit.tool_buys = self.fit.tool_buys + 1
         self.pay_target = None
         self.pay_phase = None
         self.pay_purse0 = 0
@@ -2050,8 +2118,8 @@ class Bot(object):
         self._retreat_x = 0.0
         self.last_recruit_drop = 0.0
         # взаимодействие
-        if hasattr(self, 'fit') and self.fit.get('last_interaction') is not None:
-            self.fit['last_interaction'] = self.now()
+        if hasattr(self, 'fit') and self.fit.last_interaction is not None:
+            self.fit.last_interaction = self.now()
 
     # ============================================================== главный
     def ensure_focus(self) -> bool:
@@ -2104,7 +2172,7 @@ class Bot(object):
             # скип обучения/интро: зажать S на 5 секунд (только если игра в фокусе
             # или бот в режиме эволюции, чтобы не мешать пользователю)
             # скип обучения (только если включён флаг --skip-tutorial)
-            if self.skip_tutorial and self.now() - self.fit.get('start', 0) < 30.0:
+            if self.skip_tutorial and self.now() - self.fit.start < 30.0:
                 # продолжаем уже начатый скип
                 if self.skip_until > 0:
                     if self.now() < self.skip_until:

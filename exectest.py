@@ -71,7 +71,7 @@ def run():
     clock = Clock()
     bot = bot3.Bot(dry=True, log=lambda *a: None)
     bot.now = lambda: clock.t
-    bot.fit['start'] = 0.0
+    bot.fit.start = 0.0
 
     calls = []
     # побочные эффекты -> журнал (сами они тестируются в других проверках)

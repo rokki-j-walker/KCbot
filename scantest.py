@@ -124,6 +124,13 @@ def test_structure():
     check('CFG/BOUNTIES записываются только в load_genome()',
           m_lg is not None and not assigns, '; '.join(assigns[:5]))
 
+    # R2/Д27: fit - объект со схемой; словарных обращений к нему не осталось
+    check('R2: класс Fit объявлен', 'class Fit(' in b3)
+    soup = re.findall(r"\.fit\[|\.fit\.get\(|\bf\['\w+'\]|\bf\.get\('",
+                      b3)
+    check('R2: нет словарных обращений к fit (суп ключей убран)',
+          not soup, '; '.join(soup[:5]))
+
 
 # ----------------------------------------------------------------- сборка
 def test_build_files():

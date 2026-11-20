@@ -100,7 +100,7 @@ def snap(bot, st, p):
         repr(bot.pay_target), bot.scan_x, bot.scan_i, bot.scan_t,
         bot.pay_since, repr(bot._pay_last_px), bot._pay_still_since,
         sorted(bot.pay_black.items()),
-        bot.fit.get('failed_tree', 0), bot.fit.get('failed_buy', 0),
+        bot.fit.failed_tree, bot.fit.failed_buy,
         repr(st.sel), st.purse, st.pay_state)
 
 
@@ -109,7 +109,7 @@ def run():
     clock = Clock()
     bot = bot3.Bot(dry=True, log=lambda *a: None)
     bot.now = lambda: clock.t
-    bot.fit['start'] = 0.0
+    bot.fit.start = 0.0
 
     calls = []
     # побочные эффекты -> журнал; 0x... вычищаем на всякий случай

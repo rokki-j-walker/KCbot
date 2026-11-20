@@ -53,9 +53,9 @@ def run_track():
     bot = bot3.Bot(dry=True, log=lambda *a: None)
     # подменяем время: и self.now(), и точку отсчёта эпизода
     bot.now = lambda: clock.t
-    bot.fit['start'] = 0.0
-    bot.fit['last_interaction'] = 0.0
-    bot.fit['last_track_time'] = 0.0
+    bot.fit.start = 0.0
+    bot.fit.last_interaction = 0.0
+    bot.fit.last_track_time = 0.0
 
     n = 0
     for st in load_states():
@@ -67,7 +67,7 @@ def run_track():
             raise
         n += 1
 
-    fit = dict(bot.fit)
+    fit = bot.fit.as_flat()
     lines = ['%s=%r' % (k, fit[k]) for k in sorted(fit)]
     return lines, n
 
@@ -85,24 +85,33 @@ def main():
         print('нет эталона. Снимите ДО правки: py tracktest.py ref')
         return 2
 
-    ref = io.open(REF, encoding='utf-8').read().split('\n')
-    if len(ref) != len(fit):
-        print('КРАСНЫЙ ПРОГОН: полей %d -> %d' % (len(ref), len(fit)))
-        for a, b in zip(ref, fit):
-            if a != b:
-                print('   было: %s\n   стало: %s' % (a, b))
+    import bot3
+    ref = [l for l in io.open(REF, encoding='utf-8').read().split('\n') if l]
+    ref_set, new_set = set(ref), set(fit)
+
+    # 1) каждая строка эталона обязана найтись в новом снимке БЕЗ изменений
+    missing = [l for l in ref if l not in new_set]
+
+    # 2) лишние ключи (Fit объявил их схемой раньше, чем код их создавал:
+    #    deaths/crown_picked/game_over_detected в образцах не срабатывались)
+    #    обязаны ровно совпадать со свежей схемой Fit()
+    fresh = set('%s=%r' % (k, v)
+                for k, v in sorted(bot3.Fit().as_flat().items()))
+    extra_bad = [l for l in fit if l not in ref_set and l not in fresh]
+
+    if missing or extra_bad:
+        print('КРАСНЫЙ ПРОГОН: изменено %d, лишние не как в схеме %d'
+              % (len(missing), len(extra_bad)))
+        for l in missing[:10]:
+            key = l.split('=', 1)[0]
+            now = next((x for x in fit if x.split('=', 1)[0] == key), '(нет)')
+            print('   было: %s\n  стало: %s' % (l, now))
+        for l in extra_bad[:10]:
+            print('   лишний: %s' % l)
         return 1
 
-    diffs = 0
-    for a, b in zip(ref, fit):
-        if a != b:
-            diffs += 1
-            print('   было: %s\n   стало: %s' % (a, b))
-    if diffs:
-        print('КРАСНЫЙ ПРОГОН: расхождений %d из %d' % (diffs, len(ref)))
-        return 1
-    print('ЗЕЛЁНЫЙ ПРОГОН: %d кадров, %d полей fit, 0 расхождений'
-          % (n, len(fit)))
+    print('ЗЕЛЁНЫЙ ПРОГОН: %d кадров, эталон %d полей, схема %d полей, '
+          '0 расхождений' % (n, len(ref), len(fit)))
     return 0
 
 
