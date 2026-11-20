@@ -40,6 +40,23 @@ def data_dir():
     return d
 
 
+def ensure_utf8_stdout():
+    """Перевести stdout/stderr в UTF-8 (best effort, безопасно для консолей).
+
+    При пайпе Python пишет в локальную кодировку (cp1251 на RU-Windows):
+    кириллица превращается в U+FFFD у любого читателя-UTF8 - «кракозабры»
+    в консоли при прямом запуске py evo.py/py bot3.py (аудит 2026-11-20).
+    В реальную консоль Python и так идёт через Unicode API - поведение
+    пользователя не меняется. Повторный вызов идемпотентен.
+    """
+    for s in (sys.stdout, sys.stderr):
+        if s is not None and hasattr(s, 'reconfigure'):
+            try:
+                s.reconfigure(encoding='utf-8', errors='replace')
+            except Exception:
+                pass
+
+
 def atomic_json_dump(path, obj, indent=2):
     """Записать JSON атомарно: временный файл + os.replace.
 

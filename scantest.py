@@ -109,8 +109,8 @@ def test_structure():
     check('B14: press_for определён и используется',
           'def press_for(' in b3 and 'self.press_for(' in b3)
     check('B14: _release_due вызывается в step()',
-          re.search(r'def step\(self\)[^:]*:\s*\n\s*self\._release_due\(', b3)
-          is not None)
+          re.search(r'def step\(self[^)]*\).*?self\._release_due\(',
+                    b3, re.S) is not None)
 
     # глобальный конфиг изменяется только при старте: все 3 записи в
     # load_genome() (заливка генома, D17). Во время цикла - никогда.
@@ -130,6 +130,11 @@ def test_structure():
                       b3)
     check('R2: нет словарных обращений к fit (суп ключей убран)',
           not soup, '; '.join(soup[:5]))
+
+    # один read_state на такт: main читает состояние и ПЕРЕДАЁТ в step
+    # (раньше step читал заново - два чтения и разные кадры, аудит)
+    check('main передаёт st в step() (нет двойного чтения)',
+          'bot.step(st)' in b3)
 
 
 # ----------------------------------------------------------------- сборка

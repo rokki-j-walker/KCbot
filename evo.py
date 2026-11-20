@@ -430,6 +430,7 @@ def mutation_strength(rnd, args):
 
 
 def main():
+    kc_common.ensure_utf8_stdout()   # кириллица в пайпе = UTF-8, не cp1251
     ap = argparse.ArgumentParser()
     # D19: дефолты как в C#-версии (50/15/20/5) - она давала более полную
     # выборку за раунд; лаунчер передаёт значения явно, поэтому расхождение

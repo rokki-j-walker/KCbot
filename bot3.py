@@ -2150,9 +2150,17 @@ class Bot(object):
             return 'pause'
         return None
 
-    def step(self) -> None:
+    def step(self, st: State | None = None) -> None:
+        """Один такт бота.
+
+        st можно передать извне: main() читает состояние один раз на такт.
+        Раньше step() читал ЗАНОВО - два чтения kcdbg за такт (расход) и
+        track/step могли увидеть РАЗНЫЕ кадры (аудит: двойное чтение).
+        При st=None (внутренний вызов/восстановление) - читаем сами.
+        """
         self._release_due()       # отпустить клавиши с вышедшим сроком (B14)
-        st = read_state()
+        if st is None:
+            st = read_state()
         if st is None:
             # Клавиши обязательно отпускаем: иначе зажатые A/D/Shift продолжают
             # уходить в окно, пока логгер молчит (патч слётся / игра висит).
@@ -2233,6 +2241,7 @@ class Bot(object):
 
 
 def main() -> None:
+    kc_common.ensure_utf8_stdout()   # кириллица в пайпе = UTF-8, не cp1251
     dry = '--dry' in sys.argv
     once = '--once' in sys.argv
     own_focus = '--own-focus' in sys.argv
@@ -2335,7 +2344,7 @@ def main() -> None:
                 st = read_state()
                 if st is not None:
                     bot.track(st)
-                bot.step()
+                bot.step(st)     # тот же кадр, что у track (без2-го чтения)
                 # запись живого результата (для раннего убийства при отрицательном счёте)
                 if live_result_path and (not hasattr(bot, '_last_live_write') or time.time() - bot._last_live_write > 5.0):
                     bot._last_live_write = time.time()
