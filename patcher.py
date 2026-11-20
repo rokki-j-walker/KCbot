@@ -197,12 +197,6 @@ def _build_tilde(t, insertions):
     for tid, rows in insertions.items():
         counts[tid] += len(rows)
 
-    # существующие размеры строк не должны измениться (пересечения 65536 нет)
-    for tid in insertions:
-        old = t.row_size(tid)
-        # row_size использует counts из self - считаем заново вручную
-        pass
-
     out = bytearray()
     out += bytes(d[t.off:t.off + 24])          # заголовок (Valid/Sorted те же)
     for tid in sorted(counts):

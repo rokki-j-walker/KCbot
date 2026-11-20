@@ -35,3 +35,6 @@ kc_src/
 
 # Installer output (13 МБ, собирается из KCbot.iss)
 Setup/
+
+# выход shot.py (скриншот игры)
+shot.png

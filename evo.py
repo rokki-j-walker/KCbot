@@ -18,7 +18,6 @@
 import argparse
 import baseline
 import ctypes
-import ctypes.wintypes as wt
 import gamepath
 import json
 import kc_common
@@ -328,14 +327,18 @@ def run_episode(genome, episode, restart, generation=1, speed=3.0, log_file=None
         cmd += ['--game-dir', GAME_DIR]
     if log_file:
         cmd += ['--log-file', log_file]
+    # PYTHONUTF8=1: вывод ботов - UTF-8 в любом случае. Без флага (прямой
+    # запуск `py evo.py` мимо лаунчера) боты пишут в локальную кодировку,
+    # и кириллица превращается в кракозабры у любого читателя-UTF8 (аудит).
+    env = os.environ.copy()
+    env['PYTHONUTF8'] = '1'
     if getattr(sys, 'frozen', False):
-        env = os.environ.copy()
         env['KC_RUN_MODULE'] = 'bot3'
         # drop the script path; pass args after exe
         child_cmd = [sys.executable] + cmd[1:]
         proc = subprocess.Popen(child_cmd, cwd=HERE, env=env)
     else:
-        proc = subprocess.Popen(cmd, cwd=HERE)
+        proc = subprocess.Popen(cmd, cwd=HERE, env=env)
     t0 = time.time()
     pause_time = 0.0
     last_iter = time.time()
@@ -649,7 +652,7 @@ def main():
 
         # ранжирование: оценка элиты = среднее по последним эпизодам (сглаживание шума)
         for idx, r in enumerate(results, 1):
-            r['rank_score'] = r['score'] = r['score']
+            r['rank_score'] = r['score']
         elite_res = results[0]
         if elite_res['score'] > -1e8:
             elite_hist.append(elite_res['score'])

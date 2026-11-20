@@ -65,7 +65,6 @@ def focus_game(hwnd):
 
 
 def restart_game():
-    global GAME_DIR, GAME_EXE
     subprocess.run(['taskkill', '/F', '/IM', 'Kingdom.exe'],
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(2)

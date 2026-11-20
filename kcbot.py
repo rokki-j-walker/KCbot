@@ -97,13 +97,45 @@ def _diag(args):
     return 0
 
 
+def _speed(args):
+    """Скорость игры: показать/записать speed.txt (читает KCLog5, ~1-2 с)."""
+    import os
+
+    import gamepath
+    gd = gamepath.game_dir()
+    if not gd:
+        print('!! папка игры не задана')
+        return 1
+    path = os.path.join(gd, 'Kingdom_Data', 'speed.txt')
+    if not args:
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                print('speed.txt: %s' % f.read().strip())
+        except OSError:
+            print('speed.txt: нет файла (игра создаст при старте со значением 1)')
+        return 0
+    try:
+        v = float(args[0].replace(',', '.'))
+    except ValueError:
+        print('!! значение не число: %r' % args[0])
+        return 1
+    if not (0.0 < v <= 10.0):
+        # диапазон KCLog5: >0 и <=10; для ботов bot3 дополнительно клампит 1..3
+        print('!! допустим диапазон (0, 10], получено %s' % v)
+        return 1
+    with open(path, 'w', encoding='utf-8') as f:
+        f.write(str(v))
+    print('speed.txt = %s -> игра применит за ~1-2 с' % v)
+    return 0
+
+
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
 
     ap = argparse.ArgumentParser(
         prog='kcbot.py', description=DESCRIPTION,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('command', nargs='?', choices=sorted(SUBCOMMANDS) + ['diag'],
+    ap.add_argument('command', nargs='?', choices=sorted(SUBCOMMANDS) + ['diag', 'speed'],
                     help='подкоманда')
     ap.add_argument('args', nargs=argparse.REMAINDER,
                     help='аргументы подкоманды (см. py <модуль>.py --help)')
@@ -115,10 +147,14 @@ def main(argv=None):
         for cmd in sorted(SUBCOMMANDS):
             print('  py kcbot.py %-14s -> %s.py' % (cmd, SUBCOMMANDS[cmd][0]))
         print('  py kcbot.py diag          -> диагностика')
+        print('  py kcbot.py speed 0.5     -> скорость игры (для своих сессий)')
         return 0
 
     if ns.command == 'diag':
         return _diag(ns)
+
+    if ns.command == 'speed':
+        return _speed(ns.args)
 
     mod_name, prefix = SUBCOMMANDS[ns.command]
     # перехват sys.argv: так работают и argparse, и ручные парсеры

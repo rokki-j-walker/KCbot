@@ -16,7 +16,6 @@ import queue
 import subprocess
 import sys
 import threading
-import time
 import tkinter as tk
 from tkinter import ttk
 
@@ -443,9 +442,6 @@ def create_themed_toplevel(parent, title, colors, width=800, height=600, attach_
     # Панель задач
     try:
         win.update_idletasks()
-        GWL_EXSTYLE = -20
-        WS_EX_APPWINDOW = 0x00040000
-        WS_EX_TOOLWINDOW = 0x00000080
         apply_taskbar_style(win)
 
         # ITaskbarList недоступен в этом окружении — полагаемся на WS_EX_APPWINDOW
@@ -478,6 +474,7 @@ class ConsoleWindow:
 
     MAX_LINES = 5000        # сколько строк храним/показываем
     FLUSH_MS = 80           # как часто сбрасываем накопленное в виджет
+    MAX_QUEUE = 20000       # потолок очереди до _tick (защита от утечки)
 
     def __init__(self, parent, colors, detached=False, content='both',
                  on_attach=None, on_finish=None):
@@ -597,6 +594,14 @@ class ConsoleWindow:
         if not text:
             return
         self._queue.put(text)
+        # Предохранитель от утечки: _tick перестаёт планироваться, когда окно
+        # уничтожено, а reader-поток продолжает писать - без потолка очередь
+        # росла бы неограниченно за долгую сессию (аудит). Вытесняем старое.
+        if self._queue.qsize() > self.MAX_QUEUE:
+            try:
+                self._queue.get_nowait()
+            except queue.Empty:
+                pass
 
     def _tick(self):
         """Главный цикл консоли: раз в FLUSH_MS мс сбрасываем накопленное."""
@@ -1684,7 +1689,6 @@ class App:
         # Обернуть do_search чтобы сбрасывать индекс
         orig_search = do_search
         def do_search2(*args):
-            nonlocal matches
             current_index[0] = 0
             orig_search(*args)
         search_var.trace_add('write', do_search2)
@@ -1875,26 +1879,33 @@ class App:
         """
         if self.process is None:
             return
-        console = self.console_window
         try:
             for line in self.process.stdout:
                 if not self.process_running:
                     break
+                # перечитываем ссылку на каждом шаге: окно консоли могут
+                # пересоздать (смена раскладки) - захваченная один раз
+                # ссылка увела бы поток в осиротевший объект
+                console = self.console_window
                 if console is not None:
                     console.append(line)
             self.process.wait()
         except Exception as e:
+            console = self.console_window
             if console is not None:
                 console.append('\n' + t('msg_read_err', err='%r' % (e,)) + '\n')
         finally:
             self.process_running = False
+            console = self.console_window
             if console is not None:
                 console.append('\n' + t('msg_done') + '\n')
             # кнопки - только через главный поток
             try:
                 self.start_btn.after(0, lambda: self.start_btn.pack(side=tk.LEFT, padx=4))
                 self.stop_btn.after(0, lambda: self.stop_btn.pack_forget())
-            except tk.TclError:
+            except (tk.TclError, RuntimeError):
+                # TclError - виджет уничтожен; RuntimeError - mainloop уже
+                # остановлен (закрытие приложения) - оба случая не фатальны
                 pass
 
     def stop_training(self):
