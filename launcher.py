@@ -7,7 +7,6 @@ launcher.py - лаунчер обучения KingdomBot.
 """
 import collections
 import ctypes
-import ctypes.wintypes as wt
 import gamepath
 import json
 import kc_common
@@ -835,103 +834,133 @@ def calc_time(params):
     return total_seconds, hours, minutes, details
 
 
-_WNDPROC_KEEP = {}
+def make_resizable(win, title_color=None, body_color=None):
+    """Ресайз окна за края/углы БЕЗ белой рамки Windows.
 
-
-def make_resizable(win):
-    """Нативный ресайз за края/углы для окна с overrideredirect.
-
-    overrideredirect(True) снимает рамку, а одного WS_THICKFRAME мало:
-    Windows присылает WM_NCHITTEST самой программе, Tk его игнорирует -
-    края не тянулись (жалоба пользователя). Подменяем оконную процедуру
-    и у краёв возвращаем HTLEFT/HTTOPLEFT/... - дальше размер меняет
-    сама Windows, ровно как у обычного окна.
+    WS_THICKFRAME включает нативный ресайз, но Windows 11 рисует у
+    такого окна светлую полосу сверху (жалоба пользователя). Поэтому
+    ресайз сделан «хватами»: тонкие невидимые Frame по краям/углам с
+    нужными курсорами. Цвет хвата = фон под ним (шапка или тело),
+    поэтому полос не видно, а тянутся края как у обычного окна.
     """
-    try:
-        user32 = ctypes.windll.user32
-        hwnd = user32.GetAncestor(win.winfo_id(), 2) or win.winfo_id()
-        GWL_STYLE = -16
-        WS_THICKFRAME = 0x00040000
-        style = user32.GetWindowLongW(hwnd, GWL_STYLE)
-        if not (style & WS_THICKFRAME):
-            user32.SetWindowLongW(hwnd, GWL_STYLE, style | WS_THICKFRAME)
+    if title_color:
+        win._resize_title = title_color
+    if body_color:
+        win._resize_body = body_color
+    title_color = title_color or getattr(win, '_resize_title', '#252525')
+    body_color = body_color or getattr(win, '_resize_body', '#1e1e1e')
 
-        GWLP_WNDPROC = -4
-        get_long = getattr(user32, 'GetWindowLongPtrW', None)
-        set_long = getattr(user32, 'SetWindowLongPtrW', None)
-        if get_long is not None and set_long is not None:
-            get_long.restype = ctypes.c_void_p
-            set_long.restype = ctypes.c_void_p
-            set_long.argtypes = [ctypes.c_void_p, ctypes.c_int,
-                                 ctypes.c_void_p]
-            current = get_long(hwnd, GWLP_WNDPROC)
-        else:
-            get_long = user32.GetWindowLongW
-            set_long = user32.SetWindowLongW
-            current = get_long(hwnd, GWLP_WNDPROC)
+    def _color_for(name):
+        return (title_color if ('n' in name or name.endswith('_top'))
+                else body_color)
 
-        kept = _WNDPROC_KEEP.get(hwnd)
-        current_value = int(current) if current else 0
-        if kept is not None and current_value == kept[1]:
-            return                      # наша процедура уже стоит
+    grips = getattr(win, '_resize_grips', None)
+    if grips:
+        # уже установлены (повторный вызов после сворачивания/темы) -
+        # только обновляем цвета
+        win._resize_title = title_color
+        win._resize_body = body_color
+        for name, frame in grips.items():
+            try:
+                frame.configure(bg=_color_for(name))
+                frame.lift()
+            except tk.TclError:
+                pass
+        return
 
-        WNDPROC = ctypes.WINFUNCTYPE(ctypes.c_ssize_t, ctypes.c_void_p,
-                                     ctypes.c_uint, ctypes.c_void_p,
-                                     ctypes.c_void_p)
-        user32.CallWindowProcW.restype = ctypes.c_ssize_t
-        user32.CallWindowProcW.argtypes = [
-            ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint,
-            ctypes.c_void_p, ctypes.c_void_p]
-        edge = max(5, int(round(6 * win_ui_scale())))
-        corner = edge * 2
+    size = max(4, int(round(5 * win_ui_scale())))
+    state = {}
+    win._resize_grips = {}
 
-        @WNDPROC
-        def _proc(h, msg, wparam, lparam):
-            if msg == 0x0084:           # WM_NCHITTEST
-                try:
-                    if not (user32.GetWindowLongW(h, GWL_STYLE)
-                            & 0x01000000):  # не maximized
-                        point = wt.POINT(
-                            ctypes.c_short(lparam & 0xFFFF).value,
-                            ctypes.c_short((lparam >> 16) & 0xFFFF).value)
-                        # клиентские координаты: не зависят от того, как
-                        # Windows виртуализует экранные координаты при DPI
-                        user32.ScreenToClient(h, ctypes.byref(point))
-                        client = wt.RECT()
-                        user32.GetClientRect(h, ctypes.byref(client))
-                        left = point.x
-                        top = point.y
-                        right = client.right - point.x
-                        bottom = client.bottom - point.y
-                        # углы в приоритете - иначе край съест угол
-                        if left < corner and top < corner:
-                            return 13       # HTTOPLEFT
-                        if right < corner and top < corner:
-                            return 14       # HTTOPRIGHT
-                        if left < corner and bottom < corner:
-                            return 16       # HTBOTTOMLEFT
-                        if right < corner and bottom < corner:
-                            return 17       # HTBOTTOMRIGHT
-                        if left < edge:
-                            return 10       # HTLEFT
-                        if right < edge:
-                            return 11       # HTRIGHT
-                        if top < edge:
-                            return 12       # HTTOP
-                        if bottom < edge:
-                            return 15       # HTBOTTOM
-                except Exception:
-                    pass
-            return user32.CallWindowProcW(current, h, msg, wparam, lparam)
+    def _start(event, name):
+        state.clear()
+        state.update(name=name, x=event.x_root, y=event.y_root,
+                     wx=win.winfo_x(), wy=win.winfo_y(),
+                     ww=win.winfo_width(), wh=win.winfo_height())
+        return 'break'
 
-        proc_ptr = ctypes.cast(_proc, ctypes.c_void_p)
-        set_long(hwnd, GWLP_WNDPROC, proc_ptr)
-        _WNDPROC_KEEP[hwnd] = (current_value, proc_ptr.value, _proc)
-        if os.environ.get('KCBOT_FIT_DEBUG'):
-            print('resize: HWND %s subclassed' % hwnd, flush=True)
-    except Exception as e:
-        if os.environ.get('KCBOT_FIT_DEBUG'):
-            print('resize: failed: %r' % (e,), flush=True)
+    def _drag(event):
+        if not state:
+            return 'break'
+        name = state['name']
+        dx = event.x_root - state['x']
+        dy = event.y_root - state['y']
+        wx, wy = state['wx'], state['wy']
+        ww, wh = state['ww'], state['wh']
+        try:
+            mw, mh = win.minsize()
+        except tk.TclError:
+            mw, mh = 320, 240
+        mw = max(mw, 320)
+        mh = max(mh, 240)
+        nx, ny, nw, nh = wx, wy, ww, wh
+        if 'w' in name:
+            nw = ww - dx
+            if nw < mw:
+                nw = mw
+            nx = wx + ww - nw
+        if 'e' in name:
+            nw = max(mw, ww + dx)
+        if 'n' in name:
+            nh = wh - dy
+            if nh < mh:
+                nh = mh
+            ny = wy + wh - nh
+        if 's' in name:
+            nh = max(mh, wh + dy)
+        win.geometry('%dx%d+%d+%d' % (nw, nh, nx, ny))
+        return 'break'
+
+    def _end(_event=None):
+        state.clear()
+        return 'break'
+
+    def _mk(name, cursor):
+        frame = tk.Frame(win, bg=_color_for(name), cursor=cursor, bd=0,
+                         highlightthickness=0, takefocus=0)
+        frame.bind('<ButtonPress-1>', lambda e, n=name: _start(e, n))
+        frame.bind('<B1-Motion>', _drag)
+        frame.bind('<ButtonRelease-1>', _end)
+        frame.lift()
+        win._resize_grips[name] = frame
+
+    for name, cursor in (('n', 'top_side'), ('s', 'bottom_side'),
+                         ('w_top', 'left_side'), ('w_body', 'left_side'),
+                         ('e_top', 'right_side'), ('e_body', 'right_side'),
+                         ('nw', 'top_left_corner'),
+                         ('ne', 'top_right_corner'),
+                         ('sw', 'bottom_left_corner'),
+                         ('se', 'bottom_right_corner')):
+        _mk(name, cursor)
+
+    def _layout(_event=None):
+        try:
+            W = win.winfo_width()
+            H = win.winfo_height()
+            hh = int(round(H_HEADER * win_ui_scale()))
+            hh = max(size * 2, min(hh, H))
+            g = size
+            boxes = {
+                'n': (0, 0, W, g),
+                's': (0, H - g, W, g),
+                'w_top': (0, 0, g, hh),
+                'w_body': (0, hh, g, max(1, H - hh)),
+                'e_top': (W - g, 0, g, hh),
+                'e_body': (W - g, hh, g, max(1, H - hh)),
+                'nw': (0, 0, g * 2, g * 2),
+                'ne': (W - g * 2, 0, g * 2, g * 2),
+                'sw': (0, H - g * 2, g * 2, g * 2),
+                'se': (W - g * 2, H - g * 2, g * 2, g * 2),
+            }
+            for name, frame in win._resize_grips.items():
+                x, y, w, h = boxes[name]
+                frame.place(x=x, y=y, width=w, height=h)
+                frame.lift()
+        except (tk.TclError, KeyError):
+            pass
+
+    win.bind('<Configure>', _layout, add='+')
+    win.after_idle(_layout)
 
 
 def _window_minimize(win):
@@ -986,16 +1015,42 @@ def create_themed_toplevel(parent, title, colors, width=800, height=600,
     win = tk.Toplevel(parent)
     win.title(title)
     win.overrideredirect(True)
-    make_resizable(win)
+    make_resizable(win, colors['title_bg'], colors['bg'])
     if geometry_key is None:
         geometry_key = title
     win._geometry_key = geometry_key
     # Восстановить сохранённую геометрию
     _saved = load_config().get('window_geometries', {}).get(geometry_key)
     if _saved:
-        # Сохранённый пользователем размер/позиция (важно: ресайз окон
-        # должен сохраняться между запусками)
-        win.geometry(_saved)
+        # Сохранённый пользователем размер/позиция уважается, НО если
+        # окно было сохранено на другом мониторе, открываем его на
+        # мониторе главного окна (иначе консоль/справка уезжают на
+        # основной экран при запуске на втором).
+        import re as _re
+        m = _re.match(r'(\d+)x(\d+)([+-]\d+)([+-]\d+)$', _saved)
+        recenter = False
+        if m:
+            def _sign(value):
+                return 1 if value >= 0 else -1
+            try:
+                pm = _re.search(r'([+-]\d+)[+-]\d+$', parent.geometry())
+                parent_x = int(pm.group(1)) if pm else parent.winfo_x()
+            except Exception:
+                parent_x = parent.winfo_x()
+            if _sign(int(m.group(3))) != _sign(parent_x):
+                recenter = True
+        if recenter:
+            sw, sh = int(m.group(1)), int(m.group(2))
+            try:
+                px = parent.winfo_x(); py = parent.winfo_y()
+                pw = parent.winfo_width(); ph = parent.winfo_height()
+                win.geometry('%dx%d+%d+%d'
+                             % (sw, sh, px + (pw - sw) // 2,
+                                py + (ph - sh) // 2))
+            except Exception:
+                win.geometry('%dx%d' % (sw, sh))
+        else:
+            win.geometry(_saved)
     else:
         # Центрировать относительно родителя
         try:
@@ -2183,6 +2238,7 @@ class App:
         setup_scrollbar_style()
         self.colors = COLOR_SCHEMES[resolve_theme(name)]
         self.root.configure(fg_color=self.colors['bg'])
+        make_resizable(self.root, self.colors['title_bg'], self.colors['bg'])
         # Перестроить интерфейс с новыми цветами
         self._rebuild_ui()
 
@@ -2651,7 +2707,7 @@ if __name__ == '__main__':
     root.deiconify()
     root.update()
     root.lift()
-    make_resizable(root)          # HWND готов - ставим ресайз повторно
+    make_resizable(root, app.colors['title_bg'], app.colors['bg'])   # HWND готов - ресайз
 
     # Установить иконку в панели задач ПОСЛЕ показа окна (иначе не подхватывается)
     def _apply_icon_now():
