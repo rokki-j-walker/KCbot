@@ -2452,6 +2452,10 @@ if __name__ == '__main__':
     root.after(50, _apply_icon_now)
     root.after(300, _apply_icon_now)
 
+    # Совместный просмотр UI: KCBOT_UI_CONSOLE=1 - сразу открыть консоль
+    # (обычно её открывает кнопка ≡ в шапке)
+    if os.environ.get('KCBOT_UI_CONSOLE'):
+        root.after(700, app._toggle_console_panel)
     # Отладочный автоснимок окна: KCBOT_UI_SHOT=<путь.png> - снять себя
     # через1.5 с после старта и выйти (для проверки дизайна скриншотами)
     _shot = os.environ.get('KCBOT_UI_SHOT')
