@@ -50,6 +50,12 @@ def main():
     # окно консоли (как при открытии кнопкой)
     console = launcher.ConsoleWindow(root, app.colors, detached=True,
                                      content='both')
+    # немного строк - видно фильтр, список и панель поиска снизу
+    for line in ('=== KC Bot ===\n', 'Загрузка генома...\n',
+                 'Поколение 1: очки 250\n', 'WARN: медленный кадр\n',
+                 'Ошибка: пример красной строки\n'):
+        console.append(line)
+    app._open_help()
     for i in range(10):
         root.update()
         import time
@@ -57,6 +63,8 @@ def main():
 
     grab(root, 'ui_main.png')
     grab(console.window, 'ui_console.png')
+    if getattr(app, 'help_window', None) is not None:
+        grab(app.help_window, 'ui_help.png')
 
     # кто раздувает reqheight (пустой низ окна)
     root.update_idletasks()
