@@ -1,50 +1,48 @@
 # Python
 __pycache__/
-*.pyc
-_tmp_*.json
-_tmp_*.py
+*.py[cod]
+*$py.class
 *.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# Build artifacts
+# Build / packaging
 build/
 dist/
 bin/
 obj/
-
-# Logs (runtime)
-logs/
-*.log
-bot_log.txt
-bot_log.old.txt
-human_recording.json
-
-# Runtime state - геномы, история эволюции, эталонный сейв.
-# Создаётся самим приложением; в репозиторий не попадает (решения D10, D26).
-data/
-saves/
-
-# Game analysis / decompiled copy — do not commit (юридический риск)
-_game_analysis/
-kc_src/
-
-# Temp
-*.bak
-*.tmp
-
-# PyInstaller spec — ВЕРСИОНИРУЕТСЯ (рецепт сборки должен жить в репозитории)
-
-# Installer output (13 МБ, собирается из KCbot.iss)
 Setup/
 
-# выход shot.py (скриншот игры)
+# Runtime state and training data
+logs/
+data/
+saves/
+_game_analysis/
+kc_src/
+_tmp_*.json
+_tmp_*.py
+human_recording.json
+bot_log.txt
+bot_log.old.txt
+*.log
+
+# Local screenshots / debug output
 shot.png
-
-# скриншоты сессии игры (знания - в базе Obsidian)
 play*.png
-
-# скриншоты UI-проверок и перенаправления вывода диагностик
 ui_*.png
 dbg_*.png
 user_shot.png
 err*.txt
 out*.txt
+*.bak
+*.tmp
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
