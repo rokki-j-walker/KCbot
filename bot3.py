@@ -2357,6 +2357,46 @@ def main() -> None:
     focus_paused = False
     focus_lost_at = 0.0
     last_force_focus = 0.0
+    game_paused_by_us = False
+
+    def _ensure_game_focus(timeout=3.0):
+        """Для F8-продолжения: сначала фокус игры, потом ESC."""
+        if inp.is_focused():
+            return True
+        try:
+            inp.force_focus()
+        except Exception as e:
+            log('force_focus: %r' % (e,))
+        end = time.time() + timeout
+        while time.time() < end:
+            if inp.is_focused():
+                return True
+            time.sleep(0.05)
+        log('!! не удалось вернуть фокус игры')
+        return False
+
+    def _game_in_menu():
+        """Игра на паузе/в меню? (не шлём лишний ESC)."""
+        if dry:
+            return False
+        st = read_state()
+        return bool(st is not None and not st.playing and st.hc > 0)
+
+    def _game_not_playing():
+        """Игра уже не идёт (меню или экран проигрыша) - ESC не нужен."""
+        if dry:
+            return False
+        st = read_state()
+        return bool(st is not None and not st.playing)
+
+    def _tap_esc():
+        """ESC с явным отпусканием: в паузе step() не крутится."""
+        if dry:
+            return
+        inp.down(0x01)
+        time.sleep(0.08)
+        inp.up(0x01)
+
     t_end = (time.time() + episode) if episode else None
     bot.episode_end = t_end
     try:
@@ -2367,12 +2407,37 @@ def main() -> None:
                     log('стоп по F9')
                     break
                 if hk == 'pause':
-                    paused = not paused
-                    inp.release()
-                    if paused:
+                    if not paused:
+                        paused = True
                         pause_started = time.time()
-                        log('ПАУЗА')
+                        inp.release()
+                        if _game_not_playing():
+                            log('ПАУЗА (игра уже не идёт — ESC не нужен)')
+                        elif _ensure_game_focus():
+                            # ESC уходит в активное окно, поэтому сначала фокус.
+                            if _game_not_playing():
+                                log('ПАУЗА (игра уже не идёт — ESC не нужен)')
+                            else:
+                                _tap_esc()
+                                game_paused_by_us = True
+                                log('ПАУЗА (ESC: игра остановлена)')
+                        else:
+                            log('ПАУЗА (фокус не вернулся — ESC не отправлен)')
                     else:
+                        if _ensure_game_focus():
+                            if _game_in_menu():
+                                _tap_esc()
+                                log('ПРОДОЛЖАЮ (ESC: снимаю паузу игры)')
+                            elif game_paused_by_us and read_state() is None:
+                                # Логгер молчит во время паузы/перехода: мы сами
+                                # поставили игру на ESC, значит снимаем её сами.
+                                _tap_esc()
+                                log('ПРОДОЛЖАЮ (логгер молчит — снимаю паузу)')
+                            else:
+                                log('ПРОДОЛЖАЮ (игра не в меню — ESC не нужен)')
+                        else:
+                            log('ПРОДОЛЖАЮ без ESC: фокус не вернулся')
+                        game_paused_by_us = False
                         extra = 0.0
                         if pause_started is not None:
                             extra = time.time() - pause_started
@@ -2381,6 +2446,7 @@ def main() -> None:
                                 t_end += extra
                                 bot.episode_end = t_end
                             bot.fit.paused_total += extra
+                        paused = False
                         # пауза не должна превращаться в «бездействие»
                         try:
                             bot.fit.last_move_time = time.time()
