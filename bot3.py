@@ -287,6 +287,7 @@ class Fit(object):
         self.attacking_prev = False
         self.death_latch = False
         self.game_over_detected = False
+        self.not_playing_streak = 0
         # --- монеты ---
         self.coins_in = 0.0
         self.coins_spent = 0.0
@@ -1108,8 +1109,12 @@ class Bot(object):
         True - эпизод завершён, track() должен остановиться.
         """
         f = self.fit
-        if (not st.playing and st.hc == 0
-                and self.now() - f.start > 10.0):
+        if not st.playing and st.hc == 0:
+            f.not_playing_streak += 1
+        else:
+            f.not_playing_streak = 0
+        if (f.not_playing_streak >= 3
+                and self.now() - f.start > 3.0):
             if not f.game_over_detected:
                 f.game_over_detected = True
                 if not f.death_latch:
@@ -2387,7 +2392,12 @@ def main() -> None:
                     continue
                 st = read_state()
                 if st is not None:
-                    bot.track(st)
+                    if bot.track(st):
+                        # Экран проигрыша: track() уже зафиксировал смерть.
+                        # Раньше цикл игнорировал возврат и продолжал слать
+                        # ввод на экране «The Crown Lost» (жалоба пользователя).
+                        log('игра окончена (The Crown Lost) - остановка')
+                        break
                 bot.step(st)     # тот же кадр, что у track (без2-го чтения)
                 # запись живого результата (для раннего убийства при отрицательном счёте)
                 if live_result_path and (not hasattr(bot, '_last_live_write') or time.time() - bot._last_live_write > 5.0):
