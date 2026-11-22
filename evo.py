@@ -846,12 +846,14 @@ def main():
                               flush=True)
                         if retries < 3:
                             continue
-                    # Пауза во время эпизода делает его несравнимым:
-                    # игра продолжается, бот стоит, survival-бонус растёт.
-                    if m.get('pause_time', 0) > 2.0:
+                    # Пауза F8 делает эпизод несравнимым; пауза из-за потери
+                    # фокуса — легитимна (метрики стоят, таймер продлён).
+                    manual_pause = max(
+                        0.0, m.get('pause_time', 0) - m.get('focus_pause_time', 0))
+                    if manual_pause > 2.0:
                         retries += 1
                         print('    !! эпизод с паузой %.0f с - не засчитываем'
-                              % m.get('pause_time', 0), flush=True)
+                              % manual_pause, flush=True)
                         if retries < 3:
                             continue
                     break
@@ -940,6 +942,7 @@ def main():
                 'unpicked_coins': r.get('unpicked_coins', 0),
                 'inactivity_penalty': r.get('inactivity_penalty', 0),
                 'pause_time': r.get('pause_time', 0),
+                'focus_pause_time': r.get('focus_pause_time', 0),
                 'wall_seconds': r.get('wall_seconds', 0),
                 'failed_coin': r.get('failed_coin', 0),
                 'failed_buy': r.get('failed_buy', 0),

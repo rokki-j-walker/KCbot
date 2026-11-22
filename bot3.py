@@ -278,6 +278,8 @@ class Fit(object):
         self.last_stamina = 1.0
         self.start = time.time()
         self.inactivity_penalty = 0.0
+        self.focus_pause_total = 0.0    # фокус потерян: метрики стоят
+        self.paused_total = 0.0         # F8 + focus, не идут в seconds
         self.prev_day = None                # ленивые prev_* - теперь объявлены
         self.prev_enemies = None
         self.prev_portals = None
@@ -1384,8 +1386,9 @@ class Bot(object):
                  failed_tree=f.failed_tree,
                  unpicked_coins=f.unpicked_coins,
                  coins_lost=f.coins_lost,
+                 focus_pause_time=f.focus_pause_total,
                  generation=self.generation,
-                 seconds=time.time() - f.start)
+                 seconds=max(0.0, time.time() - f.start - f.paused_total))
         m['score'] = fitness(m)
         return m
 
@@ -2351,6 +2354,9 @@ def main() -> None:
     bot._last_live_write = 0.0
     paused = False
     pause_started = None
+    focus_paused = False
+    focus_lost_at = 0.0
+    last_force_focus = 0.0
     t_end = (time.time() + episode) if episode else None
     bot.episode_end = t_end
     try:
@@ -2374,6 +2380,7 @@ def main() -> None:
                             if t_end:
                                 t_end += extra
                                 bot.episode_end = t_end
+                            bot.fit.paused_total += extra
                         # пауза не должна превращаться в «бездействие»
                         try:
                             bot.fit.last_move_time = time.time()
@@ -2394,6 +2401,47 @@ def main() -> None:
                             pass
                     time.sleep(0.2 / speed)
                     continue
+                # --- потеря фокуса игрой: сон, метрики стоят ---
+                if not dry and not inp.is_focused():
+                    now = time.time()
+                    if not focus_paused:
+                        focus_paused = True
+                        focus_lost_at = now
+                        inp.release()
+                        log('ФОКУС ПОТЕРЯН — пауза (жду возврата)')
+                    if (focus_lost_at and now - focus_lost_at >= 300.0
+                            and now - last_force_focus > 5.0):
+                        last_force_focus = now
+                        log('ФОКУС НЕ ВОЗВРАЩАЛСЯ 5 МИН — возвращаю принудительно')
+                        try:
+                            inp.force_focus()
+                        except Exception as e:
+                            log('force_focus: %r' % (e,))
+                    if live_result_path and (not hasattr(bot, '_last_live_write')
+                                             or now - bot._last_live_write > 2.0):
+                        bot._last_live_write = now
+                        try:
+                            m = bot.metrics()
+                            m['paused'] = True
+                            m['focus_paused'] = True
+                            with open(live_result_path, 'w', encoding='utf-8') as f:
+                                json.dump(m, f, ensure_ascii=False)
+                        except Exception:
+                            pass
+                    time.sleep(0.2 / speed)
+                    continue
+                if focus_paused:
+                    lost = time.time() - focus_lost_at
+                    focus_paused = False
+                    focus_lost_at = 0.0
+                    bot.fit.focus_pause_total += lost
+                    bot.fit.paused_total += lost
+                    if t_end:
+                        t_end += lost
+                        bot.episode_end = t_end
+                    bot.fit.last_move_time = time.time()
+                    bot.fit.last_interaction = time.time()
+                    log('ФОКУС ВОЗВРАЩЁН (+%.1f с к эпизоду)' % lost)
                 st = read_state()
                 if st is not None:
                     if bot.track(st):
