@@ -273,6 +273,7 @@ class Fit(object):
         self.last_purse = 0
         self.last_px = None
         self.last_interaction = time.time()
+        self.last_move_time = time.time()
         self.last_track_time = None
         self.last_stamina = 1.0
         self.start = time.time()
@@ -298,6 +299,7 @@ class Fit(object):
         self.bow_buys = 0
         self.scythe_buys = 0
         self.castle_base_buys = 0
+        self.castle_base_buys_without_workers = 0
         self.castle_upgrade_buys = 0
         self.castle_upgrade_buys_with_workers = 0
         self.castle_upgrade_buys_without_workers = 0
@@ -307,6 +309,10 @@ class Fit(object):
         self.buildings_completed = 0
         self.buildings_with_workers = 0
         self.buildings_without_workers = 0
+        self.workers = 0
+        self.archers = 0
+        self.farmers = 0
+        self.knights = 0
         self.max_buildings = 0
         self.citizens = 0
         # --- деревья ---
@@ -831,6 +837,21 @@ def fitness(m: dict) -> float:
     s += b.get('buy_hammer', 15.0) * m.get('hammer_buys', 0)
     s += b.get('buy_bow', 15.0) * m.get('bow_buys', 0)
     s += b.get('buy_scythe', 15.0) * m.get('scythe_buys', 0)
+    # бонус за инструменты как класс (экономика должна развиваться)
+    s += b.get('tool_bonus', 0.0) * m.get('tool_buys', 0)
+    # финальный состав экономики (не только первый юнит)
+    s += b.get('worker_bonus', 0.0) * m.get('workers', 0)
+    s += b.get('archer_bonus', 0.0) * m.get('archers', 0)
+    s += b.get('farmer_bonus', 0.0) * m.get('farmers', 0)
+    s += b.get('knight_bonus', 0.0) * m.get('knights', 0)
+    # здания, построенные при наличии рабочих, ценнее «пустых»
+    s += b.get('building_with_workers', 0.0) * m.get('buildings_with_workers', 0)
+    # улучшение замка с рабочими поощряется, «голый» Castle0 — нет
+    s += b.get('castle_upgrade_workers', 0.0) * m.get('castle_upgrade_buys_with_workers', 0)
+    s += b.get('castle_base_no_workers', 0.0) * m.get('castle_base_buys_without_workers', 0)
+    # неудачные попытки — штраф (раньше почти не влияли)
+    s += b.get('failed_buy_penalty', 0.0) * m.get('failed_buy', 0)
+    s += b.get('failed_recruit_penalty', 0.0) * m.get('failed_recruit', 0)
     # замок: первая база и апгрейды
     s += b.get('buy_castle_base', 60.0) * m.get('castle_base_buys', 0)
     s += b.get('buy_castle_upgrade', 40.0) * m.get('castle_upgrade_buys', 0)
@@ -865,6 +886,8 @@ def fitness(m: dict) -> float:
     s += b.get('tree_mark', 2.0) * m.get('trees_marked', 0)
     # срубленное дерево (большой бонус)
     s += b.get('tree_chop', 5.0) * m.get('trees_chopped', 0)
+    # реальные рубки с рабочими (trees_chopped иногда не ловит исчезновение)
+    s += b.get('tree_chop_workers', 0.0) * m.get('tree_chops_with_workers', 0)
     # штраф за попытку рубки без рабочих
     s += b.get('tree_chop_no_workers', -0.5) * m.get('tree_chops_without_workers', 0)
     # штраф за неудачные попытки (коэффициент из bounties.txt)
@@ -875,18 +898,6 @@ def fitness(m: dict) -> float:
     s -= b.get('tree_chop', 5.0) * ratio * m.get('failed_tree', 0)
     # потеря монет от врага
     s += b.get('coin_lost_enemy', -10.0) * m.get('coins_lost', 0)
-    # не подобранные монеты (градиент: 1 монета = -5, 30+ = -1 за каждую)
-    n_unpicked = m.get('unpicked_coins', 0)
-    if n_unpicked > 0:
-        max_pen = b.get('unpicked_coin_max', 5.0)
-        min_pen = b.get('unpicked_coin_min', 1.0)
-        threshold = b.get('unpicked_coin_threshold', 30.0)
-        if n_unpicked >= threshold:
-            per_coin = min_pen
-        else:
-            per_coin = max_pen - (max_pen - min_pen) * (n_unpicked - 1) / (threshold - 1)
-        per_coin = max(min_pen, per_coin)
-        s += b.get('unpicked_coin', -1.0) * per_coin * n_unpicked
     gen = m.get('generation', 1)
     threshold = 10.0 * gen
     if m.get('coins_in', 0) == 0 and m.get('buys', 0) == 0 and m.get('buildings', 0) == 0:
@@ -1133,7 +1144,7 @@ class Bot(object):
                 f.coins_lost = f.coins_lost + (-d)
             # таймер НЕ сбрасывается здесь — только при успешном действии
         f.last_purse = st.purse
-        # отслеживаем не подобранные монеты
+        # пик монет на земле (это НЕ «промахи»; штраф из фитнеса убран)
         if len(st.ground_coins) > f.unpicked_coins:
             f.unpicked_coins = len(st.ground_coins)
         return d
@@ -1185,6 +1196,10 @@ class Bot(object):
         if f.last_px is not None:
             dist = abs(st.px - f.last_px)
             f.distance += dist
+            # реальное движение, а не «просто прошло время»: иначе
+            # штраф за бездействие получали боты, которые ехали к цели
+            if dist > 0.3:
+                f.last_move_time = self.now()
             if st.action == 'Run':
                 f.run_distance = f.run_distance + dist
             else:
@@ -1260,9 +1275,9 @@ class Bot(object):
             self._recruit_check_time = 0.0
 
     def _track_idle_penalty(self) -> None:
-        """Штраф за бездействие: каждые 5 сек без взаимодействия."""
+        """Штраф за бездействие: каждые 5 сек без движения И взаимодействия."""
         f = self.fit
-        idle_time = self.now() - f.last_interaction
+        idle_time = self.now() - max(f.last_interaction, f.last_move_time)
         expected_penalty = int(idle_time / 5.0)
         if expected_penalty > f.inactivity_penalty:
             f.inactivity_penalty = expected_penalty
@@ -1289,6 +1304,11 @@ class Bot(object):
         f.citizens = ((st.arc - b['arc']) + (st.wrk - b['wrk'])
                          + (st.frm - b['frm']) + (st.knt - b['knt'])
                          + (p_count - b['p0']))
+        # итоговый состав экономики (для фитнеса: рабочие/лучники/фермеры)
+        f.workers = max(0, st.wrk - b['wrk'])
+        f.archers = max(0, st.arc - b['arc'])
+        f.farmers = max(0, st.frm - b['frm'])
+        f.knights = max(0, st.knt - b['knt'])
 
     def _track_crown_death(self, st: State) -> None:
         """Корона (потеря/подбор), фронт атаки врага и засчёт смерти."""
@@ -1337,11 +1357,14 @@ class Bot(object):
                  bow_buys=f.bow_buys,
                  scythe_buys=f.scythe_buys,
                  castle_base_buys=f.castle_base_buys,
+                 castle_base_buys_without_workers=f.castle_base_buys_without_workers,
                  castle_upgrade_buys=f.castle_upgrade_buys,
                  castle_upgrade_buys_with_workers=f.castle_upgrade_buys_with_workers,
                  castle_upgrade_buys_without_workers=f.castle_upgrade_buys_without_workers,
                  buildings_with_workers=f.buildings_with_workers,
                  buildings_without_workers=f.buildings_without_workers,
+                 workers=f.workers, archers=f.archers,
+                 farmers=f.farmers, knights=f.knights,
                  distance=f.distance, walk_distance=f.walk_distance,
                  run_distance=f.run_distance,
                  horse_exhaustion=f.horse_exhaustion,
@@ -2088,6 +2111,9 @@ class Bot(object):
             low = p.base.lower()
             if 'castle0' in low:
                 self.fit.castle_base_buys = self.fit.castle_base_buys + 1
+                if st.wrk < 1:
+                    self.fit.castle_base_buys_without_workers = (
+                        self.fit.castle_base_buys_without_workers + 1)
             elif 'castle' in low:
                 self.fit.castle_upgrade_buys = self.fit.castle_upgrade_buys + 1
                 if st.wrk >= 1:
@@ -2315,6 +2341,7 @@ def main() -> None:
               skip_tutorial=skip_tutorial, generation=generation, speed=speed)
     bot._last_live_write = 0.0
     paused = False
+    pause_started = None
     t_end = (time.time() + episode) if episode else None
     bot.episode_end = t_end
     try:
@@ -2327,7 +2354,24 @@ def main() -> None:
                 if hk == 'pause':
                     paused = not paused
                     inp.release()
-                    log('ПАУЗА' if paused else 'ПРОДОЛЖАЮ')
+                    if paused:
+                        pause_started = time.time()
+                        log('ПАУЗА')
+                    else:
+                        extra = 0.0
+                        if pause_started is not None:
+                            extra = time.time() - pause_started
+                            pause_started = None
+                            if t_end:
+                                t_end += extra
+                                bot.episode_end = t_end
+                        # пауза не должна превращаться в «бездействие»
+                        try:
+                            bot.fit.last_move_time = time.time()
+                            bot.fit.last_interaction = time.time()
+                        except Exception:
+                            pass
+                        log('ПРОДОЛЖАЮ (+%.1f с к эпизоду)' % extra)
                 if paused:
                     # записываем live-результат с флагом паузы, чтобы evo.py не считал время паузы в таймаут
                     if live_result_path and (not hasattr(bot, '_last_live_write') or time.time() - bot._last_live_write > 2.0):
