@@ -297,14 +297,15 @@ def card_color(colors):
 #  эталон структуры - MSI Center: крупный заголовок секции, единые
 #  высоты контролов, ровные отступы)
 H_HEADER = 48        # высота шапки окна (кнопки шапки = во всю высоту)
-H_BTN = 40           # высота ВСЕХ содержательных кнопок
-H_INPUT = 40         # высота полей ввода (= кнопке - строкы выровнены)
+H_BTN = 36           # высота ВСЕХ содержательных кнопок (компактно)
+H_INPUT = 36         # высота полей ввода (= кнопке - строки выровнены)
 FS_TITLE = 18        # название окна
 FS_SECTION = 15      # заголовок раздела (Параметры, Детали, Папка игры)
 FS_BODY = 13         # подписи, переключатели, кнопки, статус-кнопки
 FS_CAPTION = 11      # комментарии под полями, статусы
 FS_VALUE = 16        # значение в поле (моно, вправо)
 FS_MONO = 13         # моно-тела: результат, консоль, панель деталей
+FS_BIG = 18          # финальное время — чуть крупнее основного текста
 PAD_CARD = 16        # внутренний отступ карточек/разделов
 GAP_SECTION = 16     # вертикальный ритм между блоками
 
@@ -314,6 +315,9 @@ GAP_SECTION = 16     # вертикальный ритм между блокам
 # приложение не падает). Иконки заменяют текстовые кнопки, как просил
 # пользователь («сделай значки, в стиле тех что уже имеются»).
 ICON_SEARCH = '\uE721'
+ICON_FOLDER = '\uE8B7'
+ICON_PATCH = '\uE90F'
+ICON_UNPATCH = '\uE7A7'
 ICON_PREV = '\uE76B'
 ICON_NEXT = '\uE76C'
 ICON_CLEAR = '\uE74D'
@@ -1526,7 +1530,9 @@ class App:
         self.process_running = False
         self.settings_dialog = None
         self._maximized = False
-        self._normal_geometry = '1000x700'
+        # Сохраняем позицию/размер, применённые при старте (2-й монитор),
+        # а не сбрасываем в 1000x700 — иначе окно уезжает на основной.
+        self._normal_geometry = self.root.geometry() or '1000x700'
         self.detail_panel = None
         self.console_panel = None
 
@@ -1812,10 +1818,10 @@ class App:
         """Карточка «Папка игры»: подпись, путь + кнопки, бейдж патча."""
         box = ctk.CTkFrame(self.params_frame, corner_radius=8,
                            fg_color=card_color(c))
-        box.pack(fill=tk.X, padx=PAD_CARD, pady=(0, GAP_SECTION))
+        box.pack(fill=tk.X, padx=PAD_CARD, pady=(0, 8))
 
         inner = ctk.CTkFrame(box, fg_color='transparent', corner_radius=0)
-        inner.pack(fill=tk.X, padx=PAD_CARD, pady=PAD_CARD)
+        inner.pack(fill=tk.X, padx=12, pady=10)
 
         ctk.CTkLabel(inner, text=t('game_dir_title'), font=F(FS_SECTION, 'bold'),
                      text_color=c['fg'], anchor='w').pack(fill=tk.X)
@@ -1823,56 +1829,80 @@ class App:
         path = gamepath.game_dir() or gamepath.autodetect_game_dir()
         self.game_dir_var = tk.StringVar(value=path)
         row = ctk.CTkFrame(inner, fg_color='transparent', corner_radius=0)
-        row.pack(fill=tk.X, pady=(8, 0))
+        row.pack(fill=tk.X, pady=(6, 0))
         ent = ctk.CTkEntry(row, textvariable=self.game_dir_var, height=H_INPUT,
                            font=F(FS_BODY), corner_radius=4)
         ent.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
-        def _mk(label, cmd):
-            b = ctk.CTkButton(row, text=label, command=cmd, height=H_BTN,
-                              width=140, corner_radius=4, font=F(FS_BODY),
-                              fg_color='transparent', border_width=1,
-                              border_color=c['border'], text_color=c['fg'],
-                              hover_color=c['btn_hover'])
-            b.pack(side=tk.LEFT, padx=(0, 8))
-            return b
+        # Кнопки-значки в одной строке с путём: папка, автопоиск и
+        # патч/откат (одна кнопка, значок зависит от состояния патча).
+        icon_button(row, ICON_FOLDER, self._browse_game_dir, c,
+                    tooltip=t('game_dir_browse')).pack(
+            side=tk.LEFT, padx=(0, 6))
+        icon_button(row, ICON_SEARCH, self._autodetect_game_dir, c,
+                    tooltip=t('game_dir_autodetect')).pack(
+            side=tk.LEFT, padx=(0, 6))
+        self.patch_btn = icon_button(row, ICON_PATCH, self._on_patch_click, c)
+        self.patch_btn.pack(side=tk.LEFT)
+        self.patch_tooltip = Tooltip(self.patch_btn, t('patch_apply'), c)
 
-        _mk(t('game_dir_browse'), self._browse_game_dir)
-        _mk(t('game_dir_autodetect'), self._autodetect_game_dir)
-
-        self.game_dir_status = ctk.CTkLabel(inner, text='', font=F(FS_CAPTION),
-                                            text_color='#ff5555', anchor='w')
-        self.game_dir_status.pack(fill=tk.X, pady=(8, 0))
-        self._refresh_game_dir_status()
-
-        # Статус патча + кнопка отката (Фаза 7): бейдж слева, кнопка справа
+        # Статус патча — сразу под строкой пути (ближе к ней).
         prow = ctk.CTkFrame(inner, fg_color='transparent', corner_radius=0)
-        prow.pack(fill=tk.X, pady=(8, 0))
+        prow.pack(fill=tk.X, pady=(3, 0))
         self.patch_status = ctk.CTkLabel(prow, text='', font=F(FS_CAPTION),
                                          text_color='#888888', anchor='w')
         self.patch_status.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ctk.CTkButton(prow, text=t('patch_unpatch'), command=self._unpatch_game,
-                      height=H_BTN, width=160, corner_radius=4, font=F(FS_BODY),
-                      fg_color='transparent', border_width=1,
-                      border_color=c['border'], text_color=c['fg'],
-                      hover_color=c['btn_hover']).pack(side=tk.RIGHT)
+
+        # Статус папки — только при ошибке: пустая строка раньше отодвигала
+        # «патч применён» и раздувала карточку.
+        self.game_dir_status = ctk.CTkLabel(inner, text='', font=F(FS_CAPTION),
+                                            text_color='#ff5555', anchor='w')
+        self._refresh_game_dir_status()
         self._refresh_patch_status()
 
     def _refresh_patch_status(self):
-        """Показать состояние патча рядом с папкой игры."""
+        """Показать состояние патча и переключить значок патч/откат."""
         if not hasattr(self, 'patch_status'):
             return
         try:
             code, _msg = patcher.status(
                 (self.game_dir_var.get() or '').strip() or None)
         except Exception as e:
-            self.patch_status.configure(text=str(e)[:80], text_color='#ff5555')
-            return
-        label = {'ok': t('patch_state_ok'),
-                 'not_patched': t('patch_state_no')}.get(
-                     code, t('patch_state_unknown'))
-        color = {'ok': '#4CAF50', 'not_patched': '#ff5555'}.get(code, '#888888')
+            code = 'unknown'
+            label = str(e)[:80]
+            color = '#ff5555'
+        else:
+            label = {'ok': t('patch_state_ok'),
+                     'not_patched': t('patch_state_no')}.get(
+                         code, t('patch_state_unknown'))
+            color = {'ok': '#4CAF50',
+                     'not_patched': '#ff5555'}.get(code, '#888888')
         self.patch_status.configure(text=label, text_color=color)
+
+        if hasattr(self, 'patch_btn'):
+            patched = (code == 'ok')
+            self.patch_btn.configure(
+                text=ICON_UNPATCH if patched else ICON_PATCH)
+            if hasattr(self, 'patch_tooltip'):
+                self.patch_tooltip.text = (
+                    t('patch_unpatch') if patched else t('patch_apply'))
+
+    def _on_patch_click(self):
+        """Одна кнопка: пропатчить, если не пропатчено, иначе откатить."""
+        try:
+            code, _msg = patcher.status(
+                (self.game_dir_var.get() or '').strip() or None)
+        except Exception:
+            code = 'unknown'
+        if code == 'ok':
+            self._unpatch_game()
+        else:
+            self._patch_game()
+
+    def _patch_game(self):
+        """Ручной запуск патча из строки пути."""
+        self._patch_prompted = False
+        self._ensure_patched(t('patch_needed'), check_dir=True)
 
     def _unpatch_game(self):
         """Откатить патч из бэкапа (с подтверждением)."""
@@ -1910,8 +1940,13 @@ class App:
         exe = os.path.join(p, 'Kingdom.exe') if p else ''
         if p and os.path.isfile(exe):
             self.game_dir_status.configure(text='', text_color='#888888')
+            if self.game_dir_status.winfo_manager():
+                self.game_dir_status.pack_forget()
             return True
-        self.game_dir_status.configure(text=t('game_dir_missing'), text_color='#ff5555')
+        self.game_dir_status.configure(text=t('game_dir_missing'),
+                                       text_color='#ff5555')
+        if not self.game_dir_status.winfo_manager():
+            self.game_dir_status.pack(fill=tk.X, pady=(2, 0))
         return False
 
     def _browse_game_dir(self):
@@ -1953,7 +1988,7 @@ class App:
         c = self.colors
         self.main_frame = ctk.CTkFrame(self.root, fg_color='transparent',
                                        corner_radius=0)
-        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=14, pady=(6, 14))
+        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(4, 8))
         # Сетка вместо pack: pack_propagate у CTk не работает (проверено) -
         # ширина колонок задаётся только сеткой: параметры растут, панель
         # деталей держит минимум (иначе она схлопывалась в «сливку»)
@@ -1970,7 +2005,7 @@ class App:
         ctk.CTkLabel(self.params_frame, text=t('params_title'),
                      font=F(FS_SECTION, 'bold'),
                      text_color=c['fg'], anchor='w').pack(
-            fill=tk.X, padx=PAD_CARD, pady=(0, GAP_SECTION))
+            fill=tk.X, padx=PAD_CARD, pady=(0, 8))
 
         # --- Папка игры -------------------------------------------------
         # Раньше её писал только C#-лаунчер (удалён в Фазе 0), а Python-версия
@@ -2002,7 +2037,7 @@ class App:
             group = ctk.CTkFrame(grid, fg_color='transparent', corner_radius=0)
             group.grid(row=r, column=col, sticky='nsew',
                        padx=(0, 8) if col == 0 else (8, 0),
-                       pady=(0, GAP_SECTION))
+                       pady=(0, 8))
             # подпись - над СВОИМ полем
             ctk.CTkLabel(group, text=label, font=F(FS_BODY), text_color=c['fg'],
                          anchor='w').pack(fill='x')
@@ -2038,7 +2073,7 @@ class App:
             # комментарий - под СВОИМ полем; сюда же падает текст ошибки
             desc = ctk.CTkLabel(group, text=t('desc_' + key), font=F(11),
                                 text_color='#9a9a9a', anchor='w',
-                                justify='left', wraplength=220)
+                                justify='left', wraplength=260)
             desc.pack(fill='x', pady=(3, 0))
             self._desc_labels[key] = desc
             hint = ctk.CTkLabel(group, text='', font=F(11),
@@ -2054,7 +2089,7 @@ class App:
             group = ctk.CTkFrame(grid, fg_color='transparent', corner_radius=0)
             group.grid(row=row, column=col, sticky='nsew',
                        padx=(0, 8) if col == 0 else (8, 0),
-                       pady=(0, GAP_SECTION))
+                       pady=(0, 8))
             ctk.CTkLabel(group, text=label, font=F(FS_BODY),
                          text_color=c['fg'], anchor='w').pack(fill='x')
             var = tk.StringVar(value=current)
@@ -2069,7 +2104,7 @@ class App:
             menu.pack(fill='x', pady=(3, 0))
             desc_lbl = ctk.CTkLabel(group, text=desc, font=F(11),
                                     text_color='#9a9a9a', anchor='w',
-                                    justify='left', wraplength=220)
+                                    justify='left', wraplength=260)
             desc_lbl.pack(fill='x', pady=(3, 0))
             self._desc_labels[key] = desc_lbl
             hint = ctk.CTkLabel(group, text='', font=F(11),
@@ -2114,7 +2149,7 @@ class App:
         # --- Действия: первичная / danger / ghost ---------------------------
         actions = ctk.CTkFrame(self.params_frame, fg_color='transparent',
                                corner_radius=0)
-        actions.pack(fill=tk.X, padx=PAD_CARD, pady=(GAP_SECTION, 0))
+        actions.pack(fill=tk.X, padx=PAD_CARD, pady=(8, 0))
         actions.columnconfigure(0, weight=3)
         actions.columnconfigure(1, weight=2)
         actions.columnconfigure(2, weight=2)
@@ -2158,12 +2193,7 @@ class App:
                                          font=F(FS_VALUE, 'bold', mono=True),
                                          text_color=c['fg'], anchor='w',
                                          justify='left')
-        self.result_label.pack(fill=tk.X, padx=PAD_CARD, pady=(GAP_SECTION, 0))
-        self.result_detail = ctk.CTkLabel(self.params_frame, text='',
-                                          font=F(FS_MONO, mono=True),
-                                          text_color='#9a9a9a', anchor='w',
-                                          justify='left')
-        self.result_detail.pack(fill=tk.X, padx=PAD_CARD)
+        # Показываем только при ошибке, чтобы внизу не оставалось пустой строки.
 
         # Валидация при запуске
         self.root.after(100, self._validate_pop)
@@ -2192,20 +2222,16 @@ class App:
         try:
             import re as _re
             self.root.update_idletasks()
-            # Единицы Tk (= единицы geometry)! Win32-метрики в unaware-
-            # процессе дают другую систему координат и окно вылезало за
-            # экран (жалоба: «не влезло»). Экран Tk минус панель задач.
-            work_w = self.root.winfo_screenwidth() - 8
-            work_h = self.root.winfo_screenheight() - 80
+            # winfo_screen* отдаёт физические пиксели, geometry — логические
+            # единицы Tk (при масштабе 125%: geometry 1072 -> winfo 1340).
+            # Рабочую область тоже переводим в логические, иначе окно
+            # получается выше экрана и низ обрезается (жалоба «не всё влезло»).
+            scale = win_ui_scale()
+            work_w = int((self.root.winfo_screenwidth() - 8) / scale)
+            work_h = int((self.root.winfo_screenheight() - 80) / scale)
             req_w = self.main_frame.winfo_reqwidth() + 32
             req_h = (self.title_bar.winfo_reqheight()
                      + self.main_frame.winfo_reqheight() + 26)
-            # Единицы: winfo отдаёт физические пиксели (шрифты уже
-            # масштабированы CTk), geometry - логические единицы Tk
-            # (проверено: geometry1072 -> winfo1340 при масштабе1.25).
-            # Приводим req к логическим, иначе окно оказывается выше
-            # контента на ~20% (пустой низ) или ниже (обрезка).
-            scale = win_ui_scale()
             content_h = int(req_h / scale) + 8
             geo_str = self.root.geometry()
             m = _re.match(r'(\d+)x(\d+)', geo_str)
@@ -2279,7 +2305,7 @@ class App:
     def _build_detail_content(self, parent, c):
         detail_scroll = ttk.Scrollbar(parent, orient=tk.VERTICAL)
         self.detail_text = tk.Text(parent, font=FT(FS_MONO), wrap=tk.WORD,
-                                  width=56,
+                                  width=56, height=1,
                                   bg=c.get('panel_bg', c['entry_bg']), fg=c['fg'],
                                   insertbackground=c['fg'],
                                   selectbackground='#264f78',
@@ -2289,6 +2315,13 @@ class App:
         detail_scroll.configure(command=self.detail_text.yview)
         detail_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self.detail_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        # Крупное финальное время + подпись к нему.
+        _big = FT(FS_BIG)
+        self.detail_text.tag_configure(
+            'detail_label', font=FT(FS_CAPTION), foreground='#9a9a9a')
+        self.detail_text.tag_configure(
+            'detail_big', font=(_big[0], _big[1], 'bold'),
+            foreground=c['fg'])
 
     def _toggle_console_panel(self):
         if self.console_window is not None and self.console_window.window.winfo_exists():
@@ -2478,37 +2511,54 @@ class App:
         self.root.after(2000, self._schedule_detail_update)
 
 
+    def _set_result(self, text):
+        """Показать/скрыть строку ошибки внизу параметров.
+
+        Пустая строка больше не занимает место: окно подгоняется по
+        фактическому содержимому (жалоба «пустое пространство»).
+        """
+        if not hasattr(self, 'result_label'):
+            return
+        was = bool(self.result_label.winfo_manager())
+        self.result_label.configure(text=text)
+        now = bool(text)
+        if now and not was:
+            self.result_label.pack(fill=tk.X, padx=PAD_CARD, pady=(8, 0))
+        elif was and not now:
+            self.result_label.pack_forget()
+        if now != was:
+            self.root.after(50, self._fit_window)
+
     def calculate(self):
         cfg = self.get_params()
         if cfg is None:
-            if hasattr(self, 'result_label'):
-                self.result_label.configure(text=t('err_params_check'))
+            self._set_result(t('err_params_check'))
             return
         total, hours, minutes, details = calc_time(cfg)
 
-        if hasattr(self, 'result_label') and self.result_label.winfo_exists():
-            self.result_label.configure(text=t('total_time', sec='%.0f' % total,
-                                           h='%.1f' % hours, m='%.0f' % minutes))
-        if hasattr(self, 'result_detail') and self.result_detail.winfo_exists():
-            self.result_detail.configure(
-                text=t('total_bots', n=cfg['pop'] * cfg['rounds']))
+        # Время и количество поколений/ботов — только в «Деталях»;
+        # в основном окне строка остаётся только для ошибок.
+        self._set_result('')
 
         # Обновляем обе панели деталей
         for dt in [self.detail_text, getattr(self, 'detail_right_text', None)]:
             if dt is None:
                 continue
             dt.delete('1.0', tk.END)
-            dt.insert(tk.END, t('sec_params') + '\n')
-            dt.insert(tk.END, '  pop: %d\n' % cfg['pop'])
-            dt.insert(tk.END, '  rounds: %d\n' % cfg['rounds'])
-            dt.insert(tk.END, t('sec_episode', v='%.1f' % cfg['episode']) + '\n')
-            dt.insert(tk.END, t('sec_increment', v='%.1f' % cfg['episode_increment']) + '\n')
-            dt.insert(tk.END, '  speed: %.1fx\n' % cfg['speed'])
-            dt.insert(tk.END, '  restart: %s\n' % cfg['restart'])
-            dt.insert(tk.END, '  top-percent: %.4f\n' % cfg['top_percent'])
-            dt.insert(tk.END, '  optimizer: %s · evals/genome: %d\n' %
-                      (cfg.get('optimizer', 'cem'), cfg.get('eval_repeats', 2)))
-            dt.insert(tk.END, '\n' + t('sec_rounds') + '\n')
+            # Параметры уже видны слева — здесь только итоговое время
+            # крупно и расчёт по раундам.
+            total_min = int(round(total / 60.0))
+            if total_min >= 60:
+                big = t('detail_time_hm', h='%d' % (total_min // 60),
+                        m='%02d' % (total_min % 60))
+            else:
+                big = t('detail_time_m', m='%d' % total_min)
+            dt.insert(tk.END, t('detail_total_label') + '\n', 'detail_label')
+            dt.insert(tk.END, big + '\n', 'detail_big')
+            dt.insert(tk.END, t('detail_rounds_bots',
+                                n=cfg['rounds'],
+                                bots=cfg['pop'] * cfg['rounds']) + '\n\n')
+            dt.insert(tk.END, t('sec_rounds') + '\n')
             for rnd, ep, rt in details:
                 dt.insert(tk.END, t('round_line', n='%2d' % rnd, ep='%.0f' % ep,
                                     rt='%.0f' % rt, min='%.1f' % (rt / 60.0)) + '\n')
@@ -2516,16 +2566,14 @@ class App:
     def start_training(self):
         cfg = self.get_params()
         if cfg is None:
-            if hasattr(self, 'result_label'):
-                self.result_label.configure(text=t('err_params'))
+            self._set_result(t('err_params'))
             return
         # Папка игры: сохраняем и проверяем ДО запуска. Раньше launчер её не
         # проверял вообще - evo.py падал посреди прогона с RuntimeError.
         self._save_game_dir()
         if not self._refresh_game_dir_status():
             msg = t('game_dir_missing')
-            if hasattr(self, 'result_label'):
-                self.result_label.configure(text=msg)
+            self._set_result(msg)
             if self.console_window is None or not self.console_window.window.winfo_exists():
                 self.console_window = ConsoleWindow(self.root, self.colors,
                                                     detached=True, content='both')
