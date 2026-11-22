@@ -1821,11 +1821,8 @@ class Bot(object):
         if abs(t.x - st.px) > 120:
             return None
         # отслеживаем: рубка с рабочими или без
-        if hasattr(self, 'fit'):
-            if st.wrk >= 1:
-                self.fit.tree_chops_with_workers = self.fit.tree_chops_with_workers + 1
-            else:
-                self.fit.tree_chops_without_workers = self.fit.tree_chops_without_workers + 1
+        # (счётчик увеличивается ТОЛЬКО при успешной оплате — см. finish_pay;
+        #  раньше он рос на каждом выборе цели и давал очки за попытки)
         return ('pay', t)
 
     # =========================================================== исполнение
@@ -2111,6 +2108,13 @@ class Bot(object):
             # отслеживаем начало строительства/рубки
             if 'Tree' in p.base:
                 self.fit.trees_marked = self.fit.trees_marked + 1
+                # успешная оплата дерева; рабочие рубят его быстрее
+                if st.wrk >= 1:
+                    self.fit.tree_chops_with_workers = (
+                        self.fit.tree_chops_with_workers + 1)
+                else:
+                    self.fit.tree_chops_without_workers = (
+                        self.fit.tree_chops_without_workers + 1)
             elif p.type == 'PayableUpgrade':
                 self.fit.buildings_started = self.fit.buildings_started + 1
             low = p.base.lower()

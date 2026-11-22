@@ -418,6 +418,9 @@ def run_episode(genome, episode, restart, generation=1, speed=3.0, log_file=None
                 with open(p, 'r', encoding='utf-8') as f:
                     m = json.load(f)
                 m['score'] = score_episode(m)
+                # Для отбора: пауза искажает эпизод (игра идёт, бот нет).
+                m['pause_time'] = pause_time
+                m['wall_seconds'] = time.time() - t0
                 return m
             except Exception:
                 pass
@@ -843,6 +846,14 @@ def main():
                               flush=True)
                         if retries < 3:
                             continue
+                    # Пауза во время эпизода делает его несравнимым:
+                    # игра продолжается, бот стоит, survival-бонус растёт.
+                    if m.get('pause_time', 0) > 2.0:
+                        retries += 1
+                        print('    !! эпизод с паузой %.0f с - не засчитываем'
+                              % m.get('pause_time', 0), flush=True)
+                        if retries < 3:
+                            continue
                     break
                 if m is None:
                     m = {'score': -1e9, 'coins_in': 0, 'coins_spent': 0,
@@ -924,9 +935,12 @@ def main():
                 'castle_base_buys_without_workers': r.get('castle_base_buys_without_workers', 0),
                 'castle_upgrade_buys_with_workers': r.get('castle_upgrade_buys_with_workers', 0),
                 'trees_chopped': r.get('trees_chopped', 0),
+                'trees_marked': r.get('trees_marked', 0),
                 'tree_chops_with_workers': r.get('tree_chops_with_workers', 0),
                 'unpicked_coins': r.get('unpicked_coins', 0),
                 'inactivity_penalty': r.get('inactivity_penalty', 0),
+                'pause_time': r.get('pause_time', 0),
+                'wall_seconds': r.get('wall_seconds', 0),
                 'failed_coin': r.get('failed_coin', 0),
                 'failed_buy': r.get('failed_buy', 0),
                 'failed_recruit': r.get('failed_recruit', 0),

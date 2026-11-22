@@ -153,15 +153,15 @@ defense_day_bonus = 0.05
 # Отметка дерева для рубки (tree_mark)
 # Бот оплатил дерево (стоит 1 монету).
 # 0 = без награды за отметку (только за срубленное).
-tree_mark = 1.0
+tree_mark = 2.0
 
 # Срубленное дерево (tree_chop)
 # Рабочий срубил дерево. Дерево дало 1-2 монеты.
 # Большой бонус - дерево срублено.
-tree_chop = 2.0
+tree_chop = 8.0
 
 # Попытка рубки без рабочих (tree_chop_no_workers)
-tree_chop_no_workers = -1.0
+tree_chop_no_workers = -2.0
 
 # Полный расход монет без окупаемости (full_spend_penalty)
 full_spend_penalty = -5.0
@@ -369,7 +369,7 @@ farmer_bonus = 15.0
 knight_bonus = 25.0
 tool_bonus = 5.0
 building_with_workers = 15.0
-tree_chop_workers = 5.0
+tree_chop_workers = 0.0
 castle_upgrade_workers = 40.0
 castle_base_no_workers = -25.0
 failed_buy_penalty = -4.0
