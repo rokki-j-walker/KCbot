@@ -148,6 +148,8 @@ DEFAULTS = {
     'top_percent': 0.1,
     'restart': True,
     'launch_after': False,
+    'optimizer': 'cem',      # CEM/ES вместо GA (2026-11-22)
+    'eval_repeats': 2,       # 2 эпизода на геном = меньше шума
     'theme': 'dark',
     'console_content': 'both',
     'show_console': True,
@@ -808,7 +810,9 @@ def build_command(cfg):
            '--episode', str(cfg['episode']),
            '--episode-increment', str(cfg['episode_increment']),
            '--speed', str(cfg['speed']),
-           '--top-percent', str(cfg['top_percent'])]
+           '--top-percent', str(cfg['top_percent']),
+           '--optimizer', str(cfg.get('optimizer', 'cem')),
+           '--eval-repeats', str(int(cfg.get('eval_repeats', 2)))]
     cmd.append('--restart' if cfg.get('restart', True) else '--no-restart')
     return cmd
 
@@ -819,13 +823,15 @@ def calc_time(params):
     episode = params['episode']
     increment = params['episode_increment']
     restart_overhead = RESTART_OVERHEAD if params['restart'] else 0.0
+    repeats = max(1, int(params.get('eval_repeats',
+                                     DEFAULTS.get('eval_repeats', 1))))
 
     total_seconds = 0.0
     details = []
     for rnd in range(1, rounds + 1):
         ep = episode + increment * rnd
         per_bot = ep + restart_overhead
-        round_time = pop * per_bot
+        round_time = pop * per_bot * repeats
         total_seconds += round_time
         details.append((rnd, ep, round_time))
 
@@ -1649,6 +1655,17 @@ class App:
             if fv < min_val or fv > max_val:
                 self.config[key] = min(max(fv, min_val), max_val)
                 changed = True
+        if self.config.get('optimizer') not in ('cem', 'ga'):
+            self.config['optimizer'] = DEFAULTS.get('optimizer', 'cem')
+            changed = True
+        try:
+            rep = int(self.config.get('eval_repeats', 2))
+        except (TypeError, ValueError):
+            rep = 2
+        rep = min(3, max(1, rep))
+        if self.config.get('eval_repeats') != rep:
+            self.config['eval_repeats'] = rep
+            changed = True
         if changed:
             try:
                 save_config(self.config)
@@ -2032,6 +2049,52 @@ class App:
         # Для speed событие смены уходит из CTkOptionMenu(command=...)
         # выше по тексту; блок старых привязок FocusOut/Return удалён.
 
+        # --- Баланс качество/время: алгоритм и число оценок ------------
+        def _choice_group(row, col, key, label, values, current, desc):
+            group = ctk.CTkFrame(grid, fg_color='transparent', corner_radius=0)
+            group.grid(row=row, column=col, sticky='nsew',
+                       padx=(0, 8) if col == 0 else (8, 0),
+                       pady=(0, GAP_SECTION))
+            ctk.CTkLabel(group, text=label, font=F(FS_BODY),
+                         text_color=c['fg'], anchor='w').pack(fill='x')
+            var = tk.StringVar(value=current)
+            menu = FluentOptionMenu(
+                group, values=values, variable=var,
+                command=lambda _v: self.schedule_calculate(),
+                height=H_INPUT, font=F(FS_BODY), corner_radius=4,
+                fg_color=c['entry_bg'], text_color=c['fg'],
+                button_color=c['btn_hover'], button_hover_color=c['accent'],
+                dropdown_fg_color=c['entry_bg'], dropdown_text_color=c['fg'],
+                dropdown_hover_color=c['btn_hover'])
+            menu.pack(fill='x', pady=(3, 0))
+            desc_lbl = ctk.CTkLabel(group, text=desc, font=F(11),
+                                    text_color='#9a9a9a', anchor='w',
+                                    justify='left', wraplength=220)
+            desc_lbl.pack(fill='x', pady=(3, 0))
+            self._desc_labels[key] = desc_lbl
+            hint = ctk.CTkLabel(group, text='', font=F(11),
+                                text_color='#ff5555', anchor='w')
+            hint.pack(fill='x')
+            self._hint_labels[key] = hint
+            return var
+
+        opt_labels = [t('optimizer_cem'), t('optimizer_ga')]
+        opt_cur = (opt_labels[1] if self.config.get('optimizer', 'cem') == 'ga'
+                   else opt_labels[0])
+        self.optimizer_var = _choice_group(
+            3, 0, 'optimizer', t('param_optimizer'), opt_labels, opt_cur,
+            t('desc_optimizer'))
+
+        eval_labels = [t('eval_1'), t('eval_2'), t('eval_3')]
+        try:
+            eval_cur = int(self.config.get('eval_repeats', 2))
+        except (TypeError, ValueError):
+            eval_cur = 2
+        eval_cur = min(3, max(1, eval_cur))
+        self.eval_repeats_var = _choice_group(
+            3, 1, 'eval_repeats', t('param_eval_repeats'), eval_labels,
+            eval_labels[eval_cur - 1], t('desc_eval_repeats'))
+
         # --- Переключатели (Fluent switch) ---------------------------------
         sw_row = ctk.CTkFrame(self.params_frame, fg_color='transparent',
                               corner_radius=0)
@@ -2078,6 +2141,11 @@ class App:
                 if key in rec:
                     e.delete(0, tk.END)
                     e.insert(0, str(rec[key]))
+            try:
+                self.optimizer_var.set(t('optimizer_cem'))
+                self.eval_repeats_var.set(t('eval_2'))
+            except Exception:
+                pass
             self._on_param_change()
         ctk.CTkButton(actions, text=t('btn_default'), command=_reset_defaults,
                       height=H_BTN, corner_radius=4, font=F(FS_BODY),
@@ -2336,6 +2404,12 @@ class App:
             return None
         cfg['restart'] = self.restart_var.get()
         cfg['launch_after'] = self.launch_after_var.get()
+        opt_label = self.optimizer_var.get()
+        cfg['optimizer'] = ('ga' if opt_label == t('optimizer_ga')
+                            else 'cem')
+        eval_label = self.eval_repeats_var.get()
+        cfg['eval_repeats'] = {t('eval_1'): 1, t('eval_2'): 2,
+                               t('eval_3'): 3}.get(eval_label, 2)
         return cfg
 
     def _on_param_change(self):
@@ -2432,6 +2506,8 @@ class App:
             dt.insert(tk.END, '  speed: %.1fx\n' % cfg['speed'])
             dt.insert(tk.END, '  restart: %s\n' % cfg['restart'])
             dt.insert(tk.END, '  top-percent: %.4f\n' % cfg['top_percent'])
+            dt.insert(tk.END, '  optimizer: %s · evals/genome: %d\n' %
+                      (cfg.get('optimizer', 'cem'), cfg.get('eval_repeats', 2)))
             dt.insert(tk.END, '\n' + t('sec_rounds') + '\n')
             for rnd, ep, rt in details:
                 dt.insert(tk.END, t('round_line', n='%2d' % rnd, ep='%.0f' % ep,

@@ -429,6 +429,162 @@ def mutation_strength(rnd, args):
     return max(args.mut_min, args.mut_strength * (args.mut_decay ** (rnd - 1)))
 
 
+# ---------------------------------------------------------------- CEM / Pareto
+def _is_num(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _genome_bounds(key, value):
+    """Границы ключа генома (те же, что в clamp_genome)."""
+    if key in GENOME_BOUNDS:
+        return GENOME_BOUNDS[key]
+    if key.startswith('w_'):
+        return 0, None
+    return None, None
+
+
+def _sigma_for(key, value, sigma0):
+    lo, hi = _genome_bounds(key, value)
+    if lo is not None and hi is not None:
+        span = float(hi - lo)
+    else:
+        span = max(abs(float(value)) * 2.0, 1.0)
+    sigma = max(0.02, span * max(0.02, sigma0))
+    if isinstance(value, int):
+        sigma = max(0.5, sigma)          # целые не должны «замерзать»
+    return sigma
+
+
+class CEMOptimizer(object):
+    """Cross-Entropy Method для непрерывного генома.
+
+    Вместо mutation/crossover: выборка из N(mean, sigma^2), отбор элиты,
+    пересчёт mean/sigma по элите. Для целых генов — округление, для
+    ограниченных — clamp_genome. Это устойчивее GA на ~31 параметре.
+    """
+
+    def __init__(self, mean, sigma0=0.2):
+        self.mean = {k: v for k, v in mean.items() if _is_num(v)}
+        self.sigma = {k: _sigma_for(k, v, sigma0)
+                      for k, v in self.mean.items()}
+
+    def sample(self, n):
+        out = []
+        for _ in range(max(0, n)):
+            g = dict(self.mean)
+            for k, v in self.mean.items():
+                x = v + random.gauss(0.0, self.sigma[k])
+                if isinstance(v, int):
+                    x = int(round(x))
+                g[k] = x
+            out.append(clamp_genome(g))
+        return out
+
+    def update(self, ranked, elite_frac=0.5):
+        """ranked: список dict с ключом 'genome' (лучшие первыми)."""
+        if not ranked:
+            return
+        n = max(2, int(round(len(ranked) * max(0.05, elite_frac))))
+        n = min(n, len(ranked))
+        elite = ranked[:n]
+        weights = [float(n - i) for i in range(n)]
+        wsum = sum(weights)
+        for k, old in self.mean.items():
+            vals = []
+            for r in elite:
+                try:
+                    vals.append(float(r['genome'][k]))
+                except (KeyError, TypeError, ValueError):
+                    vals.append(float(old))
+            mean = sum(w * v for w, v in zip(weights, vals)) / wsum
+            var = sum(w * (v - mean) ** 2
+                      for w, v in zip(weights, vals)) / wsum
+            sigma = max(_sigma_for(k, mean, 0.02), var ** 0.5)
+            if isinstance(old, int):
+                mean = int(round(mean))
+            self.mean[k] = mean
+            self.sigma[k] = sigma
+        self.mean = clamp_genome(self.mean)
+
+
+def economy_value(m):
+    """Скаляр «качества экономики» для Pareto-отбора (не для очков)."""
+    return (m.get('workers', 0) * 4.0
+            + m.get('archers', 0) * 3.0
+            + m.get('farmers', 0) * 3.0
+            + m.get('knights', 0) * 3.0
+            + m.get('tool_buys', 0) * 2.0
+            + m.get('tree_chops_with_workers', 0) * 1.5
+            + m.get('buildings_with_workers', 0) * 2.0
+            + m.get('castle_upgrade_buys_with_workers', 0) * 4.0)
+
+
+def _dominates(a, b):
+    """Pareto-доминирование по (выживание, очки, экономика)."""
+    keys = ('survival', 'score', 'economy')
+    return (all(a.get(k, 0) >= b.get(k, 0) for k in keys)
+            and any(a.get(k, 0) > b.get(k, 0) for k in keys))
+
+
+def pareto_sort(items):
+    """Pareto: сначала ВСЕ выжившие, затем погибшие; внутри — по очкам/экономике.
+
+    Чистый Pareto допускал бота с высокой оценкой, но смертью, в первом
+    фронте. Для обучения это плохо: смерть должна быть жёстким минусом.
+    """
+    groups = [
+        [x for x in items if x.get('survival', 0) >= 1],
+        [x for x in items if x.get('survival', 0) < 1],
+    ]
+    ranked = []
+    front_no = 0
+    for group in groups:
+        rest = list(group)
+        while rest:
+            front = [x for x in rest
+                     if not any(_dominates(y, x) for y in rest if y is not x)]
+            if not front:                # защита от вырожденного сравнения
+                front = [rest[0]]
+            for x in front:
+                x['pareto_rank'] = front_no
+            front.sort(key=lambda x: x.get('score', 0), reverse=True)
+            ranked.extend(front)
+            used = {id(x) for x in front}
+            rest = [x for x in rest if id(x) not in used]
+            front_no += 1
+    return ranked
+
+
+def aggregate_evals(genome, evals):
+    """Свести несколько повторных эпизодов одного генома в одну запись."""
+    if not evals:
+        return {'score': -1e9, 'score_std': 0.0, 'evals': 0,
+                'survival': 0, 'economy': 0.0, 'genome': genome,
+                'deaths': 0, 'crown_lost': 0}
+    out = {}
+    keys = set()
+    for m in evals:
+        keys.update(m.keys())
+    for k in keys:
+        if k in ('genome', 'paused'):
+            continue
+        vals = [m.get(k) for m in evals if _is_num(m.get(k))]
+        if vals:
+            out[k] = sum(vals) / len(vals)
+    scores = [m.get('score', -1e9) for m in evals]
+    out['score'] = sum(scores) / len(scores)
+    mean = out['score']
+    out['score_std'] = (sum((s - mean) ** 2 for s in scores) / len(scores)) ** 0.5
+    out['evals'] = len(evals)
+    out['deaths'] = sum(m.get('deaths', 0) for m in evals)
+    out['crown_lost'] = sum(m.get('crown_lost', 0) for m in evals)
+    out['survival'] = 0 if (out['deaths'] or out['crown_lost']) else 1
+    out['economy'] = economy_value(out)
+    out['genome'] = genome
+    return out
+
+
+
 def main():
     kc_common.ensure_utf8_stdout()   # кириллица в пайпе = UTF-8, не cp1251
     ap = argparse.ArgumentParser()
@@ -451,6 +607,19 @@ def main():
                     help='множитель силы мутации за каждый раунд (0.9 = -10%% за раунд)')
     ap.add_argument('--mut-min', type=float, default=0.03,
                     help='минимальная сила мутации')
+    # Новый оптимизатор (2026-11-22): CEM устойчивее GA на ~31 параметре.
+    ap.add_argument('--optimizer', choices=('cem', 'ga'), default='cem',
+                    help='алгоритм поиска: cem (по умолчанию) или ga')
+    ap.add_argument('--eval-repeats', type=int, default=1,
+                    help='сколько эпизодов оценивать на геном (2 = меньше шума, x2 время)')
+    ap.add_argument('--pareto', dest='pareto', action='store_true', default=True,
+                    help='Pareto-отбор по выживанию/очкам/экономике (по умолчанию)')
+    ap.add_argument('--no-pareto', dest='pareto', action='store_false',
+                    help='сортировать только по очкам')
+    ap.add_argument('--cem-sigma', type=float, default=0.2,
+                    help='стартовая относительная ширина поиска CEM')
+    ap.add_argument('--elite-frac', type=float, default=0.5,
+                    help='доля элиты для CEM/Pareto (0.5 = половина популяции)')
     # D7: потолок 3x - на 4x и выше тайминги игры ломаются
     ap.add_argument('--speed', type=float, default=3.0,
                     help='скорость игры, максимум 3x (4x и выше ломает игру)')
@@ -476,6 +645,11 @@ def main():
     if not (0.0 < args.top_percent <= 1.0):
         raise SystemExit('!! --top-percent должен быть в (0, 1], получено: %s'
                          % args.top_percent)
+    if args.eval_repeats < 1:
+        args.eval_repeats = 1
+    args.eval_repeats = min(5, args.eval_repeats)
+    if not (0.0 < args.elite_frac <= 1.0):
+        args.elite_frac = 0.5
 
     global GAME_DIR
     GAME_DIR = (args.game_dir or '').strip().strip('"') \
@@ -582,12 +756,16 @@ def main():
         except Exception:
             history = []
 
-    print('=== эволюция: pop=%d rounds=%d episode=%.0f restart=%s ===' %
-          (args.pop, args.rounds, args.episode, args.restart))
+    print('=== эволюция: pop=%d rounds=%d episode=%.0f restart=%s '
+          'optimizer=%s evals=%d pareto=%s ===' %
+          (args.pop, args.rounds, args.episode, args.restart,
+           args.optimizer, args.eval_repeats, args.pareto))
 
     elite = dict(best)
     elite_hist = []
     prev_ranked = []
+    cem = CEMOptimizer(elite, args.cem_sigma) \
+        if args.optimizer == 'cem' else None
     for rnd in range(1, args.rounds + 1):
         if _f12_pressed():
             print('Остановка по F12')
@@ -597,29 +775,28 @@ def main():
         # формула: episode + episode_increment * поколение
         episode_len = args.episode + args.episode_increment * rnd
         s_now = mutation_strength(rnd, args)
-        print('\n--- раунд %d / %d  (время жизни: %.0f с, сила мутации: %.3f) ---' %
-              (rnd, args.rounds, episode_len, s_now))
-        # элитизм: лучший геном идёт в популяцию без изменений (и переигрывается снова)
-        pop = [dict(elite)]
-        if rnd == 1 or not prev_ranked:
-            while len(pop) < args.pop:
-                pop.append(mutate(elite, rate=0.2, strength=s_now))
+        print('\n--- раунд %d / %d  (время жизни: %.0f с, сила мутации: %.3f, оптимизатор: %s) ---' %
+              (rnd, args.rounds, episode_len, s_now, args.optimizer))
+        if cem is not None:
+            pop = [dict(elite)] + cem.sample(max(0, args.pop - 1))
         else:
-            tops = prev_ranked[:max(1, int(len(prev_ranked) * args.top_percent))]
-            n_cross = int((args.pop - 1) * args.crossover_rate)
-            for _ in range(n_cross):
-                pa, pb = random.choice(tops), random.choice(tops)
-                child = crossover(pa['genome'], pb['genome'])
-                pop.append(mutate(child, rate=0.2, strength=s_now))
-            while len(pop) < args.pop:
-                parent = random.choice(tops)
-                pop.append(mutate(parent['genome'], rate=0.2, strength=s_now))
+            # старая GA-ветка оставлена для A/B-сравнения
+            pop = [dict(elite)]
+            if rnd == 1 or not prev_ranked:
+                while len(pop) < args.pop:
+                    pop.append(mutate(elite, rate=0.2, strength=s_now))
+            else:
+                tops = prev_ranked[:max(1, int(len(prev_ranked) * args.top_percent))]
+                n_cross = int((args.pop - 1) * args.crossover_rate)
+                for _ in range(n_cross):
+                    pa, pb = random.choice(tops), random.choice(tops)
+                    child = crossover(pa['genome'], pb['genome'])
+                    pop.append(mutate(child, rate=0.2, strength=s_now))
+                while len(pop) < args.pop:
+                    parent = random.choice(tops)
+                    pop.append(mutate(parent['genome'], rate=0.2, strength=s_now))
         # подмешивание human геномов (вместо худших): заменяем последние N ботов
         if human_genomes:
-            # Никогда не выбрасываем элиту (pop[0]) и не опускаем популяцию
-            # ниже 1 бота: раньше при n_h >= pop срез pop[:args.pop - n_h]
-            # вырождался в пустой список/отрицательный слайс, и вся логика
-            # elite_res/elite_hist (results[0] = элита) ломалась.
             n_h = min(len(human_genomes), max(1, args.pop - 1))
             keep = max(1, args.pop - n_h)
             if len(pop) > keep:
@@ -627,7 +804,6 @@ def main():
             for hg in list(human_genomes)[:n_h]:
                 g = dict(hg) if rnd == 1 else mutate(hg, rate=0.1, strength=0.1)
                 pop.append(g)
-            # гарантируем размер популяции
             while len(pop) < args.pop:
                 pop.append(mutate(elite, rate=0.2, strength=s_now))
             pop = pop[:args.pop]
@@ -638,96 +814,134 @@ def main():
                 print('Остановка по F12')
                 close_game(timeout=5.0)
                 return
-            # попытки запуска бота (до 3 раз, если не контролирует игру)
-            retries = 0
-            m = None
-            while retries < 3:
-                print('  [%d/%d] эпизод... (попытка %d)' % (i, len(pop), retries + 1), flush=True)
-                log_path = os.path.join(LOGS_DIR, '%d поколения_%d бота.log' % (rnd, i))
-                m = run_episode(g, episode_len, args.restart, generation=rnd,
-                                speed=args.speed, log_file=log_path)
-                if m is None:
-                    print('    !! нет результата')
-                    m = {'score': -1e9, 'coins_in': 0, 'coins_spent': 0, 'buys': 0,
-                         'buildings': 0, 'buildings_with_workers': 0, 'citizens': 0, 'crown_lost': 0,
-                         'seconds': 0, 'genome': g}
+            evals = []
+            for rep in range(args.eval_repeats):
+                retries = 0
+                m = None
+                while retries < 3:
+                    print('  [%d/%d] эпизод... (оценка %d/%d, попытка %d)' %
+                          (i, len(pop), rep + 1, args.eval_repeats,
+                           retries + 1), flush=True)
+                    suffix = ('' if args.eval_repeats == 1
+                              else '_оценка%d' % (rep + 1))
+                    log_path = os.path.join(
+                        LOGS_DIR, '%d поколения_%d бота%s.log' %
+                        (rnd, i, suffix))
+                    m = run_episode(g, episode_len, args.restart,
+                                    generation=rnd, speed=args.speed,
+                                    log_file=log_path)
+                    if m is None:
+                        print('    !! нет результата')
+                        break
+                    if (m.get('seconds', 0) < 5
+                            or (m.get('distance', 0) == 0
+                                and m.get('coins_in', 0) == 0)):
+                        retries += 1
+                        print('    !! бот не контролировал игру '
+                              '(seconds=%.1f, dist=%.1f) - перезапуск' %
+                              (m.get('seconds', 0), m.get('distance', 0)),
+                              flush=True)
+                        if retries < 3:
+                            continue
                     break
-                # проверяем: контролировал ли бот игру?
-                if m.get('seconds', 0) < 5 or (m.get('distance', 0) == 0 and m.get('coins_in', 0) == 0):
-                    retries += 1
-                    print('    !! бот не контролировал игру (seconds=%.1f, dist=%.1f) - перезапуск' %
-                          (m.get('seconds', 0), m.get('distance', 0)), flush=True)
-                    if retries < 3:
-                        continue
+                if m is None:
+                    m = {'score': -1e9, 'coins_in': 0, 'coins_spent': 0,
+                         'buys': 0, 'buildings': 0,
+                         'buildings_with_workers': 0, 'citizens': 0,
+                         'crown_lost': 0, 'deaths': 0, 'seconds': 0,
+                         'genome': g}
                 m['genome'] = g
-                break
-            if m is None:
-                m = {'score': -1e9, 'coins_in': 0, 'coins_spent': 0, 'buys': 0,
-                     'buildings': 0, 'buildings_with_workers': 0, 'citizens': 0, 'crown_lost': 0,
-                     'seconds': 0, 'genome': g}
-            else:
-                if 'genome' not in m:
-                    m['genome'] = g
-            results.append(m)
-            print('    очки=%.1f coins_in=%.0f spent=%.0f buys=%d build=%d cit=%d crown_lost=%d' %
-                  (m['score'], m['coins_in'], m['coins_spent'], m['buys'],
-                   m['buildings'], m['citizens'], m['crown_lost']), flush=True)
+                m['eval_index'] = rep + 1
+                evals.append(m)
+                print('    очки=%.1f coins_in=%.0f spent=%.0f buys=%d '
+                      'build=%d cit=%d workers=%.0f crown_lost=%d' %
+                      (m.get('score', -1e9), m.get('coins_in', 0),
+                       m.get('coins_spent', 0), m.get('buys', 0),
+                       m.get('buildings', 0), m.get('citizens', 0),
+                       m.get('workers', 0), m.get('crown_lost', 0)),
+                      flush=True)
+            agg = aggregate_evals(g, evals)
+            results.append(agg)
+            print('    итог: очки=%.1f ±%.1f (оценок %d) экономика=%.1f '
+                  'выживание=%d' %
+                  (agg.get('score', -1e9), agg.get('score_std', 0),
+                   agg.get('evals', 0), agg.get('economy', 0),
+                   agg.get('survival', 0)), flush=True)
 
-        # ранжирование: оценка элиты = среднее по последним эпизодам (сглаживание шума)
-        for idx, r in enumerate(results, 1):
-            r['rank_score'] = r['score']
-        elite_res = results[0]
-        if elite_res['score'] > -1e8:
+        # --- отбор: Pareto (выживание/очки/экономика) или чистые очки ---
+        for r in results:
+            r['rank_score'] = r.get('score', -1e9)
+        elite_res = results[0] if results else None
+        if elite_res and elite_res.get('score', -1e9) > -1e8:
             elite_hist.append(elite_res['score'])
             elite_hist = elite_hist[-args.elite_window:]
-        if elite_hist:
             elite_res['rank_score'] = sum(elite_hist) / len(elite_hist)
-        ranked = sorted(results, key=lambda r: r['rank_score'], reverse=True)
-        if ranked[0] is not elite_res:
-            # элита сменилась: новый лидер, история его оценок начинается заново
-            elite = dict(ranked[0]['genome'])
-            elite_hist = [ranked[0]['score']] if ranked[0]['score'] > -1e8 else []
+        if args.pareto:
+            ranked = pareto_sort(results)
+        else:
+            ranked = sorted(results,
+                            key=lambda r: r.get('rank_score', -1e9),
+                            reverse=True)
+        if ranked:
+            if ranked[0] is not elite_res:
+                elite = dict(ranked[0]['genome'])
+                elite_hist = ([ranked[0]['score']]
+                              if ranked[0].get('score', -1e9) > -1e8 else [])
+            else:
+                elite = dict(ranked[0]['genome'])
         prev_ranked = ranked
         best = elite
         save_genome(BEST_GENOME, best)
+        if cem is not None:
+            cem.update(ranked, args.elite_frac)
+
         for idx, r in enumerate(results, 1):
-            history.append({'score': r['score'], 'coins_in': r['coins_in'],
-                            'coins_spent': r['coins_spent'], 'buys': r['buys'],
-                            'buildings': r['buildings'],
-                            'buildings_completed': r.get('buildings_completed', 0),
-                            'buildings_with_workers': r.get('buildings_with_workers', 0),
-                            'buildings_without_workers': r.get('buildings_without_workers', 0),
-                            'workers': r.get('workers', 0),
-                            'archers': r.get('archers', 0),
-                            'farmers': r.get('farmers', 0),
-                            'knights': r.get('knights', 0),
-                            'citizens': r['citizens'],
-                            'crown_lost': r['crown_lost'],
-                            'crown_picked': r.get('crown_picked', 0),
-                            'deaths': r.get('deaths', 0),
-                            'recruited_beggars': r.get('recruited_beggars', 0),
-                            'tool_buys': r.get('tool_buys', 0),
-                            'castle_base_buys': r.get('castle_base_buys', 0),
-                            'castle_base_buys_without_workers': r.get('castle_base_buys_without_workers', 0),
-                            'castle_upgrade_buys_with_workers': r.get('castle_upgrade_buys_with_workers', 0),
-                            'trees_chopped': r.get('trees_chopped', 0),
-                            'tree_chops_with_workers': r.get('tree_chops_with_workers', 0),
-                            'unpicked_coins': r.get('unpicked_coins', 0),
-                            'inactivity_penalty': r.get('inactivity_penalty', 0),
-                            'failed_coin': r.get('failed_coin', 0),
-                            'failed_buy': r.get('failed_buy', 0),
-                            'failed_recruit': r.get('failed_recruit', 0),
-                            'final_purse': r.get('final_purse', 0),
-                            'distance': r.get('distance', 0),
-                            'seconds': r['seconds'],
-                            'round': rnd, 'episode': episode_len,
-                            'bot': idx, 'run': log_session,
-                            'genome': r['genome']})
+            history.append({
+                'score': r.get('score', -1e9),
+                'score_std': r.get('score_std', 0),
+                'evals': r.get('evals', 0),
+                'survival': r.get('survival', 0),
+                'economy': r.get('economy', 0),
+                'pareto_rank': r.get('pareto_rank', 0),
+                'coins_in': r.get('coins_in', 0),
+                'coins_spent': r.get('coins_spent', 0),
+                'buys': r.get('buys', 0),
+                'buildings': r.get('buildings', 0),
+                'buildings_completed': r.get('buildings_completed', 0),
+                'buildings_with_workers': r.get('buildings_with_workers', 0),
+                'buildings_without_workers': r.get('buildings_without_workers', 0),
+                'workers': r.get('workers', 0),
+                'archers': r.get('archers', 0),
+                'farmers': r.get('farmers', 0),
+                'knights': r.get('knights', 0),
+                'citizens': r.get('citizens', 0),
+                'crown_lost': r.get('crown_lost', 0),
+                'crown_picked': r.get('crown_picked', 0),
+                'deaths': r.get('deaths', 0),
+                'recruited_beggars': r.get('recruited_beggars', 0),
+                'tool_buys': r.get('tool_buys', 0),
+                'castle_base_buys': r.get('castle_base_buys', 0),
+                'castle_base_buys_without_workers': r.get('castle_base_buys_without_workers', 0),
+                'castle_upgrade_buys_with_workers': r.get('castle_upgrade_buys_with_workers', 0),
+                'trees_chopped': r.get('trees_chopped', 0),
+                'tree_chops_with_workers': r.get('tree_chops_with_workers', 0),
+                'unpicked_coins': r.get('unpicked_coins', 0),
+                'inactivity_penalty': r.get('inactivity_penalty', 0),
+                'failed_coin': r.get('failed_coin', 0),
+                'failed_buy': r.get('failed_buy', 0),
+                'failed_recruit': r.get('failed_recruit', 0),
+                'final_purse': r.get('final_purse', 0),
+                'distance': r.get('distance', 0),
+                'seconds': r.get('seconds', 0),
+                'round': rnd, 'episode': episode_len,
+                'bot': idx, 'run': log_session,
+                'genome': r.get('genome', {})})
         # атомарно: обрыв в момент записи не должен затирать всю историю
         kc_common.atomic_json_dump(HISTORY, history)
         print('  лучший очки=%.1f (топ-3: %s)' %
-              (results[0]['score'],
-               ', '.join('%.1f' % r['score'] for r in results[:3])))
+              (ranked[0].get('score', -1e9) if ranked else -1e9,
+               ', '.join('%.1f' % r.get('score', -1e9)
+                         for r in ranked[:3])))
         print('  лучший геном сохранён:', BEST_GENOME)
 
         # время жизни увеличивается по формуле: episode + episode_increment * поколение
