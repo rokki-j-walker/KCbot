@@ -767,6 +767,11 @@ def main():
     elite = dict(best)
     elite_hist = []
     prev_ranked = []
+    # Лучший геном за весь прогон (не только элита последнего раунда):
+    # раньше в best_genome.json попадал топ последнего раунда, даже если
+    # он слабее абсолютного рекорда.
+    overall_best = dict(best)
+    overall_best_score = -1e9
     cem = CEMOptimizer(elite, args.cem_sigma) \
         if args.optimizer == 'cem' else None
     for rnd in range(1, args.rounds + 1):
@@ -904,7 +909,15 @@ def main():
                 elite = dict(ranked[0]['genome'])
         prev_ranked = ranked
         best = elite
-        save_genome(BEST_GENOME, best)
+        # лучший именно среди выживших: смерть не должна попадать в сохранение
+        round_pool = [r for r in results if r.get('survival', 0)] or results
+        round_best = (max(round_pool, key=lambda r: r.get('score', -1e9))
+                      if round_pool else None)
+        if (round_best is not None
+                and round_best.get('score', -1e9) > overall_best_score):
+            overall_best_score = round_best.get('score', -1e9)
+            overall_best = dict(round_best.get('genome', {}))
+        save_genome(BEST_GENOME, overall_best)
         if cem is not None:
             cem.update(ranked, args.elite_frac)
 
@@ -933,8 +946,14 @@ def main():
                 'deaths': r.get('deaths', 0),
                 'recruited_beggars': r.get('recruited_beggars', 0),
                 'tool_buys': r.get('tool_buys', 0),
+                'hammer_buys': r.get('hammer_buys', 0),
+                'bow_buys': r.get('bow_buys', 0),
+                'scythe_buys': r.get('scythe_buys', 0),
+                'first_worker': r.get('first_worker', 0),
+                'first_archer': r.get('first_archer', 0),
                 'castle_base_buys': r.get('castle_base_buys', 0),
                 'castle_base_buys_without_workers': r.get('castle_base_buys_without_workers', 0),
+                'castle_upgrade_buys': r.get('castle_upgrade_buys', 0),
                 'castle_upgrade_buys_with_workers': r.get('castle_upgrade_buys_with_workers', 0),
                 'trees_chopped': r.get('trees_chopped', 0),
                 'trees_marked': r.get('trees_marked', 0),
@@ -947,6 +966,7 @@ def main():
                 'failed_coin': r.get('failed_coin', 0),
                 'failed_buy': r.get('failed_buy', 0),
                 'failed_recruit': r.get('failed_recruit', 0),
+                'failed_tree': r.get('failed_tree', 0),
                 'final_purse': r.get('final_purse', 0),
                 'distance': r.get('distance', 0),
                 'seconds': r.get('seconds', 0),
@@ -955,10 +975,11 @@ def main():
                 'genome': r.get('genome', {})})
         # атомарно: обрыв в момент записи не должен затирать всю историю
         kc_common.atomic_json_dump(HISTORY, history)
-        print('  лучший очки=%.1f (топ-3: %s)' %
+        print('  раунд: лучший=%.1f (топ-3: %s); за прогон=%.1f' %
               (ranked[0].get('score', -1e9) if ranked else -1e9,
                ', '.join('%.1f' % r.get('score', -1e9)
-                         for r in ranked[:3])))
+                         for r in ranked[:3]),
+               overall_best_score))
         print('  лучший геном сохранён:', BEST_GENOME)
 
         # время жизни увеличивается по формуле: episode + episode_increment * поколение

@@ -1001,6 +1001,7 @@ class Bot(object):
         self.tax_wait = CFG['tax_wait'] / self.speed
         self.recruit_check = 5.0 / self.speed
         self.esc_cooldown = 3.0 / self.speed
+        self._tool_buy_until = 0.0   # пауза после покупки инструмента
         self.skip_cooldown = 30.0 / self.speed
         self.ts = {}
         self.last_focus = 0.0
@@ -1657,6 +1658,67 @@ class Bot(object):
             if t:
                 return t
 
+        # 2.5 первая база: без неё нет экономики и мастерских.
+        #     Пока база не куплена, не тратим монеты на наём: иначе бот
+        #     уходит в бомжей и покупает базу только к концу эпизода.
+        if self.fit.castle_base_buys == 0:
+            castle = None
+            for p in st.payables:
+                if p.type == 'PayableUpgrade' and 'castle0' in p.base.lower():
+                    castle = p
+                    break
+            if castle is not None:
+                if self.can_afford(st, castle) and not self.blocked(castle):
+                    self.note('buy', '%s(%s) %d @%.1f' %
+                              (castle.base, castle.type,
+                               castle.price, castle.x))
+                    return ('pay', castle)
+                t = self.coin_task(st)
+                if t:
+                    return t
+                t = self.tax_task(st)
+                if t:
+                    return t
+                return ('idle', None)
+
+        # 2.6 инструменты: если хватает монет - покупаем до найма.
+        #     Наём съедал все монеты, поэтому рабочие/лучники почти не
+        #     появлялись (прогон 3: 0.17 рабочего и 0.20 лучника).
+        best_tool = None
+        # после покупки инструмента ждём обновления st.wrk/arc: иначе бот
+        # успевает купить второй такой же инструмент, пока первый не засчитан
+        if self.now() >= self._tool_buy_until:
+            for p in st.payables:
+                if p.type != 'PayableShop' or self.blocked(p):
+                    continue
+                if not self.can_afford(st, p):
+                    continue
+                pr = self.tool_priority(st, p)
+                if pr is None:
+                    continue
+                key = (pr, abs(p.x))
+                if best_tool is None or key < best_tool[0]:
+                    best_tool = (key, p)
+        if best_tool is not None:
+            p = best_tool[1]
+            self.note('buy', '%s(%s) %d @%.1f' %
+                      (p.base, p.type, p.price, p.x))
+            return ('pay', p)
+
+        # 2.7 первый инструмент: при 2 свободных крестьянах копим на него,
+        #     а не тратим всё на новых бомжей.
+        if (self.fit.tool_buys == 0 and len(st.cit('P')) >= 2
+                and any(p.type == 'PayableShop' and not self.blocked(p)
+                        and self.tool_priority(st, p) is not None
+                        for p in st.payables)):
+            t = self.coin_task(st)
+            if t:
+                return t
+            t = self.tax_task(st)
+            if t:
+                return t
+            return ('idle', None)
+
         # 3. наём бомжей (высокий приоритет - нужны граждане)
         t = self.recruit_task(st)
         if t:
@@ -2141,6 +2203,8 @@ class Bot(object):
             elif 'toolscythe' in low or 'scythe' in low:
                 self.fit.scythe_buys = self.fit.scythe_buys + 1
                 self.fit.tool_buys = self.fit.tool_buys + 1
+            if 'hammer' in low or 'bow' in low or 'scythe' in low:
+                self._tool_buy_until = self.now() + 3.0 / self.speed
         self.pay_target = None
         self.pay_phase = None
         self.pay_purse0 = 0

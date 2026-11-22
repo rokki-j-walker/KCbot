@@ -33,7 +33,7 @@ coin_collect = 5.0
 # =============================================================================
 
 # Трата монеты на покупку (coin_spend)
-coin_spend = 4.0
+coin_spend = 3.0
 
 # Покупка объекта (buy)
 buy = 3.0
@@ -50,15 +50,15 @@ buy_castle_upgrade = 50.0
 
 # Покупка молотка (buy_hammer)
 # Превращает Peasant в Worker (рабочий). Рубит деревья.
-buy_hammer = 20.0
+buy_hammer = 35.0
 
 # Покупка лука (buy_bow)
 # Превращает Peasant в Archer (лучник). Защищает базу.
-buy_bow = 20.0
+buy_bow = 35.0
 
 # Покупка косы (buy_scythe)
 # Превращает Peasant в Farmer (фермер). Приносит доход с ферм.
-buy_scythe = 15.0
+buy_scythe = 25.0
 
 # Бонус за свободных граждан для инструментов (free_citizen_tool_bonus)
 # Если есть свободные крестьяне (P), покупка инструмента получает бонус.
@@ -98,12 +98,12 @@ profession_missing_bonus = 5.0
 # Бонус за первого лучника (first_archer_bonus)
 # Дополнительный бонус за найм первого лучника.
 # Мотивирует бота получить хотя бы одного лучника.
-first_archer_bonus = 25.0
+first_archer_bonus = 60.0
 
 # Бонус за первого рабочего (first_worker_bonus)
 # Дополнительный бонус за найм первого рабочего.
 # Мотивирует бота получить хотя бы одного рабочего.
-first_worker_bonus = 25.0
+first_worker_bonus = 60.0
 
 # Прогрессия штрафа за бездействие по дням (inactivity_day_bonus)
 # С каждым днём штраф за бездействие увеличивается на этот процент.
@@ -153,12 +153,12 @@ defense_day_bonus = 0.05
 # Отметка дерева для рубки (tree_mark)
 # Бот оплатил дерево (стоит 1 монету).
 # 0 = без награды за отметку (только за срубленное).
-tree_mark = 2.0
+tree_mark = 3.0
 
 # Срубленное дерево (tree_chop)
 # Рабочий срубил дерево. Дерево дало 1-2 монеты.
 # Большой бонус - дерево срублено.
-tree_chop = 8.0
+tree_chop = 10.0
 
 # Попытка рубки без рабочих (tree_chop_no_workers)
 tree_chop_no_workers = -2.0
@@ -205,7 +205,7 @@ failure_penalty_ratio = 0.5
 
 # Найм бомжа (recruit_beggar)
 # Бросить монету рядом с бомжом -> он станет Peasant.
-recruit_beggar = 20.0
+recruit_beggar = 10.0
 
 # Найм рыцаря (recruit_knight)
 # [НЕ читается кодом] recruit_knight = 30.0
@@ -249,7 +249,7 @@ building_start = 0.0
 # Завершение строительства (building_complete)
 # Здание построено (стена/башня/ферма появилась на карте).
 # Большой бонус - строительство завершено.
-building_complete = 15.0
+building_complete = 20.0
 
 # Здание (building) - общее
 # [НЕ читается кодом] building = 10.0
@@ -266,7 +266,7 @@ building_complete = 15.0
 # =============================================================================
 
 # Выживание (survival)
-survival = 0.1
+survival = 0.2
 
 # Бегство от врага (flee_enemy)
 # [НЕ читается кодом] flee_enemy = 5.0
@@ -288,12 +288,12 @@ death = -3000.0
 # Ходьба (movement_walk)
 # Очки за пройденную дистанцию пешком (действие Walk).
 # Бег даёт чуть больше очков.
-movement_walk = 0.05
+movement_walk = 0.03
 
 # Бег (movement_run)
 # Очки за пройденную дистанцию бегом (действие Run).
 # Бег даёт чуть больше очков чем ходьба.
-movement_run = 0.1
+movement_run = 0.06
 
 # Переутомление лошади (horse_exhaustion)
 # Штраф за полное истощение стамины (лошадь устала).
@@ -363,14 +363,14 @@ no_interaction = -15.0
 # =============================================================================
 # === ЭКОНОМИКА И РАЗВИТИЕ (2026-11-22) ===
 # =============================================================================
-worker_bonus = 30.0
-archer_bonus = 20.0
-farmer_bonus = 15.0
-knight_bonus = 25.0
-tool_bonus = 5.0
-building_with_workers = 15.0
+worker_bonus = 50.0
+archer_bonus = 35.0
+farmer_bonus = 30.0
+knight_bonus = 40.0
+tool_bonus = 10.0
+building_with_workers = 35.0
 tree_chop_workers = 0.0
-castle_upgrade_workers = 40.0
-castle_base_no_workers = -25.0
+castle_upgrade_workers = 60.0
+castle_base_no_workers = 0.0
 failed_buy_penalty = -4.0
 failed_recruit_penalty = -10.0
