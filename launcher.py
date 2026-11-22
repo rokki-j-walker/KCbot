@@ -2261,8 +2261,9 @@ class App:
         self._build_detail_panel()
 
         self.root.update_idletasks()
-        scale = win_ui_scale()
-        self.root.minsize(int(880 * scale), int(580 * scale))
+        # minsize — в логических единицах Tk; не умножаем на DPI, иначе
+        # окно не может сжаться по содержимому и снизу остаётся пусто.
+        self.root.minsize(880, 580)
         # Подогнать высоту окна под содержимое с учётом масштаба Windows
         self._fit_window()
         # Повторная подгонка после полной отрисовки: первый замер берётся,
@@ -2289,8 +2290,13 @@ class App:
             work_w = int((self.root.winfo_screenwidth() - 8) / scale)
             work_h = int((self.root.winfo_screenheight() - 80) / scale)
             req_w = self.main_frame.winfo_reqwidth() + 32
-            req_h = (self.title_bar.winfo_reqheight()
-                     + self.main_frame.winfo_reqheight() + 16)
+            # Высоту берём по левой колонке: правые «Детали» при нехватке
+            # высоты прокручиваются, а внизу основного окна не остаётся
+            # пустого места из-за их запрошенной высоты.
+            left_h = (self.params_frame.winfo_reqheight()
+                      if self.params_frame.winfo_ismapped()
+                      else self.main_frame.winfo_reqheight())
+            req_h = self.title_bar.winfo_reqheight() + left_h + 16
             content_h = int(req_h / scale) + 4
             geo_str = self.root.geometry()
             # позиция может быть и 'x+y', и '-1450+60' (2-й монитор слева)
