@@ -158,6 +158,7 @@ DEFAULTS = {
     'detail_side': 'left',
     'console_side': 'right',
     'language': 'ru',
+    'ui_scale': 'auto',      # auto / 1.0 / 1.1 / 1.25
 }
 
 def system_base_theme():
@@ -197,39 +198,41 @@ def is_light_theme(name):
 COLOR_SCHEMES = {
     'dark': {
         'bg': '#1a1a1a', 'fg': '#e0e0e0', 'entry_bg': '#252525',
-        'accent': '#4CAF50', 'graph_bg': '#202020', 'graph_fg': '#e0e0e0',
+        'accent': '#2E7D32', 'graph_bg': '#202020', 'graph_fg': '#e0e0e0',
         'title_bg': '#252525', 'btn_hover': '#333333', 'border': '#333333',
-        'panel_bg': '#222222',
+        'panel_bg': '#222222', 'muted': '#9a9a9a', 'success': '#4CAF50',
     },
     'light': {
         'bg': '#f0f0f0', 'fg': '#1e1e1e', 'entry_bg': '#ffffff',
         'accent': '#0078D4', 'graph_bg': '#ffffff', 'graph_fg': '#1e1e1e',
         'title_bg': '#e0e0e0', 'btn_hover': '#d0d0d0', 'border': '#cccccc',
-        'panel_bg': '#f5f5f5',
+        'panel_bg': '#f5f5f5', 'muted': '#666666', 'success': '#2E7D32',
     },
     'blue': {
         'bg': '#0d1b2a', 'fg': '#e0e1dd', 'entry_bg': '#1b263b',
-        'accent': '#3a86ff', 'graph_bg': '#1b263b', 'graph_fg': '#e0e1dd',
+        'accent': '#1565C0', 'graph_bg': '#1b263b', 'graph_fg': '#e0e1dd',
         'title_bg': '#1b263b', 'btn_hover': '#2a3a5a', 'border': '#2a3a5a',
-        'panel_bg': '#152238',
+        'panel_bg': '#152238', 'muted': '#9a9a9a', 'success': '#4CAF50',
     },
     'green': {
         'bg': '#0a1f0a', 'fg': '#d4e8d4', 'entry_bg': '#1a2f1a',
-        'accent': '#52b788', 'graph_bg': '#1a2f1a', 'graph_fg': '#d4e8d4',
+        'accent': '#2E7D32', 'graph_bg': '#1a2f1a', 'graph_fg': '#d4e8d4',
         'title_bg': '#1a2f1a', 'btn_hover': '#2a3f2a', 'border': '#2a3f2a',
-        'panel_bg': '#152a15',
+        'panel_bg': '#152a15', 'muted': '#9a9a9a', 'success': '#4CAF50',
     },
     'white': {
         'bg': '#ffffff', 'fg': '#000000', 'entry_bg': '#f5f5f5',
         'accent': '#000000', 'graph_bg': '#ffffff', 'graph_fg': '#000000',
         'title_bg': '#f0f0f0', 'btn_hover': '#e0e0e0', 'border': '#e0e0e0',
-        'panel_bg': '#fafafa',
+        'panel_bg': '#fafafa', 'muted': '#666666', 'success': '#2E7D32',
     },
     'black': {
         'bg': '#000000', 'fg': '#ffffff', 'entry_bg': '#111111',
-        'accent': '#ffffff', 'graph_bg': '#000000', 'graph_fg': '#ffffff',
+        # Не белый акцент: иначе Start/переключатели становятся белыми
+        # кнопками с белым текстом. Тёмно-серый читается на чёрном.
+        'accent': '#3f3f3f', 'graph_bg': '#000000', 'graph_fg': '#ffffff',
         'title_bg': '#111111', 'btn_hover': '#222222', 'border': '#222222',
-        'panel_bg': '#0a0a0a',
+        'panel_bg': '#0a0a0a', 'muted': '#9a9a9a', 'success': '#4CAF50',
     },
     # Светлые с акцентами Fluent 2 (D29): нейтрали взяты из ThemeService.cs
     # старой WPF-версии (paper/card/body/divider/border).
@@ -237,13 +240,13 @@ COLOR_SCHEMES = {
         'bg': '#f5f5f5', 'fg': '#1a1a1a', 'entry_bg': '#ffffff',
         'accent': '#0067C0', 'graph_bg': '#ffffff', 'graph_fg': '#1a1a1a',
         'title_bg': '#e0e0e0', 'btn_hover': '#e8e8e8', 'border': '#c4c4c4',
-        'panel_bg': '#ffffff',
+        'panel_bg': '#ffffff', 'muted': '#666666', 'success': '#2E7D32',
     },
     'light_green': {
         'bg': '#f5f5f5', 'fg': '#1a1a1a', 'entry_bg': '#ffffff',
         'accent': '#107C10', 'graph_bg': '#ffffff', 'graph_fg': '#1a1a1a',
         'title_bg': '#e0e0e0', 'btn_hover': '#e8e8e8', 'border': '#c4c4c4',
-        'panel_bg': '#ffffff',
+        'panel_bg': '#ffffff', 'muted': '#666666', 'success': '#2E7D32',
     },
 }
 
@@ -297,16 +300,17 @@ def card_color(colors):
 #  эталон структуры - MSI Center: крупный заголовок секции, единые
 #  высоты контролов, ровные отступы)
 H_HEADER = 48        # высота шапки окна (кнопки шапки = во всю высоту)
-H_BTN = 36           # высота ВСЕХ содержательных кнопок (компактно)
-H_INPUT = 36         # высота полей ввода (= кнопке - строки выровнены)
+H_BTN = 34           # высота ВСЕХ содержательных кнопок (компактно)
+H_INPUT = 34         # высота полей ввода (= кнопке - строки выровнены)
 FS_TITLE = 18        # название окна
 FS_SECTION = 15      # заголовок раздела (Параметры, Детали, Папка игры)
 FS_BODY = 13         # подписи, переключатели, кнопки, статус-кнопки
 FS_CAPTION = 11      # комментарии под полями, статусы
 FS_VALUE = 16        # значение в поле (моно, вправо)
-FS_MONO = 13         # моно-тела: результат, консоль, панель деталей
-FS_BIG = 18          # финальное время — чуть крупнее основного текста
-PAD_CARD = 16        # внутренний отступ карточек/разделов
+FS_MONO = 13         # моно-тела: результат, консоль
+FS_DETAIL = 9        # панель «Детали» — заметно мельче основного текста
+FS_BIG = 12          # финальное время — чуть крупнее текста «Деталей»
+PAD_CARD = 12        # внутренний отступ карточек/разделов
 GAP_SECTION = 16     # вертикальный ритм между блоками
 
 # ---------- Иконки (моно-глифы Windows) ----------
@@ -474,9 +478,12 @@ class SearchBar(ctk.CTkFrame):
         # placeholder CTkEntry несовместим с textvariable (баг CTk:
         # _activate_placeholder сравнивает StringVar с ""), поэтому
         # работаем напрямую с полем ввода.
-        self.entry = ctk.CTkEntry(self, placeholder_text=placeholder,
-                                  height=H_BTN, font=F(FS_BODY),
-                                  corner_radius=4)
+        self.entry = ctk.CTkEntry(
+            self, placeholder_text=placeholder,
+            height=H_BTN, font=F(FS_BODY), corner_radius=4,
+            fg_color=colors.get('entry_bg'), text_color=colors.get('fg'),
+            placeholder_text_color=colors.get('muted', '#9a9a9a'),
+            border_color=colors.get('border'))
         self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
 
         self.find_btn = icon_button(self, ICON_SEARCH, self.next, colors,
@@ -492,9 +499,9 @@ class SearchBar(ctk.CTkFrame):
         self.prev_btn.pack(side=tk.RIGHT, padx=(0, 4))
         self.find_btn.pack(side=tk.RIGHT, padx=(0, 4))
 
-        self.count_label = ctk.CTkLabel(self, text='',
-                                        font=F(FS_CAPTION),
-                                        text_color='#9a9a9a', anchor='e')
+        self.count_label = ctk.CTkLabel(
+            self, text='', font=F(FS_CAPTION),
+            text_color=self.colors.get('muted', '#9a9a9a'), anchor='e')
         # Счётчик упаковывается ТОЛЬКО при непустом запросе: иначе он
         # резервировал пустую полосу справа, и поиск не выглядел
         # растянутым во всю ширину окна (замечание пользователя).
@@ -672,6 +679,19 @@ def _shade(hex_color, factor):
         max(0, min(255, int(v * factor))) for v in (r, g, b))
 
 
+_UI_SCALE_OVERRIDE = None   # None = системный масштаб
+
+
+def set_ui_scale(value):
+    """Задать ручной масштаб окна (None/'auto' = системный)."""
+    global _UI_SCALE_OVERRIDE
+    try:
+        _UI_SCALE_OVERRIDE = (None if value in (None, '', 'auto')
+                              else float(value))
+    except (TypeError, ValueError):
+        _UI_SCALE_OVERRIDE = None
+
+
 def win_ui_scale():
     """Масштаб интерфейса Windows из реестра (125% -> 1.25).
 
@@ -680,6 +700,8 @@ def win_ui_scale():
     масштаб. Читаем его и подстраиваем CTk/геометрию (жалоба: «при125%
     не всё влезает»).
     """
+    if _UI_SCALE_OVERRIDE is not None:
+        return _UI_SCALE_OVERRIDE
     try:
         import winreg
         with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
@@ -1014,18 +1036,18 @@ def _window_toggle_max(win):
 
 
 def create_themed_toplevel(parent, title, colors, width=800, height=600,
-                           geometry_key=None, window_icon=None):
+                           geometry_key=None, window_icon=None,
+                           resizable=True):
     """Toplevel с шапкой в стиле ГЛАВНОГО окна (Fluent, единые токены).
 
-    Раньше здесь была старая tk-шапка с фиксированным шрифтом 13 -
-    заголовки окон выглядели разнородно и не масштабировались от
-    настроек Windows. Теперь: высота H_HEADER, title_bg, название
-    FS_TITLE bold, кнопки 46px, иконки-значки, нативный ресайз.
+    resizable=True только для консоли: главное окно и справка имеют
+    фиксированный размер (требование пользователя).
     """
     win = tk.Toplevel(parent)
     win.title(title)
     win.overrideredirect(True)
-    make_resizable(win, colors['title_bg'], colors['bg'])
+    if resizable:
+        make_resizable(win, colors['title_bg'], colors['bg'])
     if geometry_key is None:
         geometry_key = title
     win._geometry_key = geometry_key
@@ -1115,9 +1137,10 @@ def create_themed_toplevel(parent, title, colors, width=800, height=600,
         btn.pack(side=tk.RIGHT)
         return btn
 
-    # крайние справа - управление окном (как в главном)
+    # крайние справа - управление окном
     _cap('\u2715', win.destroy, '#e81123')
-    _cap('\u25A1', lambda w=win: _window_toggle_max(w))
+    if resizable:
+        _cap('\u25A1', lambda w=win: _window_toggle_max(w))
     _cap('\u2014', lambda w=win: _window_minimize(w))
 
     # Служебные значки (очистить/копировать/сохранить...). Окна кладут
@@ -1149,9 +1172,11 @@ def create_themed_toplevel(parent, title, colors, width=800, height=600,
         pass
     # HWND окончательно готов после первого показа - процедура ресайза
     # ставится ещё раз (ранняя установка могла попасть в дочерний HWND)
-    make_resizable(win)
-    win.bind('<Map>', lambda e, w=win: w.after(30, lambda: make_resizable(w)),
-             add='+')
+    if resizable:
+        make_resizable(win)
+        win.bind('<Map>',
+                 lambda e, w=win: w.after(30, lambda: make_resizable(w)),
+                 add='+')
 
     # Контент
     content = tk.Frame(win, bg=colors['bg'])
@@ -1257,7 +1282,7 @@ class ConsoleWindow:
 
         self.status_var = tk.StringVar(value=t('console_status', n=0))
         ctk.CTkLabel(bar, textvariable=self.status_var, font=F(FS_CAPTION),
-                     text_color='#9a9a9a', anchor='e').pack(
+                     text_color=c.get('muted', '#9a9a9a'), anchor='e').pack(
             side=tk.RIGHT, padx=(8, 2))
 
         # --- текст + панель поиска снизу (как в справке) --------------
@@ -1289,7 +1314,7 @@ class ConsoleWindow:
                                     placeholder=t('console_search'))
         self.search_bar.pack(side=tk.BOTTOM, fill=tk.X,
                              padx=PAD_CARD, pady=(0, PAD_CARD))
-        body.pack(fill=tk.BOTH, expand=True, padx=PAD_CARD, pady=(0, 8))
+        body.pack(fill=tk.BOTH, expand=True, padx=PAD_CARD, pady=(0, 6))
 
     def _build_title_actions(self):
         """Значки операций в шапке окна (очистить/копировать/сохранить)."""
@@ -1530,6 +1555,7 @@ class App:
         self.process_running = False
         self.settings_dialog = None
         self._maximized = False
+        self._scale_ready = False
         # Сохраняем позицию/размер, применённые при старте (2-й монитор),
         # а не сбрасываем в 1000x700 — иначе окно уезжает на основной.
         self._normal_geometry = self.root.geometry() or '1000x700'
@@ -1545,6 +1571,9 @@ class App:
 
         self._build_title_bar()
         self._build_main()
+        # Теперь список масштаба можно обрабатывать (иначе стартовый
+        # command у OptionMenu мог вызвать лишний перезапуск).
+        self._scale_ready = True
         # Периодическое обновление подробностей (каждые 2 секунды)
         self._schedule_detail_update()
         # Применить стиль панели задач после отображения окна
@@ -1719,9 +1748,9 @@ class App:
             b.pack(side=tk.RIGHT)
             return b
 
-        # крайние справа - управление окном (крестик с красным hover)
+        # крайние справа - управление окном; разворачивать нельзя:
+        # размер главного окна фиксирован (только консоль ресайзится)
         _cap('\u2715', self.root.destroy, 46, hover='#e81123')
-        _cap('\u25A1', self.toggle_maximize, 46)
         _cap('\u2014', self.minimize, 46)
         # сразу левее них - Справка
         self.help_btn = _cap(t('help_title'), self._open_help, 88)
@@ -1736,7 +1765,7 @@ class App:
                    if cur_theme in theme_names else theme_labels[0]))
         theme_menu = FluentOptionMenu(
             self.title_bar, values=theme_labels, variable=theme_var,
-            width=170, height=36, corner_radius=4, font=F(FS_BODY),
+            width=200, height=36, corner_radius=4, font=F(FS_BODY),
             fg_color=c['title_bg'], text_color=c['fg'],
             button_color=c['btn_hover'], button_hover_color=c['accent'],
             dropdown_fg_color=c['entry_bg'], dropdown_text_color=c['fg'],
@@ -1763,6 +1792,30 @@ class App:
                 lang_codes[lang_labels.index(lab)], lab))
         lang_menu.pack(side=tk.RIGHT, padx=(0, 6), pady=6)
         self.lang_btn = lang_menu
+
+        # Масштаб окна — левее языка (пользователь: «тоже списком,
+        # слева от языка»). Смена перезапускает лаунчер.
+        ui_codes = ['auto', '1.0', '1.1', '1.25']
+        ui_labels = [t('ui_scale_auto'), '100%', '110%', '125%']
+        cur_scale = str(self.config.get('ui_scale', 'auto'))
+        if cur_scale not in ui_codes:
+            cur_scale = 'auto'
+        scale_var = tk.StringVar(
+            value=ui_labels[ui_codes.index(cur_scale)])
+        self._ui_scale_var = scale_var
+        self._ui_scale_labels = (ui_codes, ui_labels)
+        scale_menu = FluentOptionMenu(
+            self.title_bar, values=ui_labels, variable=scale_var,
+            width=110, height=36, corner_radius=4, font=F(FS_BODY),
+            fg_color=c['title_bg'], text_color=c['fg'],
+            button_color=c['btn_hover'], button_hover_color=c['accent'],
+            dropdown_fg_color=c['entry_bg'], dropdown_text_color=c['fg'],
+            dropdown_hover_color=c['btn_hover'],
+            command=lambda lab: self._apply_ui_scale(
+                ui_codes[ui_labels.index(lab)]))
+        scale_menu.pack(side=tk.RIGHT, padx=(0, 6), pady=6)
+        self.scale_btn = scale_menu
+        Tooltip(scale_menu, t('ui_scale_hint'), c)
 
         # Перетаскивание окна
         self.title_bar.bind('<Button-1>', self._start_move)
@@ -1796,7 +1849,6 @@ class App:
     def _do_restore(self):
         if self.root.state() in ('normal', 'zoomed'):
             self.root.overrideredirect(True)
-            make_resizable(self.root)
             self.root.update_idletasks()
             self.root.update()
             apply_taskbar_style(self.root)
@@ -1818,10 +1870,10 @@ class App:
         """Карточка «Папка игры»: подпись, путь + кнопки, бейдж патча."""
         box = ctk.CTkFrame(self.params_frame, corner_radius=8,
                            fg_color=card_color(c))
-        box.pack(fill=tk.X, padx=PAD_CARD, pady=(0, 8))
+        box.pack(fill=tk.X, padx=PAD_CARD, pady=(0, 4))
 
         inner = ctk.CTkFrame(box, fg_color='transparent', corner_radius=0)
-        inner.pack(fill=tk.X, padx=12, pady=10)
+        inner.pack(fill=tk.X, padx=12, pady=8)
 
         ctk.CTkLabel(inner, text=t('game_dir_title'), font=F(FS_SECTION, 'bold'),
                      text_color=c['fg'], anchor='w').pack(fill=tk.X)
@@ -1829,9 +1881,11 @@ class App:
         path = gamepath.game_dir() or gamepath.autodetect_game_dir()
         self.game_dir_var = tk.StringVar(value=path)
         row = ctk.CTkFrame(inner, fg_color='transparent', corner_radius=0)
-        row.pack(fill=tk.X, pady=(6, 0))
-        ent = ctk.CTkEntry(row, textvariable=self.game_dir_var, height=H_INPUT,
-                           font=F(FS_BODY), corner_radius=4)
+        row.pack(fill=tk.X, pady=(4, 0))
+        ent = ctk.CTkEntry(row, textvariable=self.game_dir_var,
+                           height=H_INPUT, font=F(FS_BODY),
+                           corner_radius=4, fg_color=c['entry_bg'],
+                           text_color=c['fg'], border_color=c['border'])
         ent.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
         # Кнопки-значки в одной строке с путём: папка, автопоиск и
@@ -1848,9 +1902,10 @@ class App:
 
         # Статус патча — сразу под строкой пути (ближе к ней).
         prow = ctk.CTkFrame(inner, fg_color='transparent', corner_radius=0)
-        prow.pack(fill=tk.X, pady=(3, 0))
+        prow.pack(fill=tk.X, pady=(2, 0))
         self.patch_status = ctk.CTkLabel(prow, text='', font=F(FS_CAPTION),
-                                         text_color='#888888', anchor='w')
+                                         text_color=c.get('muted', '#888888'),
+                                         anchor='w')
         self.patch_status.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         # Статус папки — только при ошибке: пустая строка раньше отодвигала
@@ -1875,8 +1930,9 @@ class App:
             label = {'ok': t('patch_state_ok'),
                      'not_patched': t('patch_state_no')}.get(
                          code, t('patch_state_unknown'))
-            color = {'ok': '#4CAF50',
-                     'not_patched': '#ff5555'}.get(code, '#888888')
+            color = {'ok': self.colors.get('success', '#4CAF50'),
+                     'not_patched': '#ff5555'}.get(
+                         code, self.colors.get('muted', '#888888'))
         self.patch_status.configure(text=label, text_color=color)
 
         if hasattr(self, 'patch_btn'):
@@ -1939,7 +1995,8 @@ class App:
         p = (self.game_dir_var.get() or '').strip()
         exe = os.path.join(p, 'Kingdom.exe') if p else ''
         if p and os.path.isfile(exe):
-            self.game_dir_status.configure(text='', text_color='#888888')
+            self.game_dir_status.configure(
+                text='', text_color=self.colors.get('muted', '#888888'))
             if self.game_dir_status.winfo_manager():
                 self.game_dir_status.pack_forget()
             return True
@@ -1988,12 +2045,12 @@ class App:
         c = self.colors
         self.main_frame = ctk.CTkFrame(self.root, fg_color='transparent',
                                        corner_radius=0)
-        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(4, 8))
+        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=(2, 2))
         # Сетка вместо pack: pack_propagate у CTk не работает (проверено) -
         # ширина колонок задаётся только сеткой: параметры растут, панель
         # деталей держит минимум (иначе она схлопывалась в «сливку»)
         self.main_frame.grid_columnconfigure(0, weight=1)
-        self.main_frame.grid_columnconfigure(1, minsize=360, weight=0)
+        self.main_frame.grid_columnconfigure(1, minsize=400, weight=0)
         self.main_frame.grid_rowconfigure(0, weight=1)
 
         # Левая колонка: параметры
@@ -2005,7 +2062,7 @@ class App:
         ctk.CTkLabel(self.params_frame, text=t('params_title'),
                      font=F(FS_SECTION, 'bold'),
                      text_color=c['fg'], anchor='w').pack(
-            fill=tk.X, padx=PAD_CARD, pady=(0, 8))
+            fill=tk.X, padx=PAD_CARD, pady=(0, 4))
 
         # --- Папка игры -------------------------------------------------
         # Раньше её писал только C#-лаунчер (удалён в Фазе 0), а Python-версия
@@ -2037,7 +2094,7 @@ class App:
             group = ctk.CTkFrame(grid, fg_color='transparent', corner_radius=0)
             group.grid(row=r, column=col, sticky='nsew',
                        padx=(0, 8) if col == 0 else (8, 0),
-                       pady=(0, 8))
+                       pady=(0, 6))
             # подпись - над СВОИМ полем
             ctk.CTkLabel(group, text=label, font=F(FS_BODY), text_color=c['fg'],
                          anchor='w').pack(fill='x')
@@ -2051,7 +2108,7 @@ class App:
                 menu = FluentOptionMenu(
                     group, values=SPEED_VALUES, variable=var,
                     height=H_INPUT, font=F(FS_VALUE, mono=True),
-                    corner_radius=4, width=140,
+                    corner_radius=4, width=300,
                     fg_color=c['entry_bg'], text_color=c['fg'],
                     button_color=c['btn_hover'],
                     button_hover_color=c['accent'],
@@ -2059,26 +2116,28 @@ class App:
                     dropdown_text_color=c['fg'],
                     dropdown_hover_color=c['btn_hover'],
                     command=lambda _v: self._on_speed_change())
-                menu.pack(fill='x', pady=(3, 0))
+                menu.pack(anchor='w', pady=(2, 0))
                 e = _OptionField(menu, var, SPEED_DISPLAY, SPEED_REVERSE)
                 self.entries[key] = (e, typ)
             else:
-                e = ctk.CTkEntry(group, height=H_INPUT, font=F(FS_VALUE, mono=True),
-                                 justify='right', corner_radius=4)
+                e = ctk.CTkEntry(group, width=300, height=H_INPUT,
+                                 font=F(FS_VALUE, mono=True),
+                                 justify='right', corner_radius=4,
+                                 fg_color=c['entry_bg'], text_color=c['fg'],
+                                 border_color=c['border'])
                 e.insert(0, str(self.config.get(key, DEFAULTS[key])))
-                e.pack(fill='x', pady=(3, 0))
+                e.pack(anchor='w', pady=(2, 0))
                 self.entries[key] = (e, typ)
                 e.bind('<KeyRelease>', lambda ev: self._on_param_change())
                 e.bind('<FocusOut>', lambda ev: self._on_param_change())
             # комментарий - под СВОИМ полем; сюда же падает текст ошибки
             desc = ctk.CTkLabel(group, text=t('desc_' + key), font=F(11),
-                                text_color='#9a9a9a', anchor='w',
+                                text_color=c.get('muted', '#9a9a9a'), anchor='w',
                                 justify='left', wraplength=260)
-            desc.pack(fill='x', pady=(3, 0))
+            desc.pack(fill='x', pady=(2, 0))
             self._desc_labels[key] = desc
             hint = ctk.CTkLabel(group, text='', font=F(11),
                                 text_color='#ff5555', anchor='w')
-            hint.pack(fill='x')
             self._hint_labels[key] = hint
 
         # Для speed событие смены уходит из CTkOptionMenu(command=...)
@@ -2089,7 +2148,7 @@ class App:
             group = ctk.CTkFrame(grid, fg_color='transparent', corner_radius=0)
             group.grid(row=row, column=col, sticky='nsew',
                        padx=(0, 8) if col == 0 else (8, 0),
-                       pady=(0, 8))
+                       pady=(0, 6))
             ctk.CTkLabel(group, text=label, font=F(FS_BODY),
                          text_color=c['fg'], anchor='w').pack(fill='x')
             var = tk.StringVar(value=current)
@@ -2097,19 +2156,19 @@ class App:
                 group, values=values, variable=var,
                 command=lambda _v: self.schedule_calculate(),
                 height=H_INPUT, font=F(FS_BODY), corner_radius=4,
+                width=300,
                 fg_color=c['entry_bg'], text_color=c['fg'],
                 button_color=c['btn_hover'], button_hover_color=c['accent'],
                 dropdown_fg_color=c['entry_bg'], dropdown_text_color=c['fg'],
                 dropdown_hover_color=c['btn_hover'])
-            menu.pack(fill='x', pady=(3, 0))
+            menu.pack(anchor='w', pady=(2, 0))
             desc_lbl = ctk.CTkLabel(group, text=desc, font=F(11),
-                                    text_color='#9a9a9a', anchor='w',
+                                    text_color=c.get('muted', '#9a9a9a'), anchor='w',
                                     justify='left', wraplength=260)
-            desc_lbl.pack(fill='x', pady=(3, 0))
+            desc_lbl.pack(fill='x', pady=(2, 0))
             self._desc_labels[key] = desc_lbl
             hint = ctk.CTkLabel(group, text='', font=F(11),
                                 text_color='#ff5555', anchor='w')
-            hint.pack(fill='x')
             self._hint_labels[key] = hint
             return var
 
@@ -2149,7 +2208,7 @@ class App:
         # --- Действия: первичная / danger / ghost ---------------------------
         actions = ctk.CTkFrame(self.params_frame, fg_color='transparent',
                                corner_radius=0)
-        actions.pack(fill=tk.X, padx=PAD_CARD, pady=(8, 0))
+        actions.pack(fill=tk.X, padx=PAD_CARD, pady=(6, 0))
         actions.columnconfigure(0, weight=3)
         actions.columnconfigure(1, weight=2)
         actions.columnconfigure(2, weight=2)
@@ -2231,11 +2290,9 @@ class App:
             work_h = int((self.root.winfo_screenheight() - 80) / scale)
             req_w = self.main_frame.winfo_reqwidth() + 32
             req_h = (self.title_bar.winfo_reqheight()
-                     + self.main_frame.winfo_reqheight() + 26)
-            content_h = int(req_h / scale) + 8
+                     + self.main_frame.winfo_reqheight() + 16)
+            content_h = int(req_h / scale) + 4
             geo_str = self.root.geometry()
-            m = _re.match(r'(\d+)x(\d+)', geo_str)
-            cur_w = int(m.group(1)) if m else req_w
             # позиция может быть и 'x+y', и '-1450+60' (2-й монитор слева)
             pm = _re.search(r'([+-]\d+)([+-]\d+)$', geo_str)
             if pm:
@@ -2245,9 +2302,9 @@ class App:
             # высоту - по содержимому (в логических единицах): и растим,
             # и ужимаем; не выше рабочей области экрана
             new_h = min(max(content_h, 560), work_h)
-            # ширина: req без запаса сжимал левую колонку (поле пути
-            # обрезалось) - даём +240 на воздух, не уже текущей
-            new_w = min(max(cur_w, int(req_w / scale) + 240), work_w)
+            # ширина: поля параметров теперь фиксированные (~300), поэтому
+            # окно можно сжать по содержимому, а не держать старую ширину.
+            new_w = min(max(int(req_w / scale) + 100, 1100), work_w)
             import os as _os
             if _os.environ.get('KCBOT_FIT_DEBUG'):
                 print('FIT: req=%dx%d work=%dx%d -> %dx%d (geo было %s)'
@@ -2304,8 +2361,8 @@ class App:
 
     def _build_detail_content(self, parent, c):
         detail_scroll = ttk.Scrollbar(parent, orient=tk.VERTICAL)
-        self.detail_text = tk.Text(parent, font=FT(FS_MONO), wrap=tk.WORD,
-                                  width=56, height=1,
+        self.detail_text = tk.Text(parent, font=FT(FS_DETAIL), wrap=tk.WORD,
+                                  width=50, height=1,
                                   bg=c.get('panel_bg', c['entry_bg']), fg=c['fg'],
                                   insertbackground=c['fg'],
                                   selectbackground='#264f78',
@@ -2318,7 +2375,8 @@ class App:
         # Крупное финальное время + подпись к нему.
         _big = FT(FS_BIG)
         self.detail_text.tag_configure(
-            'detail_label', font=FT(FS_CAPTION), foreground='#9a9a9a')
+            'detail_label', font=FT(8),
+            foreground=c.get('muted', '#9a9a9a'))
         self.detail_text.tag_configure(
             'detail_big', font=(_big[0], _big[1], 'bold'),
             foreground=c['fg'])
@@ -2339,7 +2397,6 @@ class App:
         setup_scrollbar_style()
         self.colors = COLOR_SCHEMES[resolve_theme(name)]
         self.root.configure(fg_color=self.colors['bg'])
-        make_resizable(self.root, self.colors['title_bg'], self.colors['bg'])
         # Перестроить интерфейс с новыми цветами
         self._rebuild_ui()
 
@@ -2354,6 +2411,47 @@ class App:
             messagebox.showinfo('KC Bot', t('lang_applied', name=label))
         except Exception:
             pass
+
+    def _apply_ui_scale(self, code):
+        """Сменить масштаб окна: сохранить и перезапустить лаунчер."""
+        cur = str(self.config.get('ui_scale', 'auto'))
+        if not getattr(self, '_scale_ready', True):
+            # Стартовый вызов OptionMenu — вернуть текущее значение.
+            codes, labels = self._ui_scale_labels
+            if cur in codes:
+                self._ui_scale_var.set(labels[codes.index(cur)])
+            return
+        if code == cur:
+            return
+        if self.process_running:
+            from tkinter import messagebox
+            messagebox.showwarning(t('ui_scale_title'),
+                                   t('ui_scale_running'))
+            # Вернуть отображение текущего значения в списке.
+            codes, labels = self._ui_scale_labels
+            if cur in codes:
+                self._ui_scale_var.set(labels[codes.index(cur)])
+            return
+        self.config['ui_scale'] = code
+        try:
+            self.config['window_geometry'] = self.root.geometry()
+        except Exception:
+            pass
+        save_config(self.config)
+        self._restart_launcher()
+
+    def _restart_launcher(self):
+        """Запустить новый экземпляр с новым масштабом и закрыть старый."""
+        import subprocess
+        if getattr(sys, 'frozen', False):
+            cmd = [sys.executable]
+        else:
+            cmd = [sys.executable, os.path.join(HERE, 'launcher.py')]
+        subprocess.Popen(cmd, cwd=HERE)
+        try:
+            self.root.destroy()
+        except Exception:
+            os._exit(0)
 
     def _rebuild_ui(self):
         # Уничтожить старые фреймы
@@ -2385,7 +2483,8 @@ class App:
 
         win, content = create_themed_toplevel(
             self.root, t('help_title'), c, 900, 720,
-            geometry_key='help_window', window_icon=ICON_HELP)
+            geometry_key='help_window', window_icon=ICON_HELP,
+            resizable=False)
         self.help_window = win
 
         # --- текст справки (шрифт масштабируется от настроек Windows) ---
@@ -2462,6 +2561,20 @@ class App:
         'top_percent': (0.01, 1.0, 'val_top'),
     }
 
+    def _set_hint(self, hint, text):
+        """Показать подсказку об ошибке, не занимая место пустой строкой."""
+        if hint is None:
+            return
+        was = bool(hint.winfo_manager())
+        now = bool(text)
+        hint.configure(text=text)
+        if now and not was:
+            hint.pack(fill=tk.X)
+        elif was and not now:
+            hint.pack_forget()
+        if now != was:
+            self.root.after(30, self._fit_window)
+
     def _validate_all(self):
         all_valid = True
         for key, (e, typ) in self.entries.items():
@@ -2480,14 +2593,12 @@ class App:
                 # CTk-поле: подсветка через fg_color/border_color
                 # (bg/highlight* из tk CTk не принимает - колбэк падал)
                 e.configure(fg_color='#3a1a1a', border_color='#ff5555')
-                if hint:
-                    hint.configure(text=t(msg))
+                self._set_hint(hint, t(msg))
                 all_valid = False
             else:
                 e.configure(fg_color=self.colors['entry_bg'],
                             border_color=self.colors['border'])
-                if hint:
-                    hint.configure(text='')
+                self._set_hint(hint, '')
 
         if all_valid:
             self.start_btn.configure(state=tk.NORMAL)
@@ -2744,6 +2855,8 @@ if __name__ == '__main__':
             import bot3
             bot3.main()
         sys.exit(0)
+    _boot_cfg = load_config()
+    set_ui_scale(_boot_cfg.get('ui_scale', 'auto'))
     root = ctk.CTk()
     root.title('KC Bot')
     # Масштаб по DPI делает сам CustomTkinter. Старый ручной
@@ -2766,7 +2879,7 @@ if __name__ == '__main__':
     # Восстановить размер/позицию окна. KCBOT_UI_GEOMETRY (напр.
     # '-1450+60') принудительно открывает окно на 2-м мониторе слева -
     # пользователь смотрит экран, пока агент запускает приложение.
-    saved_geo = load_config().get('window_geometry', None) if 'load_config' in globals() else None
+    saved_geo = _boot_cfg.get('window_geometry', None)
     forced_geo = os.environ.get('KCBOT_UI_GEOMETRY')
     if forced_geo:
         root.geometry(forced_geo)
@@ -2781,9 +2894,10 @@ if __name__ == '__main__':
         root.geometry('%dx%d+%d+%d' % (win_w, win_h, x, y))
     root.minsize(800, 500)
 
-    # Кастомный заголовок (overrideredirect)
+    # Кастомный заголовок (overrideredirect); главное окно фиксированного
+    # размера — ресайз только у консоли.
     root.overrideredirect(True)
-    make_resizable(root)          # нативный хват за края/углы
+    root.resizable(False, False)
 
     # Показать в панели задач
     try:
@@ -2831,7 +2945,6 @@ if __name__ == '__main__':
     root.deiconify()
     root.update()
     root.lift()
-    make_resizable(root, app.colors['title_bg'], app.colors['bg'])   # HWND готов - ресайз
 
     # Установить иконку в панели задач ПОСЛЕ показа окна (иначе не подхватывается)
     def _apply_icon_now():
