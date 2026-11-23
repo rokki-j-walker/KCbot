@@ -11,7 +11,7 @@
 ; =============================================================================
 
 #define MyAppName "KCbot"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "rokki-j-walker"
 #define MyAppURL "https://github.com/rokki-j-walker/KCbot"
 #define MyAppExeName "KCbot.exe"
@@ -40,7 +40,7 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 SetupIconFile=assets\kc_bot.ico
 
 [Languages]
-Name: "russian"; MessagesFile: "compiler:Default.isl"
+Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
