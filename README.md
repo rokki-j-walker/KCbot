@@ -5,8 +5,8 @@
 пропатченный логгер и обучает стратегию эволюцией: **CEM + Pareto**,
 с сохранённым старым **GA**-режимом.
 
-**Релиз v1.0.1:**
-https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.1
+**Релиз v1.0.2:**
+https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.2
 
 ---
 
@@ -19,6 +19,8 @@ https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.1
 - **Главное окно фиксированного размера**; ресайз — только у консоли,
   справка тоже фиксирована.
 - Компактная строка пути: значки «папка», «автопоиск», «патч/откат».
+- **Кнопка «Обновить»**: проверяет GitHub Releases, скачивает установщик
+  новой версии и запускает его (с проверкой SHA256).
 - Патчер `Assembly-CSharp.dll` с бэкапом и откатом.
 - «Детали»: итоговое время, количество поколений/ботов и расчёт по
   раундам без дублирования параметров.
@@ -48,12 +50,12 @@ https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.1
 ## Установка
 
 ### Инсталлер
-Скачать `KCbot-1.0.1.exe` из
-[Releases](https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.1)
+Скачать `KCbot-1.0.2.exe` из
+[Releases](https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.2)
 и запустить. Установка в пользовательский каталог, Python не нужен.
 
 ### Портативная версия
-Скачать `KCbot-1.0.1-portable.zip`, распаковать в любую папку и запустить
+Скачать `KCbot-1.0.2-portable.zip`, распаковать в любую папку и запустить
 `KCbot.exe`.
 
 **Требования:** Windows 10/11 x64, установленная **Kingdom: Classic**
@@ -95,7 +97,9 @@ https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.1
 | Оценок на геном | 1 / 2 / 3 — меньше шума, но дольше |
 
 Время в «Деталях» пересчитывается с учётом популяции, раундов, эпизодов
-и числа оценок.
+и числа оценок. Скорость не меняет реальное время прогона (эпизод идёт
+по секундам), но меняет **игровое время** — обе цифры видны в «Деталях»
+и обновляются при смене скорости.
 
 ---
 
@@ -105,15 +109,15 @@ https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.1
 py -m pip install -r requirements.txt
 py -m PyInstaller KCbot.spec --noconfirm --clean
 & "C:\Program Files\utils\Inno Setup 7\ISCC.exe" KCbot.iss
-Compress-Archive -Path 'dist\KCbot\*' -DestinationPath 'dist\KCbot-1.0.1-portable.zip' -CompressionLevel Optimal
+Compress-Archive -Path 'dist\KCbot\*' -DestinationPath 'dist\KCbot-1.0.2-portable.zip' -CompressionLevel Optimal
 ```
 
 Результаты:
 - `dist/KCbot/KCbot.exe` — onedir-сборка (Windows x64);
-- `Setup/KCbot-1.0.1.exe` — инсталлер Inno Setup 7;
-- `dist/KCbot-1.0.1-portable.zip` — портативная версия.
+- `Setup/KCbot-1.0.2.exe` — инсталлер Inno Setup 7;
+- `dist/KCbot-1.0.2-portable.zip` — портативная версия.
 
-Версия exe задаётся `KCbot_version.txt` (FileVersion 1.0.1.0).
+Версия exe задаётся `KCbot_version.txt` (FileVersion 1.0.2.0).
 
 ### Проверка
 ```powershell
@@ -159,7 +163,7 @@ KCbot/
 
 - `BUG_REPORT.md` — известные проблемы и история аудита.
 - `TODO.md` — план развития.
-- Релиз **v1.0.1** опубликован; проверка на чистой VM недоступна в
+- Релиз **v1.0.2** опубликован; проверка на чистой VM недоступна в
   текущем окружении.
 
 Проект не связан с разработчиками Kingdom и распространяется как

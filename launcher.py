@@ -8,15 +8,20 @@ launcher.py - лаунчер обучения KingdomBot.
 import collections
 import ctypes
 import gamepath
+import hashlib
 import json
 import kc_common
 import os
 import patcher
 import queue
+import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import tkinter as tk
+import urllib.request
+import webbrowser
 from tkinter import ttk
 
 # Дизайн-библиотека (решение по дизайну 2026-11-21): современные виджеты
@@ -36,6 +41,24 @@ if getattr(sys, 'frozen', False):
     HERE = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
 else:
     HERE = os.path.dirname(os.path.abspath(__file__))
+
+APP_VERSION = '1.0.2'
+GITHUB_REPO = 'rokki-j-walker/KCbot'
+UPDATE_API = 'https://api.github.com/repos/%s/releases/latest' % GITHUB_REPO
+UPDATE_PAGE = 'https://github.com/%s/releases/latest' % GITHUB_REPO
+
+
+def parse_version(text):
+    """'v1.2.3' -> (1, 2, 3); устойчиво к мусору."""
+    parts = []
+    for p in str(text or '').strip().lstrip('vV').split('.'):
+        digits = ''.join(ch for ch in p if ch.isdigit())
+        parts.append(int(digits) if digits else 0)
+    return tuple(parts) or (0,)
+
+
+def is_newer(tag):
+    return parse_version(tag) > parse_version(APP_VERSION)
 
 # ---------- Локализация ----------
 LOCALE_DIR = os.path.join(HERE, 'locales')
@@ -1556,6 +1579,7 @@ class App:
         self.settings_dialog = None
         self._maximized = False
         self._scale_ready = False
+        self._update_busy = False
         # Сохраняем позицию/размер, применённые при старте (2-й монитор),
         # а не сбрасываем в 1000x700 — иначе окно уезжает на основной.
         self._normal_geometry = self.root.geometry() or '1000x700'
@@ -1664,8 +1688,12 @@ class App:
         except (ValueError, TypeError):
             return
         if getattr(self, '_speed_seen', None) == val:
+            self.schedule_calculate()
             return
         self._speed_seen = val
+        # Скорость меняет игровое время (см. «Детали»), поэтому пересчёт
+        # нужен сразу, не дожидаясь следующего изменения другого поля.
+        self.schedule_calculate()
         self._ensure_patched(t('patch_speed'))
 
     def _migrate_config(self):
@@ -1752,8 +1780,9 @@ class App:
         # размер главного окна фиксирован (только консоль ресайзится)
         _cap('\u2715', self.root.destroy, 46, hover='#e81123')
         _cap('\u2014', self.minimize, 46)
-        # сразу левее них - Справка
+        # сразу левее них - Справка и Обновить
         self.help_btn = _cap(t('help_title'), self._open_help, 88)
+        self.update_btn = _cap(t('update_check'), self._check_updates, 100)
 
         # Тема и Язык - списки в стиле фильтра консоли (эталон пользователя):
         # видно текущее значение, выбор из списка, масштаб вместе с Windows
@@ -2474,6 +2503,136 @@ class App:
         self._build_title_bar()
         self._build_main()
 
+    # ------------------------------------------------------------ обновления
+    def _set_update_button(self, text=None, state=tk.NORMAL):
+        if not hasattr(self, 'update_btn'):
+            return
+        try:
+            self.update_btn.configure(text=text or t('update_check'),
+                                      state=state)
+        except Exception:
+            pass
+
+    def _check_updates(self):
+        from tkinter import messagebox
+        if self.process_running:
+            messagebox.showwarning(t('update_title'), t('update_running'))
+            return
+        if self._update_busy:
+            return
+        self._update_busy = True
+        self._set_update_button(t('update_checking'), tk.DISABLED)
+        threading.Thread(target=self._fetch_update, daemon=True).start()
+
+    def _fetch_update(self):
+        try:
+            req = urllib.request.Request(
+                UPDATE_API, headers={'User-Agent': 'KCbot-Updater',
+                                     'Accept': 'application/vnd.github+json'})
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                data = json.load(resp)
+        except Exception as e:
+            self.root.after(0, lambda err=e: self._update_error(err))
+            return
+        self.root.after(0, lambda: self._update_fetched(data))
+
+    def _update_fetched(self, data):
+        from tkinter import messagebox
+        self._update_busy = False
+        self._set_update_button()
+        tag = data.get('tag_name', '')
+        if not is_newer(tag):
+            messagebox.showinfo(
+                t('update_title'),
+                t('update_latest', ver='v' + APP_VERSION))
+            return
+        assets = data.get('assets') or []
+        installer = None
+        for a in assets:
+            name = (a.get('name') or '').lower()
+            if name.endswith('.exe') and 'portable' not in name \
+                    and a.get('browser_download_url'):
+                installer = a
+                break
+        if installer is None:
+            if messagebox.askyesno(
+                    t('update_title'),
+                    t('update_no_asset', ver=tag)):
+                webbrowser.open(data.get('html_url') or UPDATE_PAGE)
+            return
+        if not messagebox.askyesno(
+                t('update_title'),
+                t('update_available', ver=tag)):
+            return
+        self._download_update(installer, tag)
+
+    def _download_update(self, asset, tag):
+        self._update_busy = True
+        self._set_update_button(t('update_downloading'), tk.DISABLED)
+        folder = os.path.join(tempfile.gettempdir(), 'KCbot-update')
+        os.makedirs(folder, exist_ok=True)
+        path = os.path.join(folder, asset.get('name') or 'KCbot-update.exe')
+        threading.Thread(target=self._download_update_worker,
+                         args=(asset, tag, path), daemon=True).start()
+
+    def _download_update_worker(self, asset, tag, path):
+        try:
+            req = urllib.request.Request(
+                asset['browser_download_url'],
+                headers={'User-Agent': 'KCbot-Updater'})
+            with urllib.request.urlopen(req, timeout=90) as resp, \
+                    open(path, 'wb') as f:
+                shutil.copyfileobj(resp, f, 1024 * 256)
+            digest = (asset.get('digest') or '').lower()
+            if digest.startswith('sha256:'):
+                h = hashlib.sha256()
+                with open(path, 'rb') as f:
+                    for chunk in iter(lambda: f.read(1024 * 1024), b''):
+                        h.update(chunk)
+                if h.hexdigest() != digest.split(':', 1)[1]:
+                    raise ValueError('SHA256 mismatch')
+        except Exception as e:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except OSError:
+                pass
+            self.root.after(0, lambda err=e: self._update_error(err, True))
+            return
+        self.root.after(0, lambda: self._update_downloaded(path, tag))
+
+    def _update_downloaded(self, path, tag):
+        from tkinter import messagebox
+        self._update_busy = False
+        self._set_update_button()
+        if not messagebox.askyesno(
+                t('update_title'),
+                t('update_ready', ver=tag, path=path)):
+            messagebox.showinfo(t('update_title'),
+                                t('update_saved', path=path))
+            return
+        try:
+            cfg = load_config()
+            cfg['window_geometry'] = self.root.geometry()
+            save_config(cfg)
+        except Exception:
+            pass
+        try:
+            subprocess.Popen([path], cwd=os.path.dirname(path))
+        except Exception as e:
+            messagebox.showerror(t('update_title'),
+                                 t('update_failed', err=str(e)[:300]))
+            return
+        self.root.after(250, self.root.destroy)
+
+    def _update_error(self, err, download=False):
+        from tkinter import messagebox
+        self._update_busy = False
+        self._set_update_button()
+        key = 'update_download_failed' if download else 'update_failed'
+        messagebox.showwarning(t('update_title'),
+                               t(key, err=str(err)[:300]))
+
     def _open_help(self):
         c = self.colors
         # Одно окно справки: повторный клик поднимает уже открытое
@@ -2670,11 +2829,24 @@ class App:
                         m='%02d' % (total_min % 60))
             else:
                 big = t('detail_time_m', m='%d' % total_min)
+            speed = max(1.0, float(cfg.get('speed', 1.0)))
+            game_total = total * speed
+            game_min = int(round(game_total / 60.0))
+            if game_min >= 60:
+                game = t('detail_game_time', h='%d' % (game_min // 60),
+                         m='%02d' % (game_min % 60),
+                         speed='%g' % speed)
+            else:
+                game = t('detail_game_time_m', m='%d' % game_min,
+                         speed='%g' % speed)
             dt.insert(tk.END, t('detail_total_label') + '\n', 'detail_label')
             dt.insert(tk.END, big + '\n', 'detail_big')
             dt.insert(tk.END, t('detail_rounds_bots',
                                 n=cfg['rounds'],
-                                bots=cfg['pop'] * cfg['rounds']) + '\n\n')
+                                bots=cfg['pop'] * cfg['rounds']) + '\n')
+            dt.insert(tk.END, game + '\n\n')
+            dt.insert(tk.END, t('detail_speed_note') + '\n\n',
+                      'detail_label')
             dt.insert(tk.END, t('sec_rounds') + '\n')
             for rnd, ep, rt in details:
                 dt.insert(tk.END, t('round_line', n='%2d' % rnd, ep='%.0f' % ep,
