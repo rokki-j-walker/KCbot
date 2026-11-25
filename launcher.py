@@ -768,6 +768,141 @@ def _work_area():
         return 1920, 1040
 
 
+# ----------------------------------------------------- мониторы и позиция окна
+def monitor_rects():
+    """Все мониторы: [((монитор), (рабочая область))] в физических пикселях.
+
+    Процесс не DPI-aware, но EnumDisplayMonitors/GetMonitorInfo на нём
+    отдают именно физические координаты: сверено замером с GetWindowRect
+    (позиция в geometry() совпадает с Win32 один в один: '+100+100' ->
+    left=100, '-1450+60' -> left=-1450).
+    """
+    out = []
+    try:
+        from ctypes import wintypes
+        CB = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HMONITOR,
+                                wintypes.HDC,
+                                ctypes.POINTER(wintypes.RECT),
+                                wintypes.LPARAM)
+
+        class _MI(ctypes.Structure):
+            _fields_ = [('cbSize', wintypes.DWORD),
+                        ('rcMonitor', wintypes.RECT),
+                        ('rcWork', wintypes.RECT),
+                        ('dwFlags', wintypes.DWORD)]
+
+        def _cb(hmon, _hdc, _lprc, _lparam):
+            mi = _MI()
+            mi.cbSize = ctypes.sizeof(_MI)
+            if ctypes.windll.user32.GetMonitorInfoW(hmon, ctypes.byref(mi)):
+                m, w = mi.rcMonitor, mi.rcWork
+                out.append(((m.left, m.top, m.right, m.bottom),
+                            (w.left, w.top, w.right, w.bottom)))
+            return True
+
+        ctypes.windll.user32.EnumDisplayMonitors(0, 0, CB(_cb), 0)
+    except Exception:
+        pass
+    return out
+
+
+def geometry_rect(geo):
+    """'1000x700+100+100' -> (x, y, ширина, высота) в физических пикселях.
+
+    Замер: позиция в geometry() уже физическая (не масштабируется), а
+    размер задаётся в единицах Tk - физика = size x win_ui_scale()
+    (1000 -> 1250 при 125%).
+    """
+    import re as _re
+    s = str(geo or '').strip()
+    # Tk форматирует отрицательную координату как '+-1450' (проверено:
+    # geometry() -> '1000x700+-1450+60'), поэтому размер и позицию
+    # ищем разными кусками regex, а не одним по всему строке.
+    m = _re.match(r'(\d+)x(\d+)', s)
+    p = _re.search(r'([+-]\d+)([+-]\d+)$', s)
+    if not m or not p:
+        return None
+    try:
+        sc = win_ui_scale()
+    except Exception:
+        sc = 1.0
+    w = max(1, int(round(int(m.group(1)) * sc)))
+    h = max(1, int(round(int(m.group(2)) * sc)))
+    return int(p.group(1)), int(p.group(2)), w, h
+
+
+def geometry_visible(geo, min_px=100):
+    """True, если окно с геометрией geo видно хотя бы частично.
+
+    False означает, что окно уехало за пределы ВСЕХ подключённых
+    мониторов - например, было открыто на 2-м мониторе, а его
+    отключили. Тогда окно надо открыть по центру, а не в пустоту
+    (Windows само окно сюда не возвращает - проверено замером
+    для '+3000').
+    """
+    rect = geometry_rect(geo)
+    if rect is None:
+        return True          # не разобрали - не мешаем пользователю
+    mons = monitor_rects()
+    if not mons:
+        return True          # мониторы не получили - не мешаем
+    x, y, w, h = rect
+    for (ml, mt, mr, mb), _work in mons:
+        if (min(x + w, mr) - max(x, ml) >= min_px
+                and min(y + h, mb) - max(y, mt) >= min_px):
+            return True
+    return False
+
+
+def monitor_for_rect(x, y, w, h):
+    """Монитор с наибольшим пересечением с прямоугольником: ((монитор),
+    (рабочая область)) в физических пикселях, либо None.
+
+    Оба прямоугольника нужны вызывающему: по монитору считается предел
+    размера окна, по рабочей области (без панели задач) - позиция.
+    """
+    mons = monitor_rects()
+    best, best_area = None, 0
+    for mon, work in mons:
+        ml, mt, mr, mb = mon
+        area = (min(x + w, mr) - max(x, ml)) * (min(y + h, mb) - max(y, mt))
+        if area > best_area:
+            best, best_area = (mon, work), area
+    return best
+
+
+def primary_work_area():
+    """Рабочая область ОСНОВНОГО монитора (физ. px): (l, t, r, b).
+
+    Берём из EnumDisplayMonitors, а не из SPI_GETWORKAREA: мониторы мы
+    и так оттуда получаем, координаты совпадают с geometry(), а
+    SystemParametersInfoW в этом процессе отдаёт виртуализированные
+    (без масштаба) значения - см. замер GetWindowRect.
+    """
+    for mon, work in monitor_rects():
+        # у основного монитора начало координат Windows = (0, 0)
+        if mon[0] == 0 and mon[1] == 0:
+            return work
+    return 0, 0, 2048, 1104
+
+
+def center_geometry(win_w, win_h):
+    """'WxH+X+Y' по центру рабочей области ОСНОВНОГО монитора.
+
+    win_w/win_h - в единицах Tk (как в geometry()), координаты - физические.
+    """
+    wl, wt, wr, wb = primary_work_area()
+    try:
+        sc = win_ui_scale()
+    except Exception:
+        sc = 1.0
+    pw = int(round(win_w * sc))
+    ph = int(round(win_h * sc))
+    x = wl + max(0, (wr - wl - pw) // 2)
+    y = wt + max(0, (wb - wt - ph) // 2)
+    return '%dx%d+%d+%d' % (win_w, win_h, x, y)
+
+
 # Скорость: показ «1x/2x/3x», хранение «1/2/3» (как в конфиге/CLI)
 SPEED_DISPLAY = {'1': '1x', '2': '2x', '3': '3x'}
 SPEED_REVERSE = {v: k for k, v in SPEED_DISPLAY.items()}
@@ -1118,9 +1253,17 @@ def create_themed_toplevel(parent, title, colors, width=800, height=600,
         # мониторе главного окна (иначе консоль/справка уезжают на
         # основной экран при запуске на втором).
         import re as _re
-        m = _re.match(r'(\d+)x(\d+)([+-]\d+)([+-]\d+)$', _saved)
-        recenter = False
-        if m:
+        # Tk пишет отрицательную координату как '+-1450' - размер и позицию
+        # ищем разными кусками regex, иначе match не находится и ниже
+        # m.group(1) падает с AttributeError.
+        sz = _re.match(r'(\d+)x(\d+)', _saved)
+        pos = _re.search(r'([+-]\d+)([+-]\d+)$', _saved)
+        # Переносим к родителю, если:
+        # 1) монитор, на котором окно стояло, больше не подключён
+        #    (geometry_visible == False) - иначе окно уедет в пустоту;
+        # 2) окно сохранено на другом мониторе, чем главное (см. ниже).
+        recenter = not geometry_visible(_saved)
+        if sz and pos and not recenter:
             def _sign(value):
                 return 1 if value >= 0 else -1
             try:
@@ -1128,10 +1271,10 @@ def create_themed_toplevel(parent, title, colors, width=800, height=600,
                 parent_x = int(pm.group(1)) if pm else parent.winfo_x()
             except Exception:
                 parent_x = parent.winfo_x()
-            if _sign(int(m.group(3))) != _sign(parent_x):
+            if _sign(int(pos.group(1))) != _sign(parent_x):
                 recenter = True
-        if recenter:
-            sw, sh = int(m.group(1)), int(m.group(2))
+        if recenter and sz:
+            sw, sh = int(sz.group(1)), int(sz.group(2))
             try:
                 px = parent.winfo_x(); py = parent.winfo_y()
                 pw = parent.winfo_width(); ph = parent.winfo_height()
@@ -1140,8 +1283,11 @@ def create_themed_toplevel(parent, title, colors, width=800, height=600,
                                 py + (ph - sh) // 2))
             except Exception:
                 win.geometry('%dx%d' % (sw, sh))
-        else:
+        elif sz:
             win.geometry(_saved)
+        else:
+            # не разобрали сохранённую геометрию - просто по размеру
+            win.geometry('%dx%d' % (width, height))
     else:
         # Центрировать относительно родителя
         try:
@@ -2347,6 +2493,26 @@ class App:
         # пока шрифты/детали ещё не осели (замер завышен - окно растёт с
         # пустым низом; жалоба «снизу много свободного пространства»)
         self.root.after(700, self._fit_window)
+        # Стартовое центрирование считается под 1000x700, а _fit_window
+        # растягивает окно под содержимое (1120+) - центр уезжает вправо
+        # и вниз. Доцентрировать уже с фактическим размером.
+        self.root.after(950, self._finish_centering)
+
+    def _finish_centering(self):
+        """Пере-центрировать окно после подгонки размера (см. _fit_window)."""
+        if not getattr(self.root, '_kc_center_pending', False):
+            return
+        self.root._kc_center_pending = False
+        try:
+            import re as _re
+            self.root.update_idletasks()
+            m = _re.match(r'(\d+)x(\d+)', self.root.geometry())
+            if not m:
+                return
+            self.root.geometry(
+                center_geometry(int(m.group(1)), int(m.group(2))))
+        except Exception:
+            pass
     def _fit_window(self):
         """Растянуть окно под содержимое с учётом масштаба Windows.
 
@@ -2364,8 +2530,35 @@ class App:
             # Рабочую область тоже переводим в логические, иначе окно
             # получается выше экрана и низ обрезается (жалоба «не всё влезло»).
             scale = win_ui_scale()
-            work_w = int((self.root.winfo_screenwidth() - 8) / scale)
-            work_h = int((self.root.winfo_screenheight() - 80) / scale)
+            geo_str = self.root.geometry()
+            # позиция может быть и 'x+y', и '-1450+60' (2-й монитор слева);
+            # координаты в geometry ФИЗИЧЕСКИЕ (замер: '-1450+60' ->
+            # GetWindowRect.left = -1450), размер - в единицах Tk.
+            pm = _re.search(r'([+-]\d+)([+-]\d+)$', geo_str)
+            if pm:
+                x, y = int(pm.group(1)), int(pm.group(2))
+            else:
+                x, y = 80, 60
+            # Окно прижимаем к МОНИТОРУ, на котором оно стоит, а не к
+            # основному: иначе окно, сохранённое на мониторе справа,
+            # уезжало на основной, а для монитора слева пришлось делать
+            # обходное условие x >= 0 (границы второго экрана Tk не
+            # сообщает - берём их из Win32).
+            try:
+                cur_w, cur_h = self.root.winfo_width(), \
+                    self.root.winfo_height()
+            except Exception:
+                cur_w, cur_h = 1000, 700
+            found = monitor_for_rect(x, y, max(1, cur_w), max(1, cur_h))
+            if found:
+                (ml, mt, mr, mb), (wl, wt, wr, wb) = found
+            else:
+                wl, wt, wr, wb = primary_work_area()
+                ml, mt, mr, mb = wl, wt, wr, wb
+            # предел размера - полный монитор (как раньше по winfo_screen*),
+            # позиция - по рабочей области (без панели задач)
+            work_w = max(200, int((mr - ml - 8) / scale))
+            work_h = max(200, int((mb - mt - 80) / scale))
             req_w = self.main_frame.winfo_reqwidth() + 32
             # Высоту берём по левой колонке: правые «Детали» при нехватке
             # высоты прокручиваются, а внизу основного окна не остаётся
@@ -2375,13 +2568,6 @@ class App:
                       else self.main_frame.winfo_reqheight())
             req_h = self.title_bar.winfo_reqheight() + left_h + 16
             content_h = int(req_h / scale) + 4
-            geo_str = self.root.geometry()
-            # позиция может быть и 'x+y', и '-1450+60' (2-й монитор слева)
-            pm = _re.search(r'([+-]\d+)([+-]\d+)$', geo_str)
-            if pm:
-                x, y = int(pm.group(1)), int(pm.group(2))
-            else:
-                x, y = 80, 60
             # высоту - по содержимому (в логических единицах): и растим,
             # и ужимаем; не выше рабочей области экрана
             new_h = min(max(content_h, 560), work_h)
@@ -2390,16 +2576,24 @@ class App:
             new_w = min(max(int(req_w / scale) + 100, 1100), work_w)
             import os as _os
             if _os.environ.get('KCBOT_FIT_DEBUG'):
-                print('FIT: req=%dx%d work=%dx%d -> %dx%d (geo было %s)'
-                      % (req_w, req_h, work_w, work_h, new_w, new_h,
-                         self.root.geometry()), flush=True)
-            # окно обязано целиком помещаться на экране; координаты со
-            # знаком минус (второй монитор) не трогаем - их границы Tk
-            # для второго экрана не сообщает
-            if x >= 0:
-                x = min(max(x, 0), max(0, work_w - new_w))
-            if y >= 0:
-                y = min(max(y, 0), max(0, work_h - new_h))
+                # geometry и winfo_* здесь в одном пространстве координат
+                # (позиция совпадает, размер winfo = geometry x масштаб);
+                # GetWindowRect после отрисовки отдаёт виртуальные координаты
+                # и с ними сравнивать нельзя - поэтому в отладке его нет.
+                print('FIT: req=%dx%d work=%dx%d mon=%s -> %dx%d | '
+                      'geo=%s winfo=%sx%s xy=%s,%s' % (
+                          req_w, req_h, work_w, work_h,
+                          (wl, wt, wr, wb), new_w, new_h,
+                          self.root.geometry(),
+                          self.root.winfo_width(), self.root.winfo_height(),
+                          self.root.winfo_x(), self.root.winfo_y()),
+                      flush=True)
+            # окно обязано целиком помещаться на СВОЁМ мониторе;
+            # координаты физические, размер в единицах Tk -> * масштаб
+            new_w_phys = int(round(new_w * scale))
+            new_h_phys = int(round(new_h * scale))
+            x = min(max(x, wl), max(wl, wr - new_w_phys))
+            y = min(max(y, wt), max(wt, wb - new_h_phys))
             self.root.geometry('%dx%d+%d+%d' % (new_w, new_h, x, y))
             self._normal_geometry = '%dx%d' % (new_w, new_h)
         except Exception:
@@ -3117,17 +3311,19 @@ if __name__ == '__main__':
     # пользователь смотрит экран, пока агент запускает приложение.
     saved_geo = _boot_cfg.get('window_geometry', None)
     forced_geo = os.environ.get('KCBOT_UI_GEOMETRY')
+    root._kc_center_pending = False
     if forced_geo:
         root.geometry(forced_geo)
-    elif saved_geo:
+    elif saved_geo and geometry_visible(saved_geo):
+        # Последнее положение помним и открываемся в нём. Но если
+        # монитор, на котором окно стояло, больше не подключён -
+        # открываемся по центру: Windows само окно сюда не возвращает
+        # (замер: '+3000' остаётся за экраном), а overrideredirect
+        # окно и переставить не может.
         root.geometry(saved_geo)
     else:
-        screen_w = root.winfo_screenwidth()
-        screen_h = root.winfo_screenheight()
-        win_w, win_h = 1000, 700
-        x = (screen_w - win_w) // 2
-        y = (screen_h - win_h) // 2
-        root.geometry('%dx%d+%d+%d' % (win_w, win_h, x, y))
+        root._kc_center_pending = True
+        root.geometry(center_geometry(1000, 700))
     root.minsize(800, 500)
 
     # Кастомный заголовок (overrideredirect); главное окно фиксированного
