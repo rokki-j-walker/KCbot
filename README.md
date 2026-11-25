@@ -5,8 +5,8 @@
 пропатченный логгер и обучает стратегию эволюцией: **CEM + Pareto**,
 с сохранённым старым **GA**-режимом.
 
-**Релиз v1.0.2:**
-https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.2
+**Релиз v1.0.3:**
+https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.3
 
 ---
 
@@ -50,12 +50,12 @@ https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.2
 ## Установка
 
 ### Инсталлер
-Скачать `KCbot-1.0.2.exe` из
-[Releases](https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.2)
+Скачать `KCbot-1.0.3.exe` из
+[Releases](https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.3)
 и запустить. Установка в пользовательский каталог, Python не нужен.
 
 ### Портативная версия
-Скачать `KCbot-1.0.2-portable.zip`, распаковать в любую папку и запустить
+Скачать `KCbot-1.0.3-portable.zip`, распаковать в любую папку и запустить
 `KCbot.exe`.
 
 **Требования:** Windows 10/11 x64, установленная **Kingdom: Classic**
@@ -97,9 +97,11 @@ https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.2
 | Оценок на геном | 1 / 2 / 3 — меньше шума, но дольше |
 
 Время в «Деталях» пересчитывается с учётом популяции, раундов, эпизодов
-и числа оценок. Скорость не меняет реальное время прогона (эпизод идёт
-по секундам), но меняет **игровое время** — обе цифры видны в «Деталях»
-и обновляются при смене скорости.
+и числа оценок. **`episode` задано в игровых секундах**: реальное время
+прогона = игровые ÷ скорость, а перезапуск игры — реальные секунды и от
+скорости не делится. Поэтому в «Деталях» **«Реальное время» зависит от
+1x/2x/3x**, а **«Игровое время» одинаково при любой скорости**; обе цифры
+обновляются при смене скорости.
 
 ---
 
@@ -109,15 +111,15 @@ https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.2
 py -m pip install -r requirements.txt
 py -m PyInstaller KCbot.spec --noconfirm --clean
 & "C:\Program Files\utils\Inno Setup 7\ISCC.exe" KCbot.iss
-Compress-Archive -Path 'dist\KCbot\*' -DestinationPath 'dist\KCbot-1.0.2-portable.zip' -CompressionLevel Optimal
+Compress-Archive -Path 'dist\KCbot\*' -DestinationPath 'dist\KCbot-1.0.3-portable.zip' -CompressionLevel Optimal
 ```
 
 Результаты:
 - `dist/KCbot/KCbot.exe` — onedir-сборка (Windows x64);
-- `Setup/KCbot-1.0.2.exe` — инсталлер Inno Setup 7;
-- `dist/KCbot-1.0.2-portable.zip` — портативная версия.
+- `Setup/KCbot-1.0.3.exe` — инсталлер Inno Setup 7;
+- `dist/KCbot-1.0.3-portable.zip` — портативная версия.
 
-Версия exe задаётся `KCbot_version.txt` (FileVersion 1.0.2.0).
+Версия exe задаётся `KCbot_version.txt` (FileVersion 1.0.3.0).
 
 ### Проверка
 ```powershell
@@ -163,7 +165,7 @@ KCbot/
 
 - `BUG_REPORT.md` — известные проблемы и история аудита.
 - `TODO.md` — план развития.
-- Релиз **v1.0.2** опубликован; проверка на чистой VM недоступна в
+- Релиз **v1.0.3** опубликован; проверка на чистой VM недоступна в
   текущем окружении.
 
 Проект не связан с разработчиками Kingdom и распространяется как

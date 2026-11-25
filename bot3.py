@@ -994,7 +994,8 @@ class Bot(object):
         self.speed = max(0.1, speed)
         self.task = None
         self.last_recruit_drop = 0.0
-        self.episode_end = None   # время окончания эпизода (для отображения оставшегося)
+        self.episode_end = None   # бюджет эпизода в ИГРОВЫХ секундах (для отображения оставшегося)
+        self.pause_started = None  # начало текущей паузы (F8/фокус), если идёт
         # масштабируем временные константы под скорость симуляции
         self.coin_timeout = CFG['coin_timeout'] / self.speed
         self.pay_giveup = CFG['pay_giveup'] / self.speed
@@ -1009,6 +1010,8 @@ class Bot(object):
         self.pay_phase = None
         self.pay_started = 0.0
         self.pay_purse0 = 0
+        self.pay_purse_min = None
+        self.pay_saw_completed = False
         self.pay_since = 0.0          # когда начали искать точку оплаты
         self._pay_last_px = None      # для проверки реальной остановки
         self._pay_still_since = 0.0
@@ -1040,6 +1043,21 @@ class Bot(object):
     def now(self) -> float:
         return time.time()
 
+    def game_seconds(self) -> float:
+        """Игровые секунды эпизода = (реальное время - паузы) × скорость.
+
+        Time.timeScale = скорость, поэтому игровое время растёт в speed раз
+        быстрее реального. Паузы (F8 и потеря фокуса) вычитаются: во время
+        паузы симуляция стоит. Игровые секунды не зависят от скорости -
+        на 1x и 3x эпизод живёт одинаковое игровое время, но разное реальное.
+        """
+        paused = self.fit.paused_total
+        ps = getattr(self, 'pause_started', None)
+        if ps is not None:
+            # пауза ещё идёт - paused_total обновится только при возобновлении
+            paused += time.time() - ps
+        return max(0.0, time.time() - self.fit.start - paused) * self.speed
+
     def say(self, *a) -> None:
         self.log(*a)
 
@@ -1047,9 +1065,12 @@ class Bot(object):
         if self.stat.get(key) != val:
             self.stat[key] = val
             score = getattr(self, '_last_score', None)
-            # оставшееся время (если есть таймер) или прошедшее
+            # оставшееся время (если есть таймер) или прошедшее.
+            # episode_end задан в игровых секундах - в консоль выводим
+            # остаток РЕАЛЬНЫХ секунд (сколько ждать по часам).
             if self.episode_end is not None:
-                remaining = max(0, self.episode_end - time.time())
+                remaining = max(0.0, self.episode_end - self.game_seconds()) \
+                    / max(0.1, self.speed)
             else:
                 remaining = time.time() - self.fit.start if hasattr(self, 'fit') else 0
             if key == 'task':
@@ -1389,7 +1410,7 @@ class Bot(object):
                  coins_lost=f.coins_lost,
                  focus_pause_time=f.focus_pause_total,
                  generation=self.generation,
-                 seconds=max(0.0, time.time() - f.start - f.paused_total))
+                 seconds=self.game_seconds())
         m['score'] = fitness(m)
         return m
 
@@ -2061,6 +2082,15 @@ class Bot(object):
     def _pay_hold(self, st: State, p: Payable, now: float) -> None:
         """Фаза 'hold': держим S, ждём конца транзакции или таймаута."""
         ps = st.pay_state
+        # Успех нельзя определять только по pay_purse0 - st.purse: во время
+        # оплаты бот может подобрать монеты, и тогда spent станет
+        # отрицательным, хотя покупка прошла (баг: 106 из 112 pay_disabled
+        # с spent<0). Игра пишет ps:Completed - запоминаем его.
+        if ps == 'Completed':
+            self.pay_saw_completed = True
+        if (self.pay_purse_min is None
+                or st.purse < self.pay_purse_min):
+            self.pay_purse_min = st.purse
         if ps == 'None':
             # транзакция завершилась (или откатилась)
             if now - self.pay_started > 0.6:
@@ -2124,6 +2154,8 @@ class Bot(object):
         self.pay_phase = 'hold'
         self.pay_started = now
         self.pay_purse0 = st.purse
+        self.pay_purse_min = st.purse
+        self.pay_saw_completed = False
         self.note('task', 'PAY %s price=%d purse=%d' % (p.base, p.price, st.purse))
         if not self.dry:
             self.inp.down(SC_S)
@@ -2156,19 +2188,30 @@ class Bot(object):
 
     def finish_pay(self, st: State, p: Payable) -> None:
         self.release_s()
-        spent = self.pay_purse0 - st.purse
+        spent = max(0, self.pay_purse0 - st.purse)
+        # Запасной признак: минимальный остаток за время удержания S. Если
+        # после списания бот подобрал монеты, итоговый st.purse выше, но
+        # минимум всё равно показывает списание.
+        pmin = (self.pay_purse_min if self.pay_purse_min is not None
+                else st.purse)
+        spent_min = max(0, self.pay_purse0 - pmin)
+        paid = (self.pay_saw_completed or spent >= p.price
+                or spent_min >= p.price)
         # если монеты не списались — объект недоступен (условия не выполнены): бан на 60 с
-        if spent <= 0:
+        if not paid:
             key = '%s@%.0f' % (p.base, p.x)
             self.pay_black[key] = self.now() + 20.0
             self.note('pay_disabled', '%s @%.1f (spent=%d)' % (p.base, p.x, spent))
-        self.note('pay_done', '%s цена=%d потрачено=%d' % (p.base, p.price, spent))
+        # в лог не выводим отрицательное «потрачено»: при успешной покупке
+        # показываем хотя бы цену (монеты, подобранные в транзакции, — доход)
+        shown = max(p.price, spent) if paid else spent
+        self.note('pay_done', '%s цена=%d потрачено=%d' % (p.base, p.price, shown))
         # успешная покупка: сбрасываем таймер бездействия
-        if spent > 0 and spent >= p.price:
+        if paid:
             if hasattr(self, 'fit'):
                 self.fit.last_interaction = self.now()
         # отслеживаем покупки инструментов (только если успешно)
-        if hasattr(self, 'fit') and spent > 0 and spent >= p.price:
+        if hasattr(self, 'fit') and paid:
             self.fit.buys = self.fit.buys + 1
             # отслеживаем начало строительства/рубки
             if 'Tree' in p.base:
@@ -2208,6 +2251,8 @@ class Bot(object):
         self.pay_target = None
         self.pay_phase = None
         self.pay_purse0 = 0
+        self.pay_purse_min = None
+        self.pay_saw_completed = False
         self.scan_x = None
         self.scan_i = 0
         self.scan_t = 0.0
@@ -2461,7 +2506,8 @@ def main() -> None:
         time.sleep(0.08)
         inp.up(0x01)
 
-    t_end = (time.time() + episode) if episode else None
+    # Бюджет эпизода - в ИГРОВЫХ секундах: реальная длительность = episode/speed.
+    t_end = episode if episode else None
     bot.episode_end = t_end
     try:
         while True:
@@ -2474,6 +2520,7 @@ def main() -> None:
                     if not paused:
                         paused = True
                         pause_started = time.time()
+                        bot.pause_started = pause_started
                         inp.release()
                         if _game_not_playing():
                             log('ПАУЗА (игра уже не идёт — ESC не нужен)')
@@ -2506,10 +2553,10 @@ def main() -> None:
                         if pause_started is not None:
                             extra = time.time() - pause_started
                             pause_started = None
-                            if t_end:
-                                t_end += extra
-                                bot.episode_end = t_end
+                            # t_end в игровых секундах не продлеваем: игровые
+                            # часы и так стоят во время паузы (game_seconds()).
                             bot.fit.paused_total += extra
+                        bot.pause_started = None
                         paused = False
                         # пауза не должна превращаться в «бездействие»
                         try:
@@ -2537,6 +2584,7 @@ def main() -> None:
                     if not focus_paused:
                         focus_paused = True
                         focus_lost_at = now
+                        bot.pause_started = focus_lost_at
                         inp.release()
                         log('ФОКУС ПОТЕРЯН — пауза (жду возврата)')
                     if (focus_lost_at and now - focus_lost_at >= 300.0
@@ -2566,9 +2614,9 @@ def main() -> None:
                     focus_lost_at = 0.0
                     bot.fit.focus_pause_total += lost
                     bot.fit.paused_total += lost
-                    if t_end:
-                        t_end += lost
-                        bot.episode_end = t_end
+                    # t_end в игровых секундах не продлеваем: пауза уже
+                    # вычтена из игровых часов (game_seconds()).
+                    bot.pause_started = None
                     bot.fit.last_move_time = time.time()
                     bot.fit.last_interaction = time.time()
                     log('ФОКУС ВОЗВРАЩЁН (+%.1f с к эпизоду)' % lost)
@@ -2596,7 +2644,7 @@ def main() -> None:
                 time.sleep(1.0)
             if once:
                 break
-            if t_end and time.time() >= t_end:
+            if t_end and bot.game_seconds() >= t_end:
                 break
             time.sleep(0.2 / speed)
     except KeyboardInterrupt:

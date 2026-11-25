@@ -83,6 +83,20 @@ def close_game(timeout=10.0):
     return find_window() is None
 
 
+def launcher_env():
+    """Среда для запуска лаунчера - без режима evo и аргументов обучения.
+
+    В frozen-сборке лаунчер выставляет дочернему evo KC_RUN_MODULE=evo и
+    KC_EVO_ARGS. Если их не убрать, новый процесс KCbot.exe вместо UI
+    снова запустит evo с теми же аргументами - скрытое второе обучение
+    (баг 2026-11-23: после «Обучение завершено» бот играл ещё 3 часа).
+    """
+    env = os.environ.copy()
+    for key in ('KC_RUN_MODULE', 'KC_EVO_ARGS', 'KC_FROM_LAUNCHER'):
+        env.pop(key, None)
+    return env
+
+
 def wait_window(timeout=90):
     t0 = time.time()
     while time.time() - t0 < timeout:
@@ -398,8 +412,10 @@ def run_episode(genome, episode, restart, generation=1, speed=3.0, log_file=None
                 pause_time += iter_elapsed
                 print('    .. пауза (%.0f сек накоплено)' % pause_time, flush=True)
             last_iter = now
-            # таймаут с учётом паузы
-            if now - t0 - pause_time > episode + 60:
+            # Таймаут в РЕАЛЬНЫХ секундах: episode задан в игровых, поэтому
+            # реальная длительность = episode / скорость (паузы вычитаем).
+            sp = min(3.0, max(1.0, speed))   # как в bot3: D7-потолок 3x
+            if now - t0 - pause_time > episode / sp + 60:
                 proc.kill()
                 proc.wait()
                 break
@@ -596,7 +612,8 @@ def main():
     # проявлялось только при прямом запуске.
     ap.add_argument('--pop', type=int, default=50)
     ap.add_argument('--rounds', type=int, default=15)
-    ap.add_argument('--episode', type=float, default=20.0)
+    ap.add_argument('--episode', type=float, default=60.0,
+                    help='длительность эпизода в ИГРОВЫХ секундах')
     # D8: дефолт лаунчера (0.1), а не 0.25 из старого evo.py
     ap.add_argument('--top-percent', type=float, default=0.1,
                     help='доля элиты для отбора (по умолчанию 0.1 = 10%%)')
@@ -759,9 +776,10 @@ def main():
         except Exception:
             history = []
 
-    print('=== эволюция: pop=%d rounds=%d episode=%.0f restart=%s '
-          'optimizer=%s evals=%d pareto=%s ===' %
+    print('=== эволюция: pop=%d rounds=%d episode=%.0f игровых с restart=%s '
+          'speed=%gx optimizer=%s evals=%d pareto=%s ===' %
           (args.pop, args.rounds, args.episode, args.restart,
+           min(3.0, max(1.0, args.speed)),
            args.optimizer, args.eval_repeats, args.pareto))
 
     elite = dict(best)
@@ -783,8 +801,10 @@ def main():
         # формула: episode + episode_increment * поколение
         episode_len = args.episode + args.episode_increment * rnd
         s_now = mutation_strength(rnd, args)
-        print('\n--- раунд %d / %d  (время жизни: %.0f с, сила мутации: %.3f, оптимизатор: %s) ---' %
-              (rnd, args.rounds, episode_len, s_now, args.optimizer))
+        print('\n--- раунд %d / %d  (время жизни: %.0f игровых с = %.0f реальных с при %gx, сила мутации: %.3f, оптимизатор: %s) ---' %
+              (rnd, args.rounds, episode_len,
+               episode_len / min(3.0, max(1.0, args.speed)),
+               min(3.0, max(1.0, args.speed)), s_now, args.optimizer))
         if cem is not None:
             pop = [dict(elite)] + cem.sample(max(0, args.pop - 1))
         else:
@@ -1004,16 +1024,27 @@ def main():
         if os.path.exists(_cfg_path):
             with open(_cfg_path, 'r', encoding='utf-8') as _f:
                 _cfg = _json.load(_f)
-            if _cfg.get('launch_after', False):
+            # Если обучение запущено из лаунчера, он уже открыт и ждёт
+            # завершения — второй лаунчер не нужен.
+            if (_cfg.get('launch_after', False)
+                    and not os.environ.get('KC_FROM_LAUNCHER')):
                 print('Запуск лаунчера...', flush=True)
+                # Не наследовать режим evo! Иначе вместо лаунчера
+                # запустится ЕЩЁ ОДНО обучение без консоли (см.
+                # launcher_env, баг 2026-11-23).
+                child_env = launcher_env()
+                child_cmd = ([sys.executable] if getattr(sys, 'frozen', False)
+                             else [sys.executable,
+                                   os.path.join(HERE, 'launcher.py')])
                 # DEVNULL: лаунчер не должен наследовать наш stdout - иначе
                 # пайп остаётся открытым ПОСЛЕ выхода evo и любая обёртка
                 # (pipe/Tee) виснет часами (аудит2026-11-20: команда обучения
                 # ждала закрытия пайпа9 часов). CREATE_NO_WINDOW: в dev
                 # python.exe не создаёт лишнее окно консоли.
                 subprocess.Popen(
-                    [sys.executable, os.path.join(HERE, 'launcher.py')],
+                    child_cmd,
                     cwd=HERE,
+                    env=child_env,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     creationflags=(0x08000000 if os.name == 'nt' else 0))

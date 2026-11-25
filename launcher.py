@@ -42,7 +42,7 @@ if getattr(sys, 'frozen', False):
 else:
     HERE = os.path.dirname(os.path.abspath(__file__))
 
-APP_VERSION = '1.0.2'
+APP_VERSION = '1.0.3'
 GITHUB_REPO = 'rokki-j-walker/KCbot'
 UPDATE_API = 'https://api.github.com/repos/%s/releases/latest' % GITHUB_REPO
 UPDATE_PAGE = 'https://github.com/%s/releases/latest' % GITHUB_REPO
@@ -98,7 +98,11 @@ APPDATA_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), '
 CONFIG_FILE = os.path.join(APPDATA_DIR, 'launcher_config.json')
 HISTORY_FILE = os.path.join(kc_common.data_dir(), 'data', 'evo_history.json')
 
-RESTART_OVERHEAD = 30.0
+# Средний простой на перезапуск игры/эпизод. Измерено по 600 логам
+# прогона 2026-11-24 (pop=50, rounds=6, eval_repeats=2, speed=3):
+# 16.36-17.41 с, среднее ≈16.9. Старое значение 30 давало +2 ч 11 мин
+# к оценке (11 ч 15 мин вместо фактических 9 ч 04 мин).
+RESTART_OVERHEAD = 16.9
 
 # Минимальная популяция для нормального обучения (генетический алгоритм)
 def apply_taskbar_style(win):
@@ -165,7 +169,8 @@ os.makedirs(APPDATA_DIR, exist_ok=True)
 DEFAULTS = {
     'pop': 50,
     'rounds': 15,
-    'episode': 20.0,
+    'episode': 60.0,        # игровые секунды (D52): старый дефолт 20 был
+                            # реальными, на 3x это 60 игровых - свели к ним
     'episode_increment': 5.0,
     'speed': 3.0,           # D7: потолок 3x, на 4x+ игра ломается
     'top_percent': 0.1,
@@ -182,6 +187,10 @@ DEFAULTS = {
     'console_side': 'right',
     'language': 'ru',
     'ui_scale': 'auto',      # auto / 1.0 / 1.1 / 1.25
+    # D52: episode/increment в ИГРОВЫХ секундах. Маркер есть только у конфигов,
+    # записанных уже в новой семантике - по его отсутствию load_config()
+    # понимает, что старые значения даны в РЕАЛЬНЫХ секундах, и переводит их.
+    'time_semantics': 'game_v1',
 }
 
 def system_base_theme():
@@ -824,6 +833,21 @@ def load_config():
     try:
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             data = json.load(f)
+        # D52: миграция семантики episode (реальные -> игровые секунды).
+        # Старый конфиг не содержит time_semantics, значит episode/increment
+        # записаны в РЕАЛЬНЫХ секундах. На 3x старые 20 реальных = 60 игровых,
+        # поэтому переводим умножением на скорость - обучение не меняется.
+        # Мигрируем ТОЛЬКО присутствующие ключи: отсутствующие позже возьмут
+        # новый игровой дефолт из DEFAULTS и умножать их нельзя.
+        if 'time_semantics' not in data:
+            sp = min(3.0, max(1.0, float(data.get('speed', 1.0) or 1.0)))
+            for key in ('episode', 'episode_increment'):
+                if key in data:
+                    try:
+                        data[key] = float(data[key]) * sp
+                    except (TypeError, ValueError):
+                        pass
+            data['time_semantics'] = 'game_v1'
         for k, v in DEFAULTS.items():
             data.setdefault(k, v)
         return data
@@ -867,26 +891,37 @@ def build_command(cfg):
 
 
 def calc_time(params):
+    """Оценка прогона. episode задан в ИГРОВЫХ секундах.
+
+    Реальное время  = Σ (episode / скорость + перезапуск) × ботов × оценок
+    Игровое время   = Σ episode × ботов × оценок   (от скорости не зависит)
+
+    Перезапуск игры (RESTART_OVERHEAD) - реальные секунды, на скорость
+    НЕ делится: игра грузится одинаково долго при 1x и 3x.
+    """
     pop = params['pop']
     rounds = params['rounds']
     episode = params['episode']
     increment = params['episode_increment']
+    speed = min(3.0, max(1.0, float(params.get('speed', 1.0))))
     restart_overhead = RESTART_OVERHEAD if params['restart'] else 0.0
     repeats = max(1, int(params.get('eval_repeats',
                                      DEFAULTS.get('eval_repeats', 1))))
 
-    total_seconds = 0.0
+    real_seconds = 0.0
+    game_seconds = 0.0
     details = []
     for rnd in range(1, rounds + 1):
         ep = episode + increment * rnd
-        per_bot = ep + restart_overhead
-        round_time = pop * per_bot * repeats
-        total_seconds += round_time
-        details.append((rnd, ep, round_time))
+        round_game = pop * ep * repeats
+        round_real = pop * (ep / speed + restart_overhead) * repeats
+        game_seconds += round_game
+        real_seconds += round_real
+        details.append((rnd, ep, round_real, round_game))
 
-    hours = total_seconds / 3600.0
-    minutes = (total_seconds % 3600) / 60.0
-    return total_seconds, hours, minutes, details
+    hours = real_seconds / 3600.0
+    minutes = (real_seconds % 3600) / 60.0
+    return real_seconds, game_seconds, hours, minutes, details
 
 
 def make_resizable(win, title_color=None, body_color=None):
@@ -2258,7 +2293,7 @@ class App:
 
         # Кнопка сброса параметров к рекомендованным (ghost)
         def _reset_defaults():
-            rec = {'pop': 50, 'rounds': 15, 'episode': 20.0, 'episode_increment': 5.0,
+            rec = {'pop': 50, 'rounds': 15, 'episode': 60.0, 'episode_increment': 5.0,
                    'speed': 3.0, 'top_percent': 0.1}
             for key, (e, typ) in self.entries.items():
                 if key in rec:
@@ -2810,7 +2845,7 @@ class App:
         if cfg is None:
             self._set_result(t('err_params_check'))
             return
-        total, hours, minutes, details = calc_time(cfg)
+        real_total, game_total, hours, minutes, details = calc_time(cfg)
 
         # Время и количество поколений/ботов — только в «Деталях»;
         # в основном окне строка остаётся только для ошибок.
@@ -2823,23 +2858,22 @@ class App:
             dt.delete('1.0', tk.END)
             # Параметры уже видны слева — здесь только итоговое время
             # крупно и расчёт по раундам.
-            total_min = int(round(total / 60.0))
+            speed = min(3.0, max(1.0, float(cfg.get('speed', 1.0))))
+            # Реальное время зависит от скорости, игровое — нет.
+            total_min = int(round(real_total / 60.0))
             if total_min >= 60:
                 big = t('detail_time_hm', h='%d' % (total_min // 60),
                         m='%02d' % (total_min % 60))
             else:
                 big = t('detail_time_m', m='%d' % total_min)
-            speed = max(1.0, float(cfg.get('speed', 1.0)))
-            game_total = total * speed
             game_min = int(round(game_total / 60.0))
             if game_min >= 60:
                 game = t('detail_game_time', h='%d' % (game_min // 60),
-                         m='%02d' % (game_min % 60),
-                         speed='%g' % speed)
+                         m='%02d' % (game_min % 60))
             else:
-                game = t('detail_game_time_m', m='%d' % game_min,
-                         speed='%g' % speed)
-            dt.insert(tk.END, t('detail_total_label') + '\n', 'detail_label')
+                game = t('detail_game_time_m', m='%d' % game_min)
+            dt.insert(tk.END, t('detail_total_label',
+                                speed='%g' % speed) + '\n', 'detail_label')
             dt.insert(tk.END, big + '\n', 'detail_big')
             dt.insert(tk.END, t('detail_rounds_bots',
                                 n=cfg['rounds'],
@@ -2848,9 +2882,10 @@ class App:
             dt.insert(tk.END, t('detail_speed_note') + '\n\n',
                       'detail_label')
             dt.insert(tk.END, t('sec_rounds') + '\n')
-            for rnd, ep, rt in details:
+            for rnd, ep, rt, gr in details:
                 dt.insert(tk.END, t('round_line', n='%2d' % rnd, ep='%.0f' % ep,
-                                    rt='%.0f' % rt, min='%.1f' % (rt / 60.0)) + '\n')
+                                    rt='%.0f' % rt, min='%.1f' % (rt / 60.0),
+                                    gr='%.0f' % gr) + '\n')
 
     def start_training(self):
         cfg = self.get_params()
@@ -2887,6 +2922,8 @@ class App:
         # умирает молча: кнопка «Старт» не восстанавливается (аудит).
         env = os.environ.copy()
         env['PYTHONUTF8'] = '1'
+        # evo не должен открывать второй лаунчер: текущий уже открыт.
+        env['KC_FROM_LAUNCHER'] = '1'
         if getattr(sys, 'frozen', False):
             # '<python> evo.py ...' -> '...' для KC_EVO_ARGS (его читает shlex)
             if len(cmd) > 1 and cmd[1] == 'evo.py':

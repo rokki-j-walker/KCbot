@@ -11,7 +11,7 @@
 ; =============================================================================
 
 #define MyAppName "KCbot"
-#define MyAppVersion "1.0.2"
+#define MyAppVersion "1.0.3"
 #define MyAppPublisher "rokki-j-walker"
 #define MyAppURL "https://github.com/rokki-j-walker/KCbot"
 #define MyAppExeName "KCbot.exe"
