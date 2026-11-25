@@ -31,7 +31,11 @@ OutputDir=Setup
 OutputBaseFilename=KCbot-{#MyAppVersion}
 Compression=lzma2/max
 SolidCompression=yes
-WizardStyle=modern
+; Тёмная тема установщика (Inno Setup 7: режимы light/dark/dynamic).
+; 'dark' - принудительно; 'dynamic' - следовать за настройкой Windows.
+; Работает и для Setup, и для Uninstall; иконки и картинки заменяются
+; встроенной тёмной версией, пользовательская иконка приложения остаётся.
+WizardStyle=modern dark
 ; Приложение - оконное (без консоли), но лаунчер порождает python-процессы,
 ; поэтому при закрытии во время обучения нужно успеть убить дочерние.
 PrivilegesRequired=lowest
