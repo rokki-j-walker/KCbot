@@ -361,6 +361,7 @@ ICON_COPY = '\uE8C8'
 ICON_SAVE = '\uE74E'
 ICON_CONSOLE = '\uE756'
 ICON_HELP = '\uE897'
+ICON_UPDATE = '\uE72C'      # Sync — проверка обновлений
 _ICON_FAMILY = None
 
 
@@ -1817,7 +1818,14 @@ class App:
         _cap('\u2014', self.minimize, 46)
         # сразу левее них - Справка и Обновить
         self.help_btn = _cap(t('help_title'), self._open_help, 88)
-        self.update_btn = _cap(t('update_check'), self._check_updates, 100)
+        # «Обновить» — значок, а не текст (как у кнопок консоли):
+        # смысл даёт подсказка, статус (Проверка.../Скачивание...) тоже
+        # уходит в подсказку, сам значок не меняется.
+        self.update_btn = icon_button(
+            self.title_bar, ICON_UPDATE, self._check_updates, c,
+            width=H_HEADER, height=H_HEADER, corner_radius=0)
+        self.update_btn.pack(side=tk.RIGHT)
+        self.update_tooltip = Tooltip(self.update_btn, t('update_check'), c)
 
         # Тема и Язык - списки в стиле фильтра консоли (эталон пользователя):
         # видно текущее значение, выбор из списка, масштаб вместе с Windows
@@ -2540,13 +2548,21 @@ class App:
 
     # ------------------------------------------------------------ обновления
     def _set_update_button(self, text=None, state=tk.NORMAL):
+        """Состояние кнопки обновления.
+
+        Значок постоянный, поэтому статус (Проверка.../Скачивание...) и
+        результат уходят во всплывающую подсказку.
+        """
         if not hasattr(self, 'update_btn'):
             return
         try:
-            self.update_btn.configure(text=text or t('update_check'),
-                                      state=state)
+            self.update_btn.configure(state=state)
         except Exception:
             pass
+        tip = getattr(self, 'update_tooltip', None)
+        if tip is not None:
+            tip.text = text or t('update_check')
+            tip._hide()   # скрыть показанную, чтобы новый текст увиделся
 
     def _check_updates(self):
         from tkinter import messagebox
