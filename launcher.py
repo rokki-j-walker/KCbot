@@ -1816,8 +1816,13 @@ class App:
         # размер главного окна фиксирован (только консоль ресайзится)
         _cap('\u2715', self.root.destroy, 46, hover='#e81123')
         _cap('\u2014', self.minimize, 46)
-        # сразу левее них - Справка и Обновить
-        self.help_btn = _cap(t('help_title'), self._open_help, 88)
+        # сразу левее них - Справка и Обновить: обе значками, смысл
+        # даёт подсказка (как у кнопок консоли)
+        self.help_btn = icon_button(
+            self.title_bar, ICON_HELP, self._open_help, c,
+            width=H_HEADER, height=H_HEADER, corner_radius=0)
+        self.help_btn.pack(side=tk.RIGHT)
+        Tooltip(self.help_btn, t('help_title'), c)
         # «Обновить» — значок, а не текст (как у кнопок консоли):
         # смысл даёт подсказка, статус (Проверка.../Скачивание...) тоже
         # уходит в подсказку, сам значок не меняется.
