@@ -685,9 +685,16 @@ def _self_shot(path):
     окно; Tk в своём процессе знает свои координаты физически.
     Включается переменной окружения KCBOT_UI_SHOT=<путь.png>.
     """
+    root = None
     try:
         from PIL import ImageGrab
         root = _self_shot.root
+        # Захват идёт по экрану, а не по HWND: если поверх окна оказалось
+        # другое окно (браузер на весь экран), в снимок попадает оно.
+        # Поднимаем своё окно наверх и делаем topmost на время съёмки.
+        root.lift()
+        root.attributes('-topmost', True)
+        root.focus_force()
         root.update_idletasks()
         x, y = root.winfo_rootx(), root.winfo_rooty()
         w, h = root.winfo_width(), root.winfo_height()
@@ -699,6 +706,11 @@ def _self_shot(path):
         print('UI-SHOT saved: %s %s' % (path, img.size), flush=True)
     except Exception as e:
         print('UI-SHOT failed: %r' % (e,), flush=True)
+    finally:
+        try:
+            root.attributes('-topmost', False)
+        except Exception:
+            pass
 
 
 def _shade(hex_color, factor):
@@ -1749,11 +1761,21 @@ class App:
         # Масштаб интерфейса: CTk обычно определяет DPI сам, но сверяемся с
         # честным источником - AppliedDPI из реестра (масштаб под параметры
         # ОС; GetDpiForSystem в unaware-процессе врёт и отдаёт96).
+        #
+        # ВАЖНО (замер, см. [[11 Дизайн UI]]): set_*_scaling(s) задаёт НЕ
+        # абсолютный масштаб, а множитель поверх DPI. При DPI=1.25:
+        # set_window_scaling(1.0) -> 1.25, set_window_scaling(1.1) -> 1.375,
+        # set_widget_scaling(0.8) -> 1.0. Прежний код передавал сюда
+        # абсолютное значение - из-за этого «100%» рисовал интерфейс в 125%,
+        # «110%» в 137.5%, а _fit_window делил ширину контента на НЕ тот
+        # масштаб: окно получалось больше содержимого (пустое место на
+        # 100%/110%) и меньше на 125%, чем на 100%. Делим на DPI.
         _sc = win_ui_scale()
         try:
-            if abs(ctk.ScalingTracker.get_window_scaling(self.root) - _sc) > 0.02:
-                ctk.set_widget_scaling(_sc)
-                ctk.set_window_scaling(_sc)
+            _dpi = float(ctk.ScalingTracker.get_window_scaling(self.root))
+            if _dpi > 0 and abs(_dpi - _sc) > 0.02:
+                ctk.set_widget_scaling(_sc / _dpi)
+                ctk.set_window_scaling(_sc / _dpi)
         except Exception:
             pass
         self.console_window = None
@@ -2576,17 +2598,24 @@ class App:
             new_w = min(max(int(req_w / scale) + 100, 1100), work_w)
             import os as _os
             if _os.environ.get('KCBOT_FIT_DEBUG'):
+                try:
+                    import customtkinter as _ctk
+                    _ctk_sc = _ctk.ScalingTracker.get_window_scaling(
+                        self.root)
+                except Exception:
+                    _ctk_sc = None
                 # geometry и winfo_* здесь в одном пространстве координат
                 # (позиция совпадает, размер winfo = geometry x масштаб);
                 # GetWindowRect после отрисовки отдаёт виртуальные координаты
                 # и с ними сравнивать нельзя - поэтому в отладке его нет.
                 print('FIT: req=%dx%d work=%dx%d mon=%s -> %dx%d | '
-                      'geo=%s winfo=%sx%s xy=%s,%s' % (
+                      'geo=%s winfo=%sx%s xy=%s,%s scale=%s ctk=%s' % (
                           req_w, req_h, work_w, work_h,
                           (wl, wt, wr, wb), new_w, new_h,
                           self.root.geometry(),
                           self.root.winfo_width(), self.root.winfo_height(),
-                          self.root.winfo_x(), self.root.winfo_y()),
+                          self.root.winfo_x(), self.root.winfo_y(),
+                          win_ui_scale(), _ctk_sc),
                       flush=True)
             # окно обязано целиком помещаться на СВОЁМ мониторе;
             # координаты физические, размер в единицах Tk -> * масштаб
