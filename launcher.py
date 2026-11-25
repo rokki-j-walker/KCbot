@@ -42,7 +42,7 @@ if getattr(sys, 'frozen', False):
 else:
     HERE = os.path.dirname(os.path.abspath(__file__))
 
-APP_VERSION = '1.0.3'
+APP_VERSION = '0.1'
 GITHUB_REPO = 'rokki-j-walker/KCbot'
 UPDATE_API = 'https://api.github.com/repos/%s/releases/latest' % GITHUB_REPO
 UPDATE_PAGE = 'https://github.com/%s/releases/latest' % GITHUB_REPO

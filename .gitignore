@@ -46,3 +46,10 @@ out*.txt
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Не публикуем в репо (убрано 2026-11-25, чистка истории)
+BUG_REPORT.md
+assets/skin.png
+*.pdb
+*.bundle
+release_notes*.md

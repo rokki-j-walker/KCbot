@@ -5,8 +5,8 @@
 пропатченный логгер и обучает стратегию эволюцией: **CEM + Pareto**,
 с сохранённым старым **GA**-режимом.
 
-**Релиз v1.0.3:**
-https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.3
+**Релиз v0.1:**
+https://github.com/rokki-j-walker/KCbot/releases/tag/v0.1
 
 ---
 
@@ -50,12 +50,12 @@ https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.3
 ## Установка
 
 ### Инсталлер
-Скачать `KCbot-1.0.3.exe` из
-[Releases](https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.3)
+Скачать `KCbot-0.1.exe` из
+[Releases](https://github.com/rokki-j-walker/KCbot/releases/tag/v0.1)
 и запустить. Установка в пользовательский каталог, Python не нужен.
 
 ### Портативная версия
-Скачать `KCbot-1.0.3-portable.zip`, распаковать в любую папку и запустить
+Скачать `KCbot-0.1-portable.zip`, распаковать в любую папку и запустить
 `KCbot.exe`.
 
 **Требования:** Windows 10/11 x64, установленная **Kingdom: Classic**
@@ -111,15 +111,15 @@ https://github.com/rokki-j-walker/KCbot/releases/tag/v1.0.3
 py -m pip install -r requirements.txt
 py -m PyInstaller KCbot.spec --noconfirm --clean
 & "C:\Program Files\utils\Inno Setup 7\ISCC.exe" KCbot.iss
-Compress-Archive -Path 'dist\KCbot\*' -DestinationPath 'dist\KCbot-1.0.3-portable.zip' -CompressionLevel Optimal
+Compress-Archive -Path 'dist\KCbot\*' -DestinationPath 'dist\KCbot-0.1-portable.zip' -CompressionLevel Optimal
 ```
 
 Результаты:
 - `dist/KCbot/KCbot.exe` — onedir-сборка (Windows x64);
-- `Setup/KCbot-1.0.3.exe` — инсталлер Inno Setup 7;
-- `dist/KCbot-1.0.3-portable.zip` — портативная версия.
+- `Setup/KCbot-0.1.exe` — инсталлер Inno Setup 7;
+- `dist/KCbot-0.1-portable.zip` — портативная версия.
 
-Версия exe задаётся `KCbot_version.txt` (FileVersion 1.0.3.0).
+Версия exe задаётся `KCbot_version.txt` (FileVersion 0.1.0).
 
 ### Проверка
 ```powershell
@@ -163,9 +163,8 @@ KCbot/
 
 ## Документация и статус
 
-- `BUG_REPORT.md` — известные проблемы и история аудита.
 - `TODO.md` — план развития.
-- Релиз **v1.0.3** опубликован; проверка на чистой VM недоступна в
+- Релиз **v0.1** опубликован; проверка на чистой VM недоступна в
   текущем окружении.
 
 Проект не связан с разработчиками Kingdom и распространяется как
